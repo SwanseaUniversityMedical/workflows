@@ -148,6 +148,11 @@ jobs:
           DOCKER_REGISTRY_USER: ${{ inputs.docker-registry-user }}
           DOCKER_REGISTRY_TOKEN: ${{ secrets.docker-registry-token }}
 
+      - name: build container
+        if: steps.changes.outputs.src == 'true'
+        run: |
+          docker build -t image -f ${{ inputs.docker-file-path }} ${{ inputs.docker-context-dir }}
+
       - name: semantic release
         if: steps.changes.outputs.src == 'true'
         uses: docker://ghcr.io/codfish/semantic-release-action:v2
@@ -170,9 +175,9 @@ jobs:
                 
               }],
             
-              ['@semantic-release/exec', { 
-                "prepareCmd": "docker build -t image -f ${{ inputs.docker-file-path }} ${{ inputs.docker-context-dir }}",
-                "publishCmd": "docker tag image ${{ inputs.docker-registry }}/${{ inputs.docker-registry-project }}/${{ inputs.docker-registry-repo }}:${nextRelease.version} && docker push ${{ inputs.docker-registry }}/${{ inputs.docker-registry-project }}/${{ inputs.docker-registry-repo }}:${nextRelease.version}",
+              ['@semantic-release/exec', {
+                "prepareCmd": "docker tag image ${{ inputs.docker-registry }}/${{ inputs.docker-registry-project }}/${{ inputs.docker-registry-repo }}:${nextRelease.version}",
+                "publishCmd": "docker push ${{ inputs.docker-registry }}/${{ inputs.docker-registry-project }}/${{ inputs.docker-registry-repo }}:${nextRelease.version}",
               }],
             
               ['@semantic-release/github', {

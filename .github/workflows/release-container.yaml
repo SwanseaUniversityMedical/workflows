@@ -16,7 +16,8 @@ on:
       path-filter:
         description: "Filters used to detect if relevant files have changed."
         default: |
-          - **
+          src:
+            - **
         type: string
 
       docker-context-dir:

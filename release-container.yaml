@@ -1,0 +1,79 @@
+on:
+  workflow_call:
+
+    inputs:
+
+      runs-on:
+        description: "The Github Actions host runner to use for compute. i.e. ubuntu-latest is a Github hosted runner."
+        default: "ubuntu-latest"
+        type: string
+
+      git-clone-dir:
+        description: "The directory context to clone the git commit into."
+        default: "."
+        type: string
+
+      docker-context-pwd:
+        description: "The directory context to execute the docker build from. i.e. The directory we run 'docker build ...' from."
+        default: "."
+        type: string
+
+      docker-context-dir:
+        description: "The directory context to execute the docker build within. i.e. Inside the Dockerfile RUN commands, this is the directory that they see as PWD."
+        default: "."
+        type: string
+
+      docker-file-path:
+        description: "Path to the Dockerfile to build the container from."
+        default: "Dockerfile"
+        type: string
+
+      docker-registry:
+        description: "Root url for the Docker registry to use. e.g. https://harbor.ukserp.ac.uk"
+        required: true
+        type: string
+
+      docker-registry-repo:
+        description: "Name of the repository within the registry that the containers should be pushed into. i.e. my-project."
+        required: true
+        type: string
+
+      docker-registry-image:
+        description: "Name of the image within the repository that the containers should named as. i.e. my-image."
+        required: true
+        type: string
+
+      docker-registry-tag-format:
+        description: "A json formatted list of Docker tag formats used by the semantic-release-docker plugin when pushing built containers to the registry."
+        default: '["latest", "{{version}}", "{{major}}-latest", "{{major}}.{{minor}}"]'
+        type: string
+
+      docker-registry-user:
+        description: "Authentication user for the docker registry."
+        required: true
+        type: string
+
+      github-app-id:
+        description: "App ID for Github App authentication."
+        required: true
+        type: string
+
+    secrets:
+
+      docker-registry-token:
+        description: "Authentication token for the docker registry."
+        required: true
+        type: string
+
+      github-app-private-key:
+        description: "Private key for Github App authentication."
+        required: true
+        type: string
+
+jobs:
+
+  release-container:
+    runs-on: ubuntu-latest
+
+    steps:
+

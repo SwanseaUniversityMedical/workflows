@@ -39,6 +39,32 @@ on:
         default: '${version}'
         type: string
 
+      release-rules:
+        description: "JSON encoded list of semantic-release release rules."
+        default: |
+          [
+            {"type": "major", "release": "major"},
+            {"type": "minor", "release": "minor"},
+            {"type": "patch", "release": "patch"},
+            {"type": "no-release", "release": false},
+
+            {"type": "chore", "release": "patch"},
+            {"type": "refactor", "release": "patch"},
+            {"type": "style", "release": "patch"},
+
+            {"type": "docs", "release": false},
+            {"type": "test", "release": false},
+            {"type": "ci", "release": false},
+
+            {"type": "feat", "release": "minor"},
+
+            {"type": "revert", "release": "patch"},
+            {"type": "perf", "release": "patch"},
+            {"type": "fix", "release": "patch"},
+            {"type": "build", "release": "patch"},
+          ]
+        type: string
+
       docker-context-dir:
         description: "The directory context to execute the docker build within. i.e. Inside the Dockerfile RUN commands, this is the directory that they see as PWD."
         default: "."
@@ -113,6 +139,11 @@ jobs:
           app_id: ${{ inputs.github-app-id }}
           private_key: ${{ secrets.github-app-private-key }}
 
+      - name: registry login
+        if: steps.changes.outputs.src == 'true'
+        run: |
+          echo "${{ secrets.docker-registry-token }}" | docker login ${{ inputs.docker-registry }} -u ${{ inputs.docker-registry-user }} --password-stdin
+
       - name: semantic release
         if: steps.changes.outputs.src == 'true'
         uses: docker://ghcr.io/codfish/semantic-release-action:v2
@@ -123,37 +154,30 @@ jobs:
           tag_format: ${{ inputs.release-tag-format }}
 
           additional_packages: |
-            ['@semantic-release/exec']
+            ['@codedependant/semantic-release-docker']
 
           plugins: |-
             [
               ['@semantic-release/commit-analyzer', {
-                "releaseRules": [
-                  {"type": "major", "release": "major"},
-                  {"type": "minor", "release": "minor"},
-                  {"type": "patch", "release": "patch"},
-                  {"type": "no-release", "release": false},
-
-                  {"type": "chore", "release": "patch"},
-                  {"type": "refactor", "release": "patch"},
-                  {"type": "style", "release": "patch"},
-
-                  {"type": "docs", "release": false},
-                  {"type": "test", "release": false},
-                  {"type": "ci", "release": false},
-
-                  {"type": "feat", "release": "minor"},
-
-                  {"type": "revert", "release": "patch"},
-                  {"type": "perf", "release": "patch"},
-                  {"type": "fix", "release": "patch"},
-                  {"type": "build", "release": "patch"},
-                ],
+                "releaseRules": ${{ inputs.release-rules }},
               }], 
             
               ['@semantic-release/release-notes-generator', {
                 
               }],
+            
+              ['@codedependant/semantic-release-docker', {
+                "dockerLogin": false,
+                "dockerContext": '${{ inputs.docker-context-dir }}',
+                "dockerFile": '${{ inputs.docker-file-path }}',
+                "dockerArgs": {
+                  GITHUB_TOKEN: null
+                },
+                "dockerRegistry": '${{ inputs.docker-registry }}',
+                "dockerProject": '${{ inputs.docker-registry-project }}',
+                "dockerImage": '${{ inputs.docker-registry-repo }}',
+                "dockerTags": ['{{version}}']
+              }]
             
               ['@semantic-release/github', {
                 "successComment": false,

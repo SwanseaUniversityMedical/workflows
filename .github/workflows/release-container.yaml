@@ -158,7 +158,7 @@ jobs:
           tag_format: ${{ inputs.release-tag-format }}
 
           additional_packages: |
-            ['@codedependant/semantic-release-docker']
+            ['@semantic-release/exec']
 
           plugins: |-
             [
@@ -170,18 +170,10 @@ jobs:
                 
               }],
             
-              ['@codedependant/semantic-release-docker', {
-                "dockerLogin": false,
-                "dockerContext": '${{ inputs.docker-context-dir }}',
-                "dockerFile": '${{ inputs.docker-file-path }}',
-                "dockerArgs": {
-                  GITHUB_TOKEN: null
-                },
-                "dockerRegistry": '${{ inputs.docker-registry }}',
-                "dockerProject": '${{ inputs.docker-registry-project }}',
-                "dockerImage": '${{ inputs.docker-registry-repo }}',
-                "dockerTags": ['{{version}}']
-              }]
+              ['@semantic-release/exec', { 
+                "prepareCmd": "docker build -t image -f ${{ inputs.docker-file-path }} ${{ inputs.docker-context-dir }}",
+                "publishCmd": "docker tag image ${{ inputs.docker-registry }}/${{ inputs.docker-registry-project }}/${{ inputs.docker-registry-repo }}:${nextRelease.version} && docker push ${{ inputs.docker-registry }}/${{ inputs.docker-registry-project }}/${{ inputs.docker-registry-repo }}:${nextRelease.version}",
+              }],
             
               ['@semantic-release/github', {
                 "successComment": false,

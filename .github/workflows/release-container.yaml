@@ -63,12 +63,10 @@ on:
       docker-registry-token:
         description: "Authentication token for the docker registry."
         required: true
-        type: string
 
       github-app-private-key:
         description: "Private key for Github App authentication."
         required: true
-        type: string
 
 jobs:
 

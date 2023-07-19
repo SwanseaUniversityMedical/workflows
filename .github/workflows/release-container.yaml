@@ -23,7 +23,7 @@ on:
       release-dry-run:
         description: "When true determines if a release should happen and what type without actually performing the release."
         default: true
-        type: bool
+        type: boolean
 
       release-branches:
         description: "JSON encoded list of regex patterns to select release branches."

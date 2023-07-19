@@ -1,0 +1,95 @@
+on:
+  workflow_call:
+
+    inputs:
+
+      runs-on:
+        description: "The Github Actions host runner to use for compute. i.e. ubuntu-latest is a Github hosted runner."
+        required: true
+        type: string
+
+      git-clone-dir:
+        description: "The directory context to clone the git commit into."
+        default: "."
+        type: string
+
+      path-filter:
+        description: "Filters used to detect if relevant files have changed."
+        default: "**"
+        type: string
+
+      docker-context-dir:
+        description: "The directory context to execute the docker build within. i.e. Inside the Dockerfile RUN commands, this is the directory that they see as PWD."
+        default: "."
+        type: string
+
+      docker-file-path:
+        description: "Path to the Dockerfile to build the container from."
+        default: "Dockerfile"
+        type: string
+
+      docker-registry:
+        description: "Root url for the Docker registry to use. e.g. https://harbor.ukserp.ac.uk"
+        required: true
+        type: string
+
+      docker-registry-project:
+        description: "Name of the project within the registry that the containers should be pushed into. i.e. my-project."
+        required: true
+        type: string
+
+      docker-registry-repo:
+        description: "Name of the image within the project that the containers should named as. i.e. my-image."
+        required: true
+        type: string
+
+      docker-registry-tag-format:
+        description: "A json formatted list of Docker tag formats used by the semantic-release-docker plugin when pushing built containers to the registry."
+        default: '["latest", "{{version}}", "{{major}}-latest", "{{major}}.{{minor}}"]'
+        type: string
+
+      docker-registry-user:
+        description: "Authentication user for the docker registry."
+        required: true
+        type: string
+
+      github-app-id:
+        description: "App ID for Github App authentication."
+        required: true
+        type: string
+
+    secrets:
+
+      docker-registry-token:
+        description: "Authentication token for the docker registry."
+        required: true
+        type: string
+
+      github-app-private-key:
+        description: "Private key for Github App authentication."
+        required: true
+        type: string
+
+jobs:
+
+  release-container:
+    runs-on: ${{ inputs.runs-on }}
+
+    steps:
+
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: detect changed files
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: ${{ inputs.path-filter }}
+
+      - name: generate token
+        if: steps.changes.outputs.src == 'true'
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
+        with:
+          app_id: ${{ inputs.github-app-id }}
+          private_key: ${{ secrets.github-app-private-key }}

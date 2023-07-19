@@ -1,0 +1,23 @@
+name: Test and Release the release-container CI
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+
+  test-release-container:
+    uses: ./.github/workflows/release-container.yaml
+
+    with:
+      runs-on: ubuntu-latest
+      github-app-id: ${{ vars.APP_ID }}
+      docker-file-path: ./tests/container/Dockerfile
+      docker-registry: ${{ vars.HARBOR_REGISTRY }}
+      docker-registry-project: ${{ vars.HARBOR_PROJECT }}
+      docker-registry-repo: whalesay
+      docker-registry-user: ${{ vars.HARBOR_USER }}
+    secrets:
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      docker-registry-token: ${{ secrets.HARBOR_TOKEN }}

@@ -13,6 +13,12 @@ jobs:
     with:
       runs-on: ubuntu-latest
 
+      path-filter: |
+        src:
+          - './.github/workflows/release-release-container.yaml'
+          - './.github/workflows/release-container.yaml'
+          - './tests/container/**'
+
       release-dry-run: false
       release-tag-format: 'release-container-${version}'
 

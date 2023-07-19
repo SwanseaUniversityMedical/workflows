@@ -5,7 +5,7 @@ on:
 
       runs-on:
         description: "The Github Actions host runner to use for compute. i.e. ubuntu-latest is a Github hosted runner."
-        default: "ubuntu-latest"
+        required: true
         type: string
 
       git-clone-dir:
@@ -13,9 +13,9 @@ on:
         default: "."
         type: string
 
-      docker-context-pwd:
-        description: "The directory context to execute the docker build from. i.e. The directory we run 'docker build ...' from."
-        default: "."
+      path-filter:
+        description: "Filters used to detect if relevant files have changed."
+        default: "**"
         type: string
 
       docker-context-dir:
@@ -33,13 +33,13 @@ on:
         required: true
         type: string
 
-      docker-registry-repo:
-        description: "Name of the repository within the registry that the containers should be pushed into. i.e. my-project."
+      docker-registry-project:
+        description: "Name of the project within the registry that the containers should be pushed into. i.e. my-project."
         required: true
         type: string
 
-      docker-registry-image:
-        description: "Name of the image within the repository that the containers should named as. i.e. my-image."
+      docker-registry-repo:
+        description: "Name of the image within the project that the containers should named as. i.e. my-image."
         required: true
         type: string
 
@@ -73,7 +73,23 @@ on:
 jobs:
 
   release-container:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
 
     steps:
 
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: detect changed files
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: ${{ inputs.path-filter }}
+
+      - name: generate token
+        if: steps.changes.outputs.src == 'true'
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
+        with:
+          app_id: ${{ inputs.github-app-id }}
+          private_key: ${{ secrets.github-app-private-key }}

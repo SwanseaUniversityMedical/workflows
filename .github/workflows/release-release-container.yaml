@@ -1,0 +1,36 @@
+name: Test and Release the release-container CI
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+
+  release-container:
+    uses: ./.github/workflows/release-container.yaml
+
+    with:
+      runs-on: ubuntu-latest
+
+      path-filter: |
+        src:
+          - './.github/workflows/release-release-container.yaml'
+          - './.github/workflows/release-container.yaml'
+          - './tests/container/**'
+
+      release-dry-run: false
+      release-tag-format: 'release-container-${version}'
+
+      github-app-id: ${{ vars.APP_ID }}
+
+      docker-file-path: ./tests/container/Dockerfile
+
+      docker-registry-user: ${{ vars.HARBOR_USER }}
+      docker-registry: ${{ vars.HARBOR_REGISTRY }}
+      docker-registry-project: ${{ vars.HARBOR_PROJECT }}
+      docker-registry-repo: whalesay
+
+    secrets:
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      docker-registry-token: ${{ secrets.HARBOR_TOKEN }}

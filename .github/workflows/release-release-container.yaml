@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  test-release-container:
+  release-container:
     uses: ./.github/workflows/release-container.yaml
 
     with:

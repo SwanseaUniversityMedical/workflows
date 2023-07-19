@@ -153,7 +153,7 @@ jobs:
         run: |
           docker build -t image -f ${{ inputs.docker-file-path }} ${{ inputs.docker-context-dir }}
 
-      - name: semantic release dry run
+      - name: release dry run
         if: steps.changes.outputs.src == 'true'
         uses: docker://ghcr.io/codfish/semantic-release-action:v2
         id: dry-release
@@ -180,7 +180,7 @@ jobs:
         env:
           TAG: ${{ inputs.docker-registry }}/${{ inputs.docker-registry-project }}/${{ inputs.docker-registry-repo }}:${{ steps.dry-release.outputs.release-version }}
 
-      - name: semantic release
+      - name: release
         if: steps.dry-release.outputs.new-release-published == 'true'
         uses: docker://ghcr.io/codfish/semantic-release-action:v2
         id: release

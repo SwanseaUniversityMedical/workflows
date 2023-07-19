@@ -153,17 +153,41 @@ jobs:
         run: |
           docker build -t image -f ${{ inputs.docker-file-path }} ${{ inputs.docker-context-dir }}
 
-      - name: semantic release
+      - name: semantic release dry run
         if: steps.changes.outputs.src == 'true'
         uses: docker://ghcr.io/codfish/semantic-release-action:v2
-        id: release
+        id: dry-release
         with:
-          dry_run: ${{ inputs.release-dry-run }}
+          dry_run: true
           branches: ${{ inputs.release-branches }}
           tag_format: ${{ inputs.release-tag-format }}
 
-          additional_packages: |
-            ['@semantic-release/exec']
+          plugins: |-
+            [
+              ['@semantic-release/commit-analyzer', {
+                "releaseRules": ${{ inputs.release-rules }},
+              }]
+            ]
+
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+
+      - name: tag and push container to registry
+        if: steps.dry-release.outputs.new-release-published == 'true'
+        run: |
+          docker tag image $TAG
+          docker push $TAG
+        env:
+          TAG: ${{ inputs.docker-registry }}/${{ inputs.docker-registry-project }}/${{ inputs.docker-registry-repo }}:${{ steps.dry-release.outputs.release-version }}
+
+      - name: semantic release
+        if: steps.dry-release.outputs.new-release-published == 'true'
+        uses: docker://ghcr.io/codfish/semantic-release-action:v2
+        id: release
+        with:
+          dry_run: false
+          branches: ${{ inputs.release-branches }}
+          tag_format: ${{ inputs.release-tag-format }}
 
           plugins: |-
             [
@@ -173,11 +197,6 @@ jobs:
             
               ['@semantic-release/release-notes-generator', {
                 
-              }],
-            
-              ['@semantic-release/exec', {
-                "prepareCmd": "docker tag image ${{ inputs.docker-registry }}/${{ inputs.docker-registry-project }}/${{ inputs.docker-registry-repo }}:${nextRelease.version}",
-                "publishCmd": "docker push ${{ inputs.docker-registry }}/${{ inputs.docker-registry-project }}/${{ inputs.docker-registry-repo }}:${nextRelease.version}",
               }],
             
               ['@semantic-release/github', {

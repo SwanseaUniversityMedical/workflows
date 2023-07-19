@@ -142,7 +142,9 @@ jobs:
       - name: registry login
         if: steps.changes.outputs.src == 'true'
         run: |
-          echo "${{ secrets.docker-registry-token }}" | docker login ${{ inputs.docker-registry }} -u ${{ inputs.docker-registry-user }} --password-stdin
+          echo "$DOCKER_REGISTRY_TOKEN" | docker login ${{ inputs.docker-registry }} -u ${{ inputs.docker-registry-user }} --password-stdin
+        env:
+          DOCKER_REGISTRY_TOKEN: ${{ secrets.docker-registry-token }}
 
       - name: semantic release
         if: steps.changes.outputs.src == 'true'

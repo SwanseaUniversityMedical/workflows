@@ -1,3 +1,5 @@
+name: release-container
+
 on:
   workflow_call:
 

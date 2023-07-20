@@ -26,6 +26,8 @@ jobs:
 
       docker-file-path: ./tests/container/Dockerfile
 
+      test-cmd: docker run image cowsay boo
+
       docker-registry-user: ${{ vars.HARBOR_USER }}
       docker-registry: ${{ vars.HARBOR_REGISTRY }}
       docker-registry-project: ${{ vars.HARBOR_PROJECT }}

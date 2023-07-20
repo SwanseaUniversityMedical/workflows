@@ -20,6 +20,11 @@ on:
             - '**'
         type: string
 
+      test-cmd:
+        description: "Shell command executed to test the built container is valid."
+        default: null
+        type: string
+
       release-dry-run:
         description: "When true determines if a release should happen and what type without actually performing the release."
         default: true
@@ -149,7 +154,7 @@ jobs:
           docker build -t image -f ${{ inputs.docker-file-path }} ${{ inputs.docker-context-dir }}
 
       - name: test container
-        if: steps.changes.outputs.src == 'true'
+        if: steps.changes.outputs.src == 'true' && inputs.test-cmd != null
         run: ${{ inputs.test-cmd }}
 
       - name: release dry run

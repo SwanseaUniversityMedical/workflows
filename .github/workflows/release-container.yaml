@@ -20,6 +20,11 @@ on:
             - '**'
         type: string
 
+      test-cmd:
+        description: "Shell command executed to test the built container is valid."
+        default: null
+        type: string
+
       release-dry-run:
         description: "When true determines if a release should happen and what type without actually performing the release."
         default: true
@@ -90,11 +95,6 @@ on:
         required: true
         type: string
 
-      docker-registry-tag-format:
-        description: "A json formatted list of Docker tag formats used by the semantic-release-docker plugin when pushing built containers to the registry."
-        default: '["latest", "{{version}}", "{{major}}-latest", "{{major}}.{{minor}}"]'
-        type: string
-
       docker-registry-user:
         description: "Authentication user for the docker registry."
         required: true
@@ -153,10 +153,16 @@ jobs:
         run: |
           docker build -t image -f ${{ inputs.docker-file-path }} ${{ inputs.docker-context-dir }}
 
+      - name: test container
+        if: steps.changes.outputs.src == 'true' && inputs.test-cmd != null
+        run: ${{ inputs.test-cmd }}
+
       - name: release dry run
         if: steps.changes.outputs.src == 'true'
         uses: docker://ghcr.io/codfish/semantic-release-action:v2
         id: dry-release
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         with:
           dry_run: true
           branches: ${{ inputs.release-branches }}
@@ -168,9 +174,6 @@ jobs:
                 "releaseRules": ${{ inputs.release-rules }},
               }]
             ]
-
-        env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
 
       - name: tag and push container to registry
         if: steps.dry-release.outputs.new-release-published == 'true'
@@ -184,6 +187,8 @@ jobs:
         if: steps.dry-release.outputs.new-release-published == 'true'
         uses: docker://ghcr.io/codfish/semantic-release-action:v2
         id: release
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         with:
           dry_run: false
           branches: ${{ inputs.release-branches }}
@@ -204,6 +209,3 @@ jobs:
                 "failTitle": false
               }]
             ]
-
-        env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}

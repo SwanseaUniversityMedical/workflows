@@ -98,30 +98,18 @@ jobs:
     needs: version-container-whalesay
     if: needs.version-container-whalesay.outputs.release.new-release-published == 'true'
 
-    runs-on: [self-hosted, linux, x64]
+    runs-on: [ self-hosted, linux, x64 ]
 
     outputs:
-      tags: ${{ steps.meta.outputs.tags }}
-      labels: ${{ steps.meta.outputs.labels }}
-      digest: ${{ steps.build.outputs.digest }}
-      image: ${{ env.WHALESAY_IMAGE }}@${{ steps.build.outputs.digest }}
-
-    env:
-      WHALESAY_VERSION: ${{ needs.version-container-whalesay.outputs.release.release-version }}
+      image: ${{ steps.digest.outputs.digest }}
 
     steps:
+      - name: create rc tag
+        run: |
+          echo "RC_TAG=${{ needs.version-container-whalesay.outputs.release.release-version }}" >> $GITHUB_ENV  
+
       - name: clone repo
         uses: actions/checkout@v3
-
-      - name: install QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: install docker buildx
-        uses: docker/setup-buildx-action@v2
-        with:
-          config-inline: |
-            [registry."${{ vars.HARBOR_REGISTRY }}"]
-              insecure = true
 
       - name: login to container registry
         uses: docker/login-action@v2
@@ -130,24 +118,22 @@ jobs:
           username: ${{ vars.HARBOR_USER }}
           password: ${{ secrets.HARBOR_TOKEN }}
 
-      - name: container metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: |
-            ${{ env.WHALESAY_IMAGE }}
-          tags: |
-            type=semver,pattern={{version}}-rc,value=v${{ env.WHALESAY_VERSION }}
+      - name: build container
+        run: |
+          docker build -t image -f tests/container/Dockerfile tests/container
 
-      - name: build and push container
-        uses: docker/build-push-action@v4
-        id: build
-        with:
-          context: tests/container
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+      - name: tag container
+        run: |
+          docker tag image ${{ env.WHALESAY_IMAGE }}:${{ env.RC_TAG }}
+
+      - name: push container
+        run: |
+          docker push ${{ env.WHALESAY_IMAGE }}:${{ env.RC_TAG }}
+
+      - name: container digest
+        id: digest
+        run: |
+          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.WHALESAY_IMAGE }}:${{ env.RC_TAG }}`" >> "$GITHUB_OUTPUT"
 
   test-container-whalesay:
     needs: build-container-whalesay

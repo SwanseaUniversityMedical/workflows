@@ -48,7 +48,7 @@ jobs:
       image: ${{ env.WHALESAY_IMAGE }}@${{ steps.build.outputs.digest }}
 
     env:
-      HARBOR_CERT_PATH: /etc/docker/certs.d/${{ vars.HARBOR_REGISTRY }}-ca.crt
+      HARBOR_CERT_PATH: /etc/ssl/certs/${{ vars.HARBOR_REGISTRY }}-ca.crt
 
     steps:
       - name: clone repo
@@ -59,7 +59,8 @@ jobs:
 
       - name: create registry cert
         run: |
-          echo "${{ vars.HARBOR_CERT }}" > ${{ env.HARBOR_CERT_PATH }}
+          sudo echo "${{ vars.HARBOR_CERT }}" > ${{ env.HARBOR_CERT_PATH }}
+          sudo update-ca-certificates
 
       - name: install docker buildx
         uses: docker/setup-buildx-action@v2

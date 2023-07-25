@@ -42,13 +42,20 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     outputs:
-      image: ${{ env.PR_COMMIT_TAG }}
+      image: ${{ env.WHALESAY_IMAGE }}@${{ steps.digest.outputs }}
 
     steps:
-      - name: set env
+      - name: get short commit sha
         run: |
-          echo "PR_TAG=${{ env.WHALESAY_IMAGE }}:pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
-          echo "PR_COMMIT_TAG=${{ env.WHALESAY_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV  
+          echo "GITHUB_SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+
+      - name: create pr tag
+        run: |
+          echo "PR_TAG=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
+
+      - name: create pr-commit tag
+        run: |
+          echo "PR_COMMIT_TAG=pr-${{ env.PR_TAG }}-${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -64,18 +71,32 @@ jobs:
         run: |
           docker build -t ${{ env.WHALESAY_IMAGE }} -f tests/container/Dockerfile tests/container
 
+      - name: tag container
+        run: |
+          docker tag ${{ env.WHALESAY_IMAGE }} ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
+          docker tag ${{ env.WHALESAY_IMAGE }} ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}
+
       - name: push container
         run: |
-          docker tag ${{ env.WHALESAY_IMAGE }} ${{ env.PR_TAG }}
-          docker push ${{ env.PR_TAG }}
-          docker tag ${{ env.WHALESAY_IMAGE }} ${{ env.PR_COMMIT_TAG }}
-          docker push ${{ env.PR_COMMIT_TAG }}
+          docker push ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
+          docker push ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}
+
+      - name: container digest
+        id: digest
+        run: |
+          docker inspect --format='{{index .RepoDigests 0}}' ${{ env.WHALESAY_IMAGE }}
+
+      - name: generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
+        with:
+          app_id: ${{ vars.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: comment the image tags to the pr
         uses: actions/github-script@v6
         with:
           script: |
-            
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,

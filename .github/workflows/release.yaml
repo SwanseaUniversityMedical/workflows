@@ -195,7 +195,6 @@ jobs:
           docker push ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
           
       - name: release
-        if: steps.dry-release.outputs.new-release-published == 'true'
         uses: docker://ghcr.io/codfish/semantic-release-action:v2
         env:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}

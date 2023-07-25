@@ -42,7 +42,7 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     outputs:
-      image: ${{ env.WHALESAY_IMAGE }}@${{ steps.digest.outputs }}
+      image: ${{ steps.digest.outputs.value }}
 
     steps:
       - name: get short commit sha
@@ -55,7 +55,7 @@ jobs:
 
       - name: create pr-commit tag
         run: |
-          echo "PR_COMMIT_TAG=pr-${{ env.PR_TAG }}-${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
+          echo "PR_COMMIT_TAG=${{ env.PR_TAG }}-${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
 
       - name: clone repo
         uses: actions/checkout@v3

@@ -1,7 +1,7 @@
 name: build, test, release
 
 on:
-  branch:
+  push:
 
 env:
   WHALESAY_IMAGE: ${{ vars.HARBOR_REGISTRY }}/${{ vars.HARBOR_PROJECT }}/whalesay

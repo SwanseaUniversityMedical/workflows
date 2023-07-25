@@ -183,12 +183,16 @@ jobs:
 
       - name: pull container
         run: |
-          docker manifest create ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }} \
-                                 ${{ needs.test-container-whalesay.outputs.image }}
+          docker pull ${{ needs.test-container-whalesay.outputs.image }}
+
+      - name: tag container
+        run: |
+          docker tag ${{ needs.test-container-whalesay.outputs.image }} \
+                     ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
 
       - name: push container
         run: |
-          docker manifest push ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
+          docker push ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
           
       - name: release
         if: steps.dry-release.outputs.new-release-published == 'true'

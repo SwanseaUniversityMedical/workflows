@@ -71,11 +71,6 @@ jobs:
         run: |
           docker build -t image -f tests/container/Dockerfile tests/container
 
-      - name: container digest
-        id: digest
-        run: |
-          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' image`" >> "$GITHUB_OUTPUT"
-
       - name: tag container
         run: |
           docker tag image ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
@@ -85,6 +80,11 @@ jobs:
         run: |
           docker push ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
           docker push ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}
+
+      - name: container digest
+        id: digest
+        run: |
+          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' image`" >> "$GITHUB_OUTPUT"
 
       - name: comment the image tags to the pr
         uses: actions/github-script@v6

@@ -200,7 +200,8 @@ jobs:
 
       - name: pull container
         run: |
-          docker pull ${{ needs.test-container-whalesay.outputs.image }} --tag ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
+          docker pull ${{ needs.test-container-whalesay.outputs.image }} \
+                --tag ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
 
       - name: push container
         run: |

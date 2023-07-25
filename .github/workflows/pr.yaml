@@ -44,11 +44,12 @@ jobs:
     outputs:
       image: ${{ env.PR_COMMIT_TAG }}
 
-    env:
-      PR_TAG: ${{ env.WHALESAY_IMAGE }}:pr-${{ github.event.pull_request.number }}
-      PR_COMMIT_TAG: ${{ env.WHALESAY_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
-
     steps:
+      - name: set env
+        run: |
+          echo "PR_TAG=${{ env.WHALESAY_IMAGE }}:pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
+          echo "PR_COMMIT_TAG=${{ env.WHALESAY_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV  
+
       - name: clone repo
         uses: actions/checkout@v3
 
@@ -75,16 +76,11 @@ jobs:
         with:
           script: |
             
-            var tags = steps.meta.outputs.tags.map(
-              (tag) => ('docker pull {0}'.format(tag))
-            ).join('\n');
-            var digest = 'docker pull {0}@{1}'.format(env.WHALESAY_IMAGE, steps.build.outputs.digest);
-            
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '```\n{tags}\n\n{digest}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
+              body: '```\n${{ env.PR_TAG }}\n${{ env.PR_COMMIT_TAG }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
             })
 
   test-container-whalesay:

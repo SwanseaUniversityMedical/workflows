@@ -3,9 +3,6 @@ name: build, push, test
 on:
   pull_request:
 
-env:
-  WHALESAY_IMAGE: ${{ vars.HARBOR_REGISTRY }}/${{ vars.HARBOR_PROJECT }}/whalesay
-
 jobs:
 
   changes:
@@ -44,10 +41,13 @@ jobs:
     outputs:
       image: ${{ steps.digest.outputs.digest }}
 
+    env:
+      IMAGE: ${{ vars.HARBOR_REGISTRY }}/${{ vars.HARBOR_PROJECT }}/whalesay
+
     steps:
       - name: get short commit sha
         run: |
-          echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-8`" >> $GITHUB_ENV
+          echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
 
       - name: create pr tag
         run: |
@@ -69,29 +69,22 @@ jobs:
 
       - name: build container
         run: |
-          docker build -t ${{ env.WHALESAY_IMAGE }} -f tests/container/Dockerfile tests/container
-
-      - name: tag container
-        run: |
-          docker tag ${{ env.WHALESAY_IMAGE }} ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
-          docker tag ${{ env.WHALESAY_IMAGE }} ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}
-
-      - name: push container
-        run: |
-          docker push ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
-          docker push ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}
+          docker build -t ${{ env.IMAGE }} -f tests/container/Dockerfile tests/container
 
       - name: container digest
         id: digest
         run: |
-          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.WHALESAY_IMAGE }}`" >> "$GITHUB_OUTPUT"
+          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.IMAGE }}`" >> "$GITHUB_OUTPUT"
 
-      - name: generate token
-        id: generate-token
-        uses: tibdex/github-app-token@v1.8.0
-        with:
-          app_id: ${{ vars.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+      - name: tag container
+        run: |
+          docker tag ${{ env.IMAGE }} ${{ env.IMAGE }}:${{ env.PR_TAG }}
+          docker tag ${{ env.IMAGE }} ${{ env.IMAGE }}:${{ env.PR_COMMIT_TAG }}
+
+      - name: push container
+        run: |
+          docker push ${{ env.IMAGE }}:${{ env.PR_TAG }}
+          docker push ${{ env.IMAGE }}:${{ env.PR_COMMIT_TAG }}
 
       - name: comment the image tags to the pr
         uses: actions/github-script@v6
@@ -101,7 +94,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '```\n${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}\n${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
+              body: '```\n${{ env.IMAGE }}:${{ env.PR_TAG }}\n${{ env.IMAGE }}:${{ env.PR_COMMIT_TAG }}\n${{ steps.digest.outputs.digest }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
             })
 
   test-container-whalesay:

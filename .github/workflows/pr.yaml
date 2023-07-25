@@ -11,9 +11,6 @@ jobs:
   changes:
     runs-on: ubuntu-latest
 
-    permissions:
-      pull-requests: read
-
     outputs:
       container-whalesay: ${{ steps.changes.outputs.container-whalesay }}
 
@@ -21,10 +18,18 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v3
 
+      - name: generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
+        with:
+          app_id: ${{ vars.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: detect changed files
         uses: dorny/paths-filter@v2
         id: changes
         with:
+          token: ${{ steps.generate-token.outputs.token }}
           filters: |
             container-whalesay:
               - './.github/workflows/pr.yaml'

@@ -1,0 +1,213 @@
+name: build, test, release
+
+on:
+  push:
+
+env:
+  WHALESAY_IMAGE: ${{ vars.HARBOR_REGISTRY }}/${{ vars.HARBOR_PROJECT }}/whalesay
+  WHALESAY_RELEASE_TAG_FORMAT: 'whalesay-${version}'
+  
+  RELEASE_BRANCHES: |
+    [
+      '+([0-9])?(.{+([0-9]),x}).x',
+      'main'
+    ]
+
+  RELEASE_RULES: |
+    [
+      {"type": "major", "release": "major"},
+      {"type": "minor", "release": "minor"},
+      {"type": "patch", "release": "patch"},
+      {"type": "no-release", "release": false},
+    
+      {"type": "chore", "release": "patch"},
+      {"type": "refactor", "release": "patch"},
+      {"type": "style", "release": "patch"},
+    
+      {"type": "docs", "release": false},
+      {"type": "test", "release": false},
+      {"type": "ci", "release": false},
+    
+      {"type": "feat", "release": "minor"},
+    
+      {"type": "revert", "release": "patch"},
+      {"type": "perf", "release": "patch"},
+      {"type": "fix", "release": "patch"},
+      {"type": "build", "release": "patch"},
+    ]
+
+jobs:
+
+  changes:
+    runs-on: [self-hosted, linux, x64]
+
+    outputs:
+      container-whalesay: ${{ steps.changes.outputs.container-whalesay }}
+
+    steps:
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: detect changed files
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            container-whalesay:
+              - './.github/workflows/release.yaml'
+              - './tests/container/**'
+
+  version-container-whalesay:
+    needs: changes
+    if: needs.changes.outputs.container-whalesay == 'true'
+
+    runs-on: [self-hosted, linux, x64]
+
+    outputs:
+      new-release-published: ${{ steps.release.outputs.new-release-published }}
+      release-version: ${{ steps.release.outputs.release-version }}
+
+    steps:
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
+        with:
+          app_id: ${{ vars.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: determine release
+        uses: docker://ghcr.io/codfish/semantic-release-action:v2
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        with:
+          dry_run: true
+          branches: ${{ env.RELEASE_BRANCHES }}
+          tag_format: ${{ env.WHALESAY_RELEASE_TAG_FORMAT }}
+
+          plugins: |-
+            [
+              ['@semantic-release/commit-analyzer', {
+                "releaseRules": ${{ env.RELEASE_RULES }},
+              }]
+            ]
+
+  build-container-whalesay:
+    needs: version-container-whalesay
+    if: needs.version-container-whalesay.steps.new-release-published == 'true'
+
+    runs-on: [ self-hosted, linux, x64 ]
+
+    outputs:
+      image: ${{ steps.digest.outputs.digest }}
+
+    steps:
+      - name: create rc tag
+        run: |
+          echo "RC_TAG=${{ needs.version-container-whalesay.outputs.release-version }}" >> $GITHUB_ENV  
+
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: login to container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ vars.HARBOR_REGISTRY }}
+          username: ${{ vars.HARBOR_USER }}
+          password: ${{ secrets.HARBOR_TOKEN }}
+
+      - name: build container
+        run: |
+          docker build -t image -f tests/container/Dockerfile tests/container
+
+      - name: tag container
+        run: |
+          docker tag image ${{ env.WHALESAY_IMAGE }}:${{ env.RC_TAG }}
+
+      - name: push container
+        run: |
+          docker push ${{ env.WHALESAY_IMAGE }}:${{ env.RC_TAG }}
+
+      - name: container digest
+        id: digest
+        run: |
+          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.WHALESAY_IMAGE }}:${{ env.RC_TAG }}`" >> "$GITHUB_OUTPUT"
+
+  test-container-whalesay:
+    needs: build-container-whalesay
+
+    runs-on: [self-hosted, linux, x64]
+
+    outputs:
+      image: ${{ needs.build-container-whalesay.outputs.image }}
+
+    steps:
+      - name: login to container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ vars.HARBOR_REGISTRY }}
+          username: ${{ vars.HARBOR_USER }}
+          password: ${{ secrets.HARBOR_TOKEN }}
+
+      - name: pull container
+        run: |
+          docker pull ${{ needs.build-container-whalesay.outputs.image }}
+
+      - name: test container
+        run: |
+          docker run \
+            ${{ needs.build-container-whalesay.outputs.image }} \
+              cowsay boo
+
+  release-container-whalesay:
+    needs: [version-container-whalesay, test-container-whalesay]
+
+    runs-on: [self-hosted, linux, x64]
+
+    env:
+      WHALESAY_RELEASE_TAG: ${{ needs.version-container-whalesay.outputs.release-version }}
+
+    steps:
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: login to container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ vars.HARBOR_REGISTRY }}
+          username: ${{ vars.HARBOR_USER }}
+          password: ${{ secrets.HARBOR_TOKEN }}
+
+      - name: pull container
+        run: |
+          docker pull ${{ needs.test-container-whalesay.outputs.image }} \
+                --tag ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
+
+      - name: push container
+        run: |
+          docker push ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
+          
+      - name: release
+        if: steps.dry-release.outputs.new-release-published == 'true'
+        uses: docker://ghcr.io/codfish/semantic-release-action:v2
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        with:
+          dry_run: false
+          branches: ${{ env.RELEASE_BRANCHES }}
+          tag_format: ${{ env.WHALESAY_RELEASE_TAG_FORMAT }}
+
+          plugins: |-
+            [
+              ['@semantic-release/commit-analyzer', {
+                "releaseRules": ${{ env.RELEASE_RULES }},
+              }], 
+              '@semantic-release/release-notes-generator',
+              ['@semantic-release/github', {
+                "successComment": false,
+                "failTitle": false
+              }]
+            ]

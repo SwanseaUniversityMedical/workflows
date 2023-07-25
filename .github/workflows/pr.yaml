@@ -80,7 +80,6 @@ jobs:
         uses: docker/build-push-action@v4
         id: build
         with:
-          allow: network.host,security.insecure
           context: tests/container
           platforms: linux/amd64
           push: true

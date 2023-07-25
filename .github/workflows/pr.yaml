@@ -91,7 +91,7 @@ jobs:
         uses: docker/build-push-action@v4
         id: build
         with:
-          buildkitd-flags: '--allow-insecure-entitlement security.insecure'
+          allow: security.insecure
           context: tests/container
           platforms: linux/amd64
           push: true

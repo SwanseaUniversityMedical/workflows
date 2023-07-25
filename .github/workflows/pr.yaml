@@ -59,7 +59,6 @@ jobs:
         with:
           config-inline: |
             [registry."${{ vars.HARBOR_REGISTRY }}"]
-              http = true
               insecure = true
 
       - name: login to container registry

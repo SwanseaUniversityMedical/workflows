@@ -39,7 +39,7 @@ env:
 jobs:
 
   changes:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
 
     outputs:
       container-whalesay: ${{ steps.changes.outputs.container-whalesay }}
@@ -61,7 +61,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.container-whalesay == 'true'
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
 
     outputs:
       release: ${{ steps.release.outputs }}
@@ -98,7 +98,7 @@ jobs:
     needs: version-container-whalesay
     if: needs.version-container-whalesay.outputs.release.new-release-published == 'true'
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
 
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
@@ -148,7 +148,7 @@ jobs:
   test-container-whalesay:
     needs: build-container-whalesay
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
 
     outputs:
       image: ${{ needs.build-container-whalesay.outputs.image }}
@@ -174,7 +174,7 @@ jobs:
   release-container-whalesay:
     needs: [version-container-whalesay, test-container-whalesay]
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
 
     env:
       WHALESAY_RELEASE_TAG: ${{ needs.version-container-whalesay.outputs.release.release-version }}

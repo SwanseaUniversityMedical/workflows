@@ -9,7 +9,7 @@ env:
 jobs:
 
   changes:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
 
     outputs:
       container-whalesay: ${{ steps.changes.outputs.container-whalesay }}
@@ -39,7 +39,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.container-whalesay == 'true'
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
 
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
@@ -104,7 +104,7 @@ jobs:
   test-container-whalesay:
     needs: build-container-whalesay
 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
 
     steps:
       - name: login to container registry

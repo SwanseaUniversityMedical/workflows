@@ -69,17 +69,17 @@ jobs:
 
       - name: build container
         run: |
-          docker build -t ${{ env.WHALESAY_IMAGE }} -f tests/container/Dockerfile tests/container
+          docker build -t image -f tests/container/Dockerfile tests/container
 
       - name: container digest
         id: digest
         run: |
-          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.WHALESAY_IMAGE }}`" >> "$GITHUB_OUTPUT"
+          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' image`" >> "$GITHUB_OUTPUT"
 
       - name: tag container
         run: |
-          docker tag ${{ env.WHALESAY_IMAGE }} ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
-          docker tag ${{ env.WHALESAY_IMAGE }} ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}
+          docker tag image ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
+          docker tag image ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}
 
       - name: push container
         run: |

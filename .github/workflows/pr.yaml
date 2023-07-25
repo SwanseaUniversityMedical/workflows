@@ -86,9 +86,17 @@ jobs:
         run: |
           echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}`" >> "$GITHUB_OUTPUT"
 
+      - name: generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
+        with:
+          app_id: ${{ vars.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: comment the image tags to the pr
         uses: actions/github-script@v6
         with:
+          token: ${{ steps.generate-token.outputs.token }}
           script: |
             github.rest.issues.createComment({
               issue_number: context.issue.number,

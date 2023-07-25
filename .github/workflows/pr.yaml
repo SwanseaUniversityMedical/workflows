@@ -59,7 +59,7 @@ jobs:
 
       - name: create registry cert
         run: |
-          sudo echo "${{ vars.HARBOR_CERT }}" > ${{ env.HARBOR_CERT_PATH }}
+          echo "${{ secret.HARBOR_CERT }}" | sudo tee ${{ env.HARBOR_CERT_PATH }}
           sudo update-ca-certificates
 
       - name: install docker buildx

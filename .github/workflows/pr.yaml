@@ -48,7 +48,7 @@ jobs:
       image: ${{ env.WHALESAY_IMAGE }}@${{ steps.build.outputs.digest }}
 
     env:
-      HARBOR_CERT_PATH: /etc/docker/certs.d/${{ vars.HARBOR_REGISTRY }}/ca.crt
+      HARBOR_CERT_PATH: /etc/docker/certs.d/${{ vars.HARBOR_REGISTRY }}-ca.crt
 
     steps:
       - name: clone repo

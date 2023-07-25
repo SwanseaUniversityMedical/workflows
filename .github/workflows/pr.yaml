@@ -51,11 +51,16 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v3
 
-#      - name: install QEMU
-#        uses: docker/setup-qemu-action@v2
-#
-#      - name: install docker buildx
-#        uses: docker/setup-buildx-action@v2
+      - name: install QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: install docker buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: |
+            env.http_proxy=${{ env.http_proxy }}
+            env.https_proxy=${{ env.http_proxy }}
+            "env.no_proxy='${{ env.no_proxy}}'"
 
       - name: login to container registry
         uses: docker/login-action@v2
@@ -83,6 +88,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            "http_proxy=${{ env.http_proxy }}"
+            "https_proxy=${{ env.http_proxy }}"
 
       - name: comment the image tags to the pr
         uses: actions/github-script@v6

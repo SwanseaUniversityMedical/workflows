@@ -107,7 +107,7 @@ jobs:
     steps:
       - name: create rc tag
         run: |
-          echo "RC_TAG=${{ needs.version-container-whalesay.outputs.release-version }}" >> $GITHUB_ENV  
+          echo "RC_TAG=rc-${{ needs.version-container-whalesay.outputs.release-version }}" >> $GITHUB_ENV  
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -183,12 +183,12 @@ jobs:
 
       - name: pull container
         run: |
-          docker pull ${{ needs.test-container-whalesay.outputs.image }} \
-                --tag ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
+          docker manifest create ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }} \
+                                 ${{ needs.test-container-whalesay.outputs.image }}
 
       - name: push container
         run: |
-          docker push ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
+          docker manifest push ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
           
       - name: release
         if: steps.dry-release.outputs.new-release-published == 'true'

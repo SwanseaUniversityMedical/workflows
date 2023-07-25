@@ -96,7 +96,7 @@ jobs:
       - name: comment the image tags to the pr
         uses: actions/github-script@v6
         with:
-          token: ${{ steps.generate-token.outputs.token }}
+          github-token: ${{ steps.generate-token.outputs.token }}
           script: |
             github.rest.issues.createComment({
               issue_number: context.issue.number,

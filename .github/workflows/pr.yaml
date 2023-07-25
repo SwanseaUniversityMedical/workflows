@@ -42,7 +42,7 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     outputs:
-      image: ${{ steps.digest.outputs.stdout }}
+      image: ${{ steps.digest.outputs.digest }}
 
     steps:
       - name: get short commit sha
@@ -84,7 +84,7 @@ jobs:
       - name: container digest
         id: digest
         run: |
-          docker inspect --format='{{index .RepoDigests 0}}' ${{ env.WHALESAY_IMAGE }}
+          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.WHALESAY_IMAGE }}`" >> "$GITHUB_OUTPUT"
 
       - name: generate token
         id: generate-token

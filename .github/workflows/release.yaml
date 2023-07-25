@@ -64,7 +64,8 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     outputs:
-      release: ${{ steps.release.outputs }}
+      new-release-published: ${{ steps.release.outputs.new-release-published }}
+      release-version: ${{ steps.release.outputs.release-version }}
 
     steps:
       - name: clone repo
@@ -96,7 +97,7 @@ jobs:
 
   build-container-whalesay:
     needs: version-container-whalesay
-    if: needs.version-container-whalesay.outputs.release.new-release-published == 'true'
+    if: needs.version-container-whalesay.steps.new-release-published == 'true'
 
     runs-on: [ self-hosted, linux, x64 ]
 
@@ -106,7 +107,7 @@ jobs:
     steps:
       - name: create rc tag
         run: |
-          echo "RC_TAG=${{ needs.version-container-whalesay.outputs.release.release-version }}" >> $GITHUB_ENV  
+          echo "RC_TAG=${{ needs.version-container-whalesay.outputs.release-version }}" >> $GITHUB_ENV  
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -167,7 +168,7 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     env:
-      WHALESAY_RELEASE_TAG: ${{ needs.version-container-whalesay.outputs.release.release-version }}
+      WHALESAY_RELEASE_TAG: ${{ needs.version-container-whalesay.outputs.release-version }}
 
     steps:
       - name: clone repo

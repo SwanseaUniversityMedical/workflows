@@ -47,7 +47,7 @@ jobs:
     steps:
       - name: get short commit sha
         run: |
-          echo "GITHUB_SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+          echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-8`" >> $GITHUB_ENV
 
       - name: create pr tag
         run: |

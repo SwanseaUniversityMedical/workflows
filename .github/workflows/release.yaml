@@ -193,7 +193,14 @@ jobs:
       - name: push container
         run: |
           docker push ${{ env.WHALESAY_IMAGE }}:${{ env.WHALESAY_RELEASE_TAG }}
-          
+
+      - name: generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
+        with:
+          app_id: ${{ vars.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: release
         uses: docker://ghcr.io/codfish/semantic-release-action:v2
         env:

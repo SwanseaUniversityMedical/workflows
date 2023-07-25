@@ -68,6 +68,7 @@ jobs:
           config-inline: |
             [registry."${{ vars.HARBOR_REGISTRY }}"]
               ca=["${{ env.HARBOR_CERT_PATH }}"]
+              insecure=true
 
       - name: login to container registry
         uses: docker/login-action@v2
@@ -90,6 +91,7 @@ jobs:
         uses: docker/build-push-action@v4
         id: build
         with:
+          buildkitd-flags: '--allow-insecure-entitlement security.insecure'
           context: tests/container
           platforms: linux/amd64
           push: true

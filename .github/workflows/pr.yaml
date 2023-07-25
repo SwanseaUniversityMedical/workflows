@@ -42,7 +42,7 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     outputs:
-      image: ${{ steps.digest.outputs.value }}
+      image: ${{ steps.digest.outputs.* }}
 
     steps:
       - name: get short commit sha
@@ -101,7 +101,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '```\n${{ env.PR_TAG }}\n${{ env.PR_COMMIT_TAG }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
+              body: '```\n${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}\n${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
             })
 
   test-container-whalesay:

@@ -97,7 +97,7 @@ jobs:
 
   build-container-whalesay:
     needs: version-container-whalesay
-    if: needs.version-container-whalesay.steps.new-release-published == 'true'
+    if: needs.version-container-whalesay.outputs.new-release-published == 'true'
 
     runs-on: [ self-hosted, linux, x64 ]
 

@@ -210,6 +210,12 @@ jobs:
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
             ${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
+            
+            ```
+            ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
+            ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}
+            ${{ steps.digest.outputs.digest }}
+            ```
 
   test-container-whalesay:
     needs: [slack, build-container-whalesay]

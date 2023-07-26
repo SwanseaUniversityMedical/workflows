@@ -85,6 +85,16 @@ jobs:
               - './.github/workflows/pr.yaml'
               - './tests/container/**'
 
+      - name: check job success
+        if: success()
+        run: |
+          echo "JOB_FAILURE=false" >> $GITHUB_ENV
+
+      - name: check job failure
+        if: failure()
+        run: |
+          echo "JOB_FAILURE=true" >> $GITHUB_ENV
+
       - name: update slack thread
         uses: archive/github-actions-slack@v2.7.0
         if: always()
@@ -93,7 +103,7 @@ jobs:
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-text: |
-            ${{ failure() && ':no_entry:' || ':white_check_mark:' }} job: ${{ job.id }}
+            ${{ env.JOB_FAILURE && ':no_entry:' || ':white_check_mark:' }} job: ${{ job.id }}
 
   build-container-whalesay:
     needs: changes
@@ -179,6 +189,16 @@ jobs:
               body: '```\n${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}\n${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}\n${{ steps.digest.outputs.digest }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
             })
 
+      - name: check job success
+        if: success()
+        run: |
+          echo "JOB_FAILURE=false" >> $GITHUB_ENV
+
+      - name: check job failure
+        if: failure()
+        run: |
+          echo "JOB_FAILURE=true" >> $GITHUB_ENV
+
       - name: update slack thread
         uses: archive/github-actions-slack@v2.7.0
         if: always()
@@ -187,7 +207,7 @@ jobs:
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-text: |
-            ${{ failure() && ':no_entry:' || ':white_check_mark:' }} job: ${{ job.id }}
+            ${{ env.JOB_FAILURE && ':no_entry:' || ':white_check_mark:' }} job: ${{ job.id }}
 
   test-container-whalesay:
     needs: build-container-whalesay
@@ -222,6 +242,16 @@ jobs:
             ${{ needs.build-container-whalesay.outputs.image }} \
               cowsay boo
 
+      - name: check job success
+        if: success()
+        run: |
+          echo "JOB_FAILURE=false" >> $GITHUB_ENV
+
+      - name: check job failure
+        if: failure()
+        run: |
+          echo "JOB_FAILURE=true" >> $GITHUB_ENV
+
       - name: update slack thread
         uses: archive/github-actions-slack@v2.7.0
         if: always()
@@ -230,4 +260,4 @@ jobs:
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-text: |
-            ${{ failure() && ':no_entry:' || ':white_check_mark:' }} job: ${{ job.id }}
+            ${{ env.JOB_FAILURE && ':no_entry:' || ':white_check_mark:' }} job: ${{ job.id }}

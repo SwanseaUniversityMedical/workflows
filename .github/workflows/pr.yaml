@@ -102,8 +102,8 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-text: |
-            ${{ env.JOB_FAILURE && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
+          slack-update-text: |
+            ${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
 
   build-container-whalesay:
     needs: changes
@@ -206,8 +206,8 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-text: |
-            ${{ env.JOB_FAILURE && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
+          slack-update-text: |
+            ${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
 
   test-container-whalesay:
     needs: build-container-whalesay
@@ -259,5 +259,5 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-text: |
-            ${{ env.JOB_FAILURE && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
+          slack-update-text: |
+            ${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}

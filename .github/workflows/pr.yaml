@@ -22,13 +22,13 @@ jobs:
         with:
           channel: ${{ vars.SLACK_CHANNEL }}
           message: |
-            Starting - ${{ github.workflow }} - on commit ${{ github.ref }} ${{ github.sha }} ...
+            Starting - ${{ github.workflow }} - run ${{ github.run_id }} - on commit ${{ github.ref }} ${{ github.sha }} ...
 
             ```
             ${{ github.event.head_commit.message }}
             ```
 
-            [Logs](https://github.com/SwanseaUniversityMedical/.workflows/actions/runs/${{ github.run_id }})
+            [Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
   changes:
     needs: slack

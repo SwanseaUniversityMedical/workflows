@@ -31,17 +31,20 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-optional-icon_emoji: ':hammer_and_wrench:'
           slack-text: |
+            :octocat: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|[Pull Request]> 
+            :book: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|[Workflow Logs]>
+
             ```
             PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
+            Branch:   ${{ github.head_ref }}
             Workflow: ${{ github.workflow }}
-            Run:      ${{ github.run_id }}:
+            Run:      ${{ github.run_id }}
             Ref:      ${{ github.ref }} 
             Sha:      ${{ github.event.pull_request.head.sha }}
             Commit:   ${{ env.COMMIT_MESSAGE }}
             ```
-            <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|Pull Request> 
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Workflow Logs>
 
   changes:
     needs: slack
@@ -52,6 +55,16 @@ jobs:
       container-whalesay: ${{ steps.changes.outputs.container-whalesay }}
 
     steps:
+      - name: update slack thread
+        uses: archive/github-actions-slack@v2.7.0
+        id: slack
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
+          slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-text: |
+            :gear: job: ${{ job.id }}
+
       - name: clone repo
         uses: actions/checkout@v3
 
@@ -72,6 +85,16 @@ jobs:
               - './.github/workflows/pr.yaml'
               - './tests/container/**'
 
+      - name: update slack thread
+        uses: archive/github-actions-slack@v2.7.0
+        if: always()
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
+          slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-text: |
+            ${{ failure() && ':no_entry:' || ':white_check_mark:' }} job: ${{ job.id }}
+
   build-container-whalesay:
     needs: changes
     if: needs.changes.outputs.container-whalesay == 'true'
@@ -82,6 +105,16 @@ jobs:
       image: ${{ steps.digest.outputs.digest }}
 
     steps:
+      - name: update slack thread
+        uses: archive/github-actions-slack@v2.7.0
+        id: slack
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
+          slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-text: |
+            :gear: job: ${{ job.id }}
+
       - name: get short commit sha
         run: |
           echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
@@ -146,12 +179,32 @@ jobs:
               body: '```\n${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}\n${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}\n${{ steps.digest.outputs.digest }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
             })
 
+      - name: update slack thread
+        uses: archive/github-actions-slack@v2.7.0
+        if: always()
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
+          slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-text: |
+            ${{ failure() && ':no_entry:' || ':white_check_mark:' }} job: ${{ job.id }}
+
   test-container-whalesay:
     needs: build-container-whalesay
 
     runs-on: [self-hosted, linux, x64]
 
     steps:
+      - name: update slack thread
+        uses: archive/github-actions-slack@v2.7.0
+        id: slack
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
+          slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-text: |
+            :gear: job: ${{ job.id }}
+
       - name: login to container registry
         uses: docker/login-action@v2
         with:
@@ -168,3 +221,13 @@ jobs:
           docker run \
             ${{ needs.build-container-whalesay.outputs.image }} \
               cowsay boo
+
+      - name: update slack thread
+        uses: archive/github-actions-slack@v2.7.0
+        if: always()
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
+          slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-text: |
+            ${{ failure() && ':no_entry:' || ':white_check_mark:' }} job: ${{ job.id }}

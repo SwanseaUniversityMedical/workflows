@@ -107,7 +107,7 @@ jobs:
             ${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
 
   build-container-whalesay:
-    needs: changes
+    needs: [slack, changes]
     if: needs.changes.outputs.container-whalesay == 'true'
 
     runs-on: [self-hosted, linux, x64]
@@ -212,7 +212,7 @@ jobs:
             ${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
 
   test-container-whalesay:
-    needs: build-container-whalesay
+    needs: [slack, build-container-whalesay]
 
     runs-on: [self-hosted, linux, x64]
 

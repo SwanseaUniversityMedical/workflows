@@ -33,13 +33,15 @@ jobs:
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-text: |
             ```
+            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
             Workflow: ${{ github.workflow }}
             Run:      ${{ github.run_id }}:
             Ref:      ${{ github.ref }} 
             Sha:      ${{ github.event.pull_request.head.sha }}
             Commit:   ${{ env.COMMIT_MESSAGE }}
             ```
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Logs>
+            <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|Pull Request> 
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Workflow Logs>
 
   changes:
     needs: slack

@@ -62,8 +62,9 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-optional-thread-ts: ${{ needs.slack.outputs.thread }}
+          slack-optional-icon_emoji: ':hammer_and_wrench:'
           slack-text: |
-            :gear: job: ${{ github.job }}
+            job: ${{ github.job }}
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -101,9 +102,10 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-optional-icon_emoji: "${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }}"
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-text: |
-            ${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
+          slack-update-message-text: |
+            job: ${{ github.job }}
 
   build-container-whalesay:
     needs: changes
@@ -122,8 +124,9 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-optional-thread-ts: ${{ needs.slack.outputs.thread }}
+          slack-optional-icon_emoji: ':hammer_and_wrench:'
           slack-text: |
-            :gear: job: ${{ github.job }}
+            job: ${{ github.job }}
 
       - name: get short commit sha
         run: |
@@ -205,9 +208,10 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-optional-icon_emoji: "${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }}"
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-text: |
-            ${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
+          slack-update-message-text: |
+            job: ${{ github.job }}
 
   test-container-whalesay:
     needs: build-container-whalesay
@@ -222,8 +226,9 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-optional-thread-ts: ${{ needs.slack.outputs.thread }}
+          slack-optional-icon_emoji: ':hammer_and_wrench:'
           slack-text: |
-            :gear: job: ${{ github.job }}
+            job: ${{ github.job }}
 
       - name: login to container registry
         uses: docker/login-action@v2
@@ -258,6 +263,7 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-optional-icon_emoji: "${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }}"
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-text: |
-            ${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
+          slack-update-message-text: |
+            job: ${{ github.job }}

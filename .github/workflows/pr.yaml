@@ -1,4 +1,4 @@
-name: build, push, test
+name: PR Update
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ jobs:
       thread: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
 
     steps:
-      - name: Send message to Slack API
+      - name: create slack thread
         uses: archive/github-actions-slack@v2.7.0
         id: slack
         with:

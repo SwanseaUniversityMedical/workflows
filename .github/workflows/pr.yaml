@@ -33,9 +33,6 @@ jobs:
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-optional-icon_emoji: ':hammer_and_wrench:'
           slack-text: |
-            :octocat: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|[Pull Request]> 
-            :book: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|[Workflow Logs]>
-
             ```
             PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
             Branch:   ${{ github.head_ref }}
@@ -45,6 +42,8 @@ jobs:
             Sha:      ${{ github.event.pull_request.head.sha }}
             Commit:   ${{ env.COMMIT_MESSAGE }}
             ```
+            :octocat: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|PR-${{ github.event.pull_request.number }}> | :book: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Logs>
+
 
   changes:
     needs: slack
@@ -187,35 +186,35 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '```\n${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}\n${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}\n${{ steps.digest.outputs.digest }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
+              body: '```\ndocker pull ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}\ndocker pull ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}\ndocker pull ${{ steps.digest.outputs.digest }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
             })
 
-      - name: check job success
-        if: success()
-        run: |
-          echo "JOB_FAILURE=false" >> $GITHUB_ENV
-
-      - name: check job failure
-        if: failure()
-        run: |
-          echo "JOB_FAILURE=true" >> $GITHUB_ENV
-
-      - name: update slack thread
+      - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
-        if: always()
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-function: update-message
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
-            ${{ env.JOB_FAILURE == 'true' && ':no_entry:' || ':white_check_mark:' }} job: ${{ github.job }}
+            :white_check_mark: job: ${{ github.job }}
             
             ```
-            ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
-            ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}
-            ${{ steps.digest.outputs.digest }}
+            docker pull ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
+            docker pull ${{ env.WHALESAY_IMAGE }}:${{ env.PR_COMMIT_TAG }}
+            docker pull ${{ steps.digest.outputs.digest }}
             ```
+
+      - name: update slack thread failure
+        uses: archive/github-actions-slack@v2.7.0
+        if: failure()
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
+          slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-function: update-message
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-update-message-text: |
+            :no_entry: job: ${{ github.job }}
 
   test-container-whalesay:
     needs: [slack, build-container-whalesay]

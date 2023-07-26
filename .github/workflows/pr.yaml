@@ -15,6 +15,11 @@ jobs:
       thread: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
 
     steps:
+      - name: clone repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}
+
       - name: get head commit message
         id: head
         run: |

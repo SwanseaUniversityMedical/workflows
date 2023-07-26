@@ -8,7 +8,31 @@ env:
 
 jobs:
 
+  slack:
+    runs-on: [self-hosted, linux, x64]
+
+    outputs:
+      thread: ${{ steps.slack.outputs.timestamp }}
+
+    steps:
+      - uses: hkusu/slack-post-action@v1
+        id: slack
+        env:
+          SLACK_APP_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        with:
+          channel: ${{ vars.SLACK_CHANNEL }}
+          message: |
+            Starting - ${{ github.workflow }} - on commit ${{ github.ref }} ${{ github.sha }} ...
+
+            ```
+            ${{ github.event.head_commit.message }}
+            ```
+
+            [Logs](https://github.com/SwanseaUniversityMedical/.workflows/actions/runs/${{ github.run_id }})
+
   changes:
+    needs: slack
+
     runs-on: [self-hosted, linux, x64]
 
     outputs:
@@ -66,6 +90,10 @@ jobs:
           registry: ${{ vars.HARBOR_REGISTRY }}
           username: ${{ vars.HARBOR_USER }}
           password: ${{ secrets.HARBOR_TOKEN }}
+
+      - name: pull container
+        run: |
+          docker pull ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
 
       - name: build container
         run: |

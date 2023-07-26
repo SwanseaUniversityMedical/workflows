@@ -15,11 +15,10 @@ jobs:
       thread: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
 
     steps:
-
-      - name: dump context
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CONTEXT"
+      - name: get head commit message
+        id: head
+        run: |
+          echo "COMMIT_MESSAGE=$(git show -s --format=%s)" >> $GITHUB_ENV
 
       - name: create slack thread
         uses: archive/github-actions-slack@v2.7.0
@@ -31,7 +30,7 @@ jobs:
             Starting - ${{ github.workflow }} - run ${{ github.run_id }} - on commit ${{ github.ref }} ${{ github.sha }} ...
 
             ```
-            ${{ github.event.head_commit.message }}
+            ${{ env.COMMIT_MESSAGE }}
             ```
 
             <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Logs>

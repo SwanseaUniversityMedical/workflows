@@ -44,7 +44,6 @@ jobs:
             ```
             :octocat: <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|PR-${{ github.event.pull_request.number }}> | :book: <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Logs>
 
-
   changes:
     needs: slack
 

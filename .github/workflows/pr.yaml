@@ -15,6 +15,12 @@ jobs:
       thread: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
 
     steps:
+
+      - name: dump context
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
       - name: create slack thread
         uses: archive/github-actions-slack@v2.7.0
         id: slack
@@ -28,7 +34,7 @@ jobs:
             ${{ github.event.head_commit.message }}
             ```
 
-            [Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Logs>
 
   changes:
     needs: slack

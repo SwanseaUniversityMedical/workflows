@@ -61,7 +61,7 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-optional-thread-ts: ${{ needs.slack.outputs.thread }}
           slack-text: |
             :gear: job: ${{ job.id }}
 
@@ -121,7 +121,7 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-optional-thread-ts: ${{ needs.slack.outputs.thread }}
           slack-text: |
             :gear: job: ${{ job.id }}
 
@@ -221,7 +221,7 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-optional-thread-ts: ${{ needs.slack.outputs.thread }}
           slack-text: |
             :gear: job: ${{ job.id }}
 

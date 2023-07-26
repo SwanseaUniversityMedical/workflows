@@ -99,7 +99,7 @@ jobs:
 
       - name: pull container
         run: |
-          docker pull ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }}
+          docker pull ${{ env.WHALESAY_IMAGE }}:${{ env.PR_TAG }} || true
 
       - name: build container
         run: |

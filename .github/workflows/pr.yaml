@@ -18,7 +18,7 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: get head commit message
         id: head
@@ -32,12 +32,13 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
           slack-text: |
-            Starting - ${{ github.workflow }} - run ${{ github.run_id }} - on commit ${{ github.ref }} ${{ github.sha }} ...
-
             ```
-            ${{ env.COMMIT_MESSAGE }}
+            Workflow: ${{ github.workflow }}
+            Run:      ${{ github.run_id }}:
+            Ref:      ${{ github.ref }} 
+            Sha:      ${{ github.event.pull_request.head.sha }}
+            Commit:   ${{ env.COMMIT_MESSAGE }}
             ```
-
             <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|Logs>
 
   changes:

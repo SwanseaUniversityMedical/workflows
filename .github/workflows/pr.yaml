@@ -12,16 +12,16 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     outputs:
-      thread: ${{ steps.slack.outputs.timestamp }}
+      thread: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
 
     steps:
-      - uses: hkusu/slack-post-action@v1
+      - name: Send message to Slack API
+        uses: archive/github-actions-slack@v2.7.0
         id: slack
-        env:
-          SLACK_APP_TOKEN: ${{ secrets.SLACK_TOKEN }}
         with:
-          channel: ${{ vars.SLACK_CHANNEL }}
-          message: |
+          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
+          slack-channel: ${{ vars.SLACK_CHANNEL }}
+          slack-text: |
             Starting - ${{ github.workflow }} - run ${{ github.run_id }} - on commit ${{ github.ref }} ${{ github.sha }} ...
 
             ```

@@ -17,12 +17,12 @@ on:
         required: true
         type: string
 
-      container-project:
+      container-registry-project:
         description: "Project within container registry."
         required: true
         type: string
 
-      container-repo:
+      container-registry-repo:
         description: "Repo within container registry project."
         required: true
         type: string

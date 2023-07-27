@@ -34,7 +34,7 @@ jobs:
 
   build-container-whalesay:
     needs: [slack, changes]
-    if: needs.changes.outputs.container-whalesay == 'true'
+    if: fromJSON(needs.changes.outputs.changes).container-whalesay == 'true'
 
     runs-on: [self-hosted, linux, x64]
 

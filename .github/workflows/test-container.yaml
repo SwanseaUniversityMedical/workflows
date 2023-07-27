@@ -7,6 +7,16 @@ on:
         required: true
         type: string
 
+      container-registry:
+        description: "URL of the container registry."
+        required: true
+        type: string
+
+      container-registry-user:
+        description: "Username for the container registry."
+        required: true
+        type: string
+
       container-registry-image:
         description: "URI of the container."
         required: true

@@ -40,6 +40,9 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     timeout-minutes: 5
 
+    outputs:
+      thread: ${{ env.SLACK_THREAD }}
+
     steps:
       - name: clone repo
         uses: actions/checkout@v3
@@ -114,7 +117,7 @@ jobs:
       - name: output the slack thread id
         if: ${{ inputs.slack-thread == null }}
         run: |
-          echo "thread=${{ fromJson(steps.slack-create-message.outputs.slack-result).response.message.ts }}" >> $GITHUB_OUTPUT
+          echo "SLACK_THREAD=${{ fromJson(steps.slack-create-message.outputs.slack-result).response.message.ts }}" >> $GITHUB_ENV
 
       - name: update slack thread
         uses: archive/github-actions-slack@v2.7.0
@@ -181,4 +184,4 @@ jobs:
       - name: output the slack thread id
         if: ${{ inputs.slack-thread != null }}
         run: |
-          echo "thread=${{ fromJson(steps.slack-update-message.outputs.slack-result).response.message.ts }}" >> $GITHUB_OUTPUT
+          echo "SLACK_THREAD=${{ fromJson(steps.slack-update-message.outputs.slack-result).response.message.ts }}" >> $GITHUB_ENV

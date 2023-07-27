@@ -1,1 +1,1 @@
-FROM docker/whalesayZZZ
+FROM docker/whalesay

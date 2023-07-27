@@ -1,0 +1,202 @@
+on:
+  workflow_call:
+    inputs:
+
+      build-cmd:
+        description: "Command to build the container named."
+        required: true
+        type: string
+
+      container-registry:
+        description: "URL of the container registry."
+        required: true
+        type: string
+
+      container-registry-user:
+        description: "Username for the container registry."
+        required: true
+        type: string
+
+      container-project:
+        description: "Project within container registry."
+        required: true
+        type: string
+
+      container-repo:
+        description: "Repo within container registry project."
+        required: true
+        type: string
+
+      slack-channel:
+        description: "ID of the Slack channel to post updates to."
+        required: true
+        type: string
+
+      slack-thread:
+        description: "Slack thread to reply to."
+        required: true
+        type: string
+
+      status-running:
+        description: "Running status for the message header."
+        default: ':hammer_and_wrench:'
+        type: string
+
+      status-success:
+        description: "Success status for the message header."
+        default: ':white_check_mark:'
+        type: string
+
+      status-failure:
+        description: "Failure status for the message header."
+        default: ':no_entry:'
+        type: string
+
+      github-app-id:
+        description: "App ID for Github."
+        required: true
+        type: string
+
+    secrets:
+
+      slack-token:
+        description: "Authentication token for Slack."
+        required: true
+
+      container-registry-token:
+        description: "Authentication token for the container registry."
+        required: true
+
+      github-app-private-key:
+        description: "App private key for Github."
+        required: true
+
+    outputs:
+
+      digest:
+        description: "Docker pull URI with digest."
+        value: ${{ jobs.build.outputs.digest }}
+
+      pr-tag:
+        description: "Docker pull URI with pr tag."
+        value: ${{ jobs.build.outputs.pr-tag }}
+
+      pr-commit-tag:
+        description: "Docker pull URI with pr and sha tag."
+        value: ${{ jobs.build.outputs.pr-commit-tag }}
+
+jobs:
+  build:
+    runs-on: [ self-hosted, linux, x64 ]
+
+    outputs:
+      digest: ${{ steps.digest.outputs.digest }}
+      pr-tag: ${{ env.PR_TAG }}
+      pr-commit-tag: ${{ env.PR_COMMIT_TAG }}
+
+    steps:
+      - name: update slack thread
+        uses: archive/github-actions-slack@v2.7.0
+        id: slack
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+          slack-channel: ${{ inputs.slack-channel }}
+          slack-optional-thread_ts: ${{ inputs.slack-thread }}
+          slack-text: |
+            ${{ inputs.status-running }} job: ${{ github.job }}
+
+      - name: build image uri
+        run: |
+          echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
+
+      - name: get short commit sha
+        run: |
+          echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
+
+      - name: create tags
+        run: |
+          echo "PR_TAG=${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
+          echo "PR_COMMIT_TAG=${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
+
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: login to container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ inputs.container-registry }}
+          username: ${{ inputs.container-registry-user }}
+          password: ${{ secrets.container-token }}
+
+      - name: pull container
+        run: |
+          docker pull ${{ env.PR_TAG }} || true
+
+      - name: build container
+        run: ${{ inputs.build-cmd }}
+
+      - name: tag container
+        run: |
+          docker tag image ${{ env.PR_TAG }}
+          docker tag image ${{ env.PR_COMMIT_TAG }}
+
+      - name: push container
+        run: |
+          docker push ${{ env.PR_TAG }}
+          docker push ${{ env.PR_COMMIT_TAG }}
+
+      - name: container digest
+        id: digest
+        run: |
+          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.PR_COMMIT_TAG }}`" >> "$GITHUB_OUTPUT"
+
+      - name: generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
+        with:
+          app_id: ${{ inputs.github-app-id }}
+          private_key: ${{ secrets.github-app-private-key }}
+
+      - name: comment the image tags to the pr
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ steps.generate-token.outputs.token }}
+          script: >-
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '```\n
+            docker pull ${{ env.PR_TAG }}\n
+            docker pull ${{ env.PR_COMMIT_TAG }}\n
+            docker pull ${{ steps.digest.outputs.digest }}\n
+            ```\n\n
+            :robot: :whale2: :package: :passenger_ship:\n'
+            })
+
+      - name: update slack thread success
+        uses: archive/github-actions-slack@v2.7.0
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+          slack-channel: ${{ inputs.slack-channel }}
+          slack-function: update-message
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-update-message-text: |
+            ${{ inputs.status-success }} job: ${{ github.job }}
+
+            ```
+            docker pull ${{ env.PR_TAG }}
+            docker pull ${{ env.PR_COMMIT_TAG }}
+            docker pull ${{ steps.digest.outputs.digest }}
+            ```
+
+      - name: update slack thread failure
+        uses: archive/github-actions-slack@v2.7.0
+        if: failure()
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+          slack-channel: ${{ inputs.slack-channel }}
+          slack-function: update-message
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-update-message-text: |
+            ${{ inputs.status-failure }} job: ${{ github.job }}

@@ -8,87 +8,12 @@ env:
 
 jobs:
 
-  slack:
-    runs-on: [self-hosted, linux, x64]
-
-    outputs:
-      thread: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-
-    steps:
-      - name: clone repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: get head commit message
-        id: head
-        run: |
-          echo "COMMIT_MESSAGE=$(git show -s --format=%s)" >> $GITHUB_ENV
-
-      - name: create slack thread
-        uses: archive/github-actions-slack@v2.7.0
-        id: slack
-        with:
-          slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
-          slack-channel: ${{ vars.SLACK_CHANNEL }}
-          slack-optional-icon_emoji: ':hammer_and_wrench:'
-          slack-blocks: >-
-            [
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": ":hammer_and_wrench: PR-42 Update",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "actions",
-                "elements": [
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": ":octocat: Pull Request",
-                      "emoji": true
-                    },
-                    "value": "button-pr",
-                    "url": "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}",
-                    "action_id": "button-pr"
-                  },
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": ":book: Logs",
-                      "emoji": true
-                    },
-                    "value": "button-log",
-                    "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                    "action_id": "button-log"
-                  }
-                ]
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "${{ env.README }}"
-                }
-              }
-            ]
-
-        env:
-          README: |
-            ```
-            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
-            Branch:   ${{ github.head_ref }}
-            Workflow: ${{ github.workflow }}
-            Run:      ${{ github.run_id }}
-            Ref:      ${{ github.ref }} 
-            Sha:      ${{ github.event.pull_request.head.sha }}
-            Commit:   ${{ env.COMMIT_MESSAGE }}
-            ````
+  slack-open-pr-thread:
+    uses: ./.github/workflows/slack-open-pr-thread.yaml
+    with:
+      runs-on: [self-hosted, linux, x64]
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
 
   changes:
     needs: slack
@@ -105,7 +30,7 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
-          slack-optional-thread_ts: ${{ needs.slack.outputs.thread }}
+          slack-optional-thread_ts: ${{ needs.slack-open-pr-thread.outputs.thread }}
           slack-text: |
             :hammer_and_wrench: job: ${{ github.job }}
 
@@ -167,7 +92,7 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
-          slack-optional-thread_ts: ${{ needs.slack.outputs.thread }}
+          slack-optional-thread_ts: ${{ needs.slack-open-pr-thread.outputs.thread }}
           slack-text: |
             :hammer_and_wrench: job: ${{ github.job }}
 
@@ -274,7 +199,7 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.SLACK_TOKEN }}
           slack-channel: ${{ vars.SLACK_CHANNEL }}
-          slack-optional-thread_ts: ${{ needs.slack.outputs.thread }}
+          slack-optional-thread_ts: ${{ needs.slack-open-pr-thread.outputs.thread }}
           slack-text: |
             :hammer_and_wrench: job: ${{ github.job }}
 
@@ -316,3 +241,14 @@ jobs:
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
             :no_entry: job: ${{ github.job }}
+
+  slack-update-pr-thread:
+    needs: [slack, test-container-whalesay]
+    uses: ./.github/workflows/slack-open-pr-thread.yaml
+    if: always()
+    with:
+      runs-on: [ self-hosted, linux, x64 ]
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack-open-pr-thread.outputs.thread }}
+      status: ${{ contains(join(needs.*.result, ','), 'failure') && ':no_entry:' || ':white_check_mark:' }}

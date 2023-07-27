@@ -43,6 +43,49 @@ jobs:
     outputs:
       thread: ${{ env.SLACK_THREAD }}
 
+    env:
+      SLACK_BLOCKS: >-
+        [
+          {
+            "type": "header",
+            "text": {
+              "type": "plain_text",
+              "text": "${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update",
+              "emoji": true
+            }
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "text": {
+                  "type": "plain_text",
+                  "text": ":octocat: Pull Request",
+                  "emoji": true
+                },
+                "url": "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}",
+              },
+              {
+                "type": "button",
+                "text": {
+                  "type": "plain_text",
+                  "text": ":book: Logs",
+                  "emoji": true
+                },
+                "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              }
+            ]
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "```\nPR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}\nBranch:   ${{ github.head_ref }}\nRef:      ${{ github.ref }}\nSha:      ${{ github.event.pull_request.head.sha }}\nCommit:   ${{ env.COMMIT_MESSAGE }}\nWorkflow: ${{ github.workflow }}\nRun:      ${{ github.run_id }}\n```"
+            }
+          }
+        ]
+
     steps:
       - name: clone repo
         uses: actions/checkout@v3
@@ -58,54 +101,10 @@ jobs:
         uses: archive/github-actions-slack@v2.7.0
         if: ${{ inputs.slack-thread == null }}
         id: slack-create-message
-        env:
-          SLACK_BODY: |
-            ```
-            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
-            Branch:   ${{ github.head_ref }}
-            Ref:      ${{ github.ref }} 
-            Sha:      ${{ github.event.pull_request.head.sha }}
-            Commit:   ${{ env.COMMIT_MESSAGE }}
-            Workflow: ${{ github.workflow }}
-            Run:      ${{ github.run_id }}
-            ```
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
-          slack-blocks: >-
-            [
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "actions",
-                "elements": [
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": ":octocat: Pull Request",
-                      "emoji": true
-                    },
-                    "url": "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}",
-                  },
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": ":book: Logs",
-                      "emoji": true
-                    },
-                    "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                  }
-                ]
-              }
-            ]
+          slack-blocks: ${{ env.SLACK_BLOCKS }}
 
       - name: output the slack thread id
         if: ${{ inputs.slack-thread == null }}
@@ -116,56 +115,12 @@ jobs:
         uses: archive/github-actions-slack@v2.7.0
         if: ${{ inputs.slack-thread != null }}
         id: slack-update-message
-        env:
-          SLACK_BODY: |
-            ```
-            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
-            Branch:   ${{ github.head_ref }}
-            Ref:      ${{ github.ref }} 
-            Sha:      ${{ github.event.pull_request.head.sha }}
-            Commit:   ${{ env.COMMIT_MESSAGE }}
-            Workflow: ${{ github.workflow }}
-            Run:      ${{ github.run_id }}
-            ```
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
           slack-function: update-message
           slack-update-message-ts: ${{ inputs.slack-thread }}
-          slack-update-message-blocks: >-
-            [
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "actions",
-                "elements": [
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": ":octocat: Pull Request",
-                      "emoji": true
-                    },
-                    "url": "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}",
-                  },
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": ":book: Logs",
-                      "emoji": true
-                    },
-                    "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                  }
-                ]
-              }
-            ]
+          slack-update-message-blocks: ${{ env.SLACK_BLOCKS }}
 
       - name: output the slack thread id
         if: ${{ inputs.slack-thread != null }}

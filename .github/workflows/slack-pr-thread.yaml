@@ -52,50 +52,8 @@ jobs:
           echo "COMMIT_MESSAGE=$(git show -s --format=%s)" >> $GITHUB_ENV
 
       - name: build message blocks
-        env:
-          SLACK_BLOCKS: >
-            [
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "actions",
-                "elements": [
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": ":octocat: Pull Request",
-                      "emoji": true
-                    },
-                    "url": "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}",
-                  },
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": ":book: Logs",
-                      "emoji": true
-                    },
-                    "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                  }
-                ]
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "```\nPR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}\nBranch:   ${{ github.head_ref }}\nRef:      ${{ github.ref }} \nSha:      ${{ github.event.pull_request.head.sha }}\nCommit:   ${{ env.COMMIT_MESSAGE }}\nWorkflow: ${{ github.workflow }}\nRun:      ${{ github.run_id }}\n```\n"
-                }
-              }
-            ]
         run: |
-          echo "SLACK_BLOCKS=${{ env.SLACK_BLOCKS }}" >> $GITHUB_ENV
+          echo "SLACK_BLOCKS='[{"type":"header","text":{"type":"plain_text","text":"${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update","emoji":true}},{"type":"actions","elements":[{"type":"button","text":{"type":"plain_text","text":":octocat: Pull Request","emoji":true},"url":"https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}"},{"type":"button","text":{"type":"plain_text","text":":book: Logs","emoji":true},"url":"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]},{"type":"section","text":{"type":"mrkdwn","text":"```\nPR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}\nBranch:   ${{ github.head_ref }}\nRef:      ${{ github.ref }} \nSha:      ${{ github.event.pull_request.head.sha }}\nCommit:   ${{ env.COMMIT_MESSAGE }}\nWorkflow: ${{ github.workflow }}\nRun:      ${{ github.run_id }}\n```\n"}}]'" >> $GITHUB_ENV
 
       - name: create slack thread
         uses: archive/github-actions-slack@v2.7.0

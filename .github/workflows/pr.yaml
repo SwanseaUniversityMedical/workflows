@@ -9,7 +9,7 @@ env:
 jobs:
 
   slack-open-pr-thread:
-    uses: ./.github/workflows/slack-open-pr-thread.yaml
+    uses: ./.github/workflows/slack-pr-thread.yaml
     with:
       runs-on: [self-hosted, linux, x64]
       slack-token: ${{ secrets.SLACK_TOKEN }}
@@ -244,7 +244,7 @@ jobs:
 
   slack-update-pr-thread:
     needs: [slack, test-container-whalesay]
-    uses: ./.github/workflows/slack-open-pr-thread.yaml
+    uses: ./.github/workflows/slack-pr-thread.yaml
     if: always()
     with:
       runs-on: [ self-hosted, linux, x64 ]

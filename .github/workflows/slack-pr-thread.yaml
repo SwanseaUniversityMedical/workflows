@@ -104,13 +104,6 @@ jobs:
                     "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
                   }
                 ]
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "${{ env.SLACK_BODY }}"
-                }
               }
             ]
 
@@ -171,13 +164,6 @@ jobs:
                     "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
                   }
                 ]
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "${{ env.SLACK_BODY }}"
-                }
               }
             ]
 

@@ -58,7 +58,7 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     outputs:
-      changes: ${{ steps.changes.outputs }}
+      changes: ${{ toJSON(steps.changes.outputs) }}
 
     steps:
       - name: update slack thread

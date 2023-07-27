@@ -161,17 +161,12 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
-          script: >-
+          script: |
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '```\n
-            docker pull ${{ env.PR_TAG }}\n
-            docker pull ${{ env.PR_COMMIT_TAG }}\n
-            docker pull ${{ steps.digest.outputs.digest }}\n
-            ```\n\n
-            :robot: :whale2: :package: :passenger_ship:\n'
+              body: '```\ndocker pull ${{ env.PR_TAG }}\ndocker pull ${{ env.PR_COMMIT_TAG }}\ndocker pull ${{ steps.digest.outputs.digest }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
             })
 
       - name: update slack thread success

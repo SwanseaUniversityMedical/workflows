@@ -245,7 +245,7 @@ jobs:
             :no_entry: job: ${{ github.job }}
 
   slack-update-pr-thread:
-    needs: [slack, test-container-whalesay]
+    needs: [slack, build-container-whalesay, test-container-whalesay]
     uses: ./.github/workflows/slack-pr-thread.yaml
     if: always()
     with:

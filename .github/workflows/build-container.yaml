@@ -2,7 +2,7 @@ on:
   workflow_call:
     inputs:
 
-      build-cmd:
+      command:
         description: "Command to build the container named."
         required: true
         type: string
@@ -133,7 +133,7 @@ jobs:
           docker pull ${{ env.PR_TAG }} || true
 
       - name: build container
-        run: ${{ inputs.build-cmd }}
+        run: ${{ inputs.command }}
 
       - name: tag container
         run: |

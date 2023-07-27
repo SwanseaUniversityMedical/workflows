@@ -41,7 +41,7 @@ jobs:
     uses: ./.github/workflows/build-container.yaml
     with:
       container-registry: ${{ vars.HARBOR_REGISTRY }}
-      container-registry-username: ${{ vars.HARBOR_USER }}
+      container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-project: ${{ vars.HARBOR_PROJECT }}
       container-registry-repo: ${{ vars.HARBOR_REPO }}
       github-app-id: ${{ vars.APP_ID }}

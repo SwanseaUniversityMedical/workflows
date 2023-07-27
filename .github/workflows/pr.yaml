@@ -54,7 +54,7 @@ jobs:
   test-container-whalesay:
     # Test the whalesay container
     needs: [slack, build-container-whalesay]
-    uses: ./.github/workflows/build-container.yaml
+    uses: ./.github/workflows/test-container.yaml
     with:
       container-registry: ${{ vars.HARBOR_REGISTRY }}
       container-registry-user: ${{ vars.HARBOR_USER }}

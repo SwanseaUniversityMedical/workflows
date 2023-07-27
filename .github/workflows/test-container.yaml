@@ -7,7 +7,7 @@ on:
         required: true
         type: string
 
-      container-registry-uri:
+      container-registry-image:
         description: "URI of the container."
         required: true
         type: string
@@ -71,11 +71,11 @@ jobs:
 
       - name: build image uri
         run: |
-          echo "IMAGE=${{ inputs.container-registry-uri }}" >> $GITHUB_ENV
+          echo "IMAGE=${{ inputs.container-registry-image }}" >> $GITHUB_ENV
 
       - name: pull container
         run: |
-          docker pull ${{ inputs.container-registry-uri }}
+          docker pull ${{ inputs.container-registry-image }}
 
       - name: test container
         run: ${{ inputs.command }}

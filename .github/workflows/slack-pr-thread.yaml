@@ -81,22 +81,12 @@ jobs:
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": "```\nPR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}\nBranch:   ${{ github.head_ref }}\nRef:      ${{ github.ref }}\nSha:      ${{ github.event.pull_request.head.sha }}\nCommit:   ${{ env.COMMIT_MESSAGE }}\nWorkflow: ${{ github.workflow }}\nRun:      ${{ github.run_id }}\n```"
+              "text": "```\nPR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}\nBranch:   ${{ github.head_ref }}\nRef:      ${{ github.ref }}\nSha:      ${{ github.event.pull_request.head.sha }}\nWorkflow: ${{ github.workflow }}\nRun:      ${{ github.run_id }}\n```"
             }
           }
         ]
 
     steps:
-      - name: clone repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: get head commit message
-        id: head
-        run: |
-          echo "COMMIT_MESSAGE=$(git show -s --format=%s)" >> $GITHUB_ENV
-
       - name: create slack thread
         uses: archive/github-actions-slack@v2.7.0
         if: ${{ inputs.slack-thread == null }}

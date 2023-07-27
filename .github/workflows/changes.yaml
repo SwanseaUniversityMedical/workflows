@@ -1,0 +1,106 @@
+on:
+  workflow_call:
+    inputs:
+
+      slack-channel:
+        description: "ID of the Slack channel to post updates to."
+        required: true
+        type: string
+
+      slack-thread:
+        description: "Slack thread to reply to."
+        required: true
+        type: string
+
+      status-running:
+        description: "Running status for the message header."
+        default: ':hammer_and_wrench:'
+        type: string
+
+      status-success:
+        description: "Success status for the message header."
+        default: ':white_check_mark:'
+        type: string
+
+      status-failure:
+        description: "Failure status for the message header."
+        default: ':no_entry:'
+        type: string
+
+      github-app-id:
+        description: "App ID for Github."
+        required: true
+        type: string
+
+    secrets:
+
+      slack-token:
+        description: "Authentication token for Slack."
+        required: true
+
+      github-app-private-key:
+        description: "App private key for Github."
+        required: true
+
+    outputs:
+
+      changes:
+        description: "JSON encoded dictionary of boolean change filters."
+        value: ${{ jobs.changes.outputs.changes }}
+
+jobs:
+  changes:
+    runs-on: [self-hosted, linux, x64]
+
+    outputs:
+      changes: ${{ steps.changes.outputs }}
+
+    steps:
+      - name: update slack thread
+        uses: archive/github-actions-slack@v2.7.0
+        id: slack
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+          slack-channel: ${{ inputs.slack-channel }}
+          slack-optional-thread_ts: ${{ inputs.slack-thread }}
+          slack-text: |
+            ${{ inputs.status-running }} job: ${{ github.job }}
+
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
+        with:
+          app_id: ${{ inputs.github-app-id }}
+          private_key: ${{ secrets.github-app-private-key }}
+
+      - name: detect changed files
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          filters: ${{ inputs.filters }}
+
+      - name: update slack thread success
+        uses: archive/github-actions-slack@v2.7.0
+        if: success()
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+          slack-channel: ${{ inputs.slack-channel }}
+          slack-function: update-message
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-update-message-text: |
+            ${{ inputs.status-success }} job: ${{ github.job }}
+
+      - name: update slack thread failure
+        uses: archive/github-actions-slack@v2.7.0
+        if: failure()
+        with:
+          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+          slack-channel: ${{ inputs.slack-channel }}
+          slack-function: update-message
+          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
+          slack-update-message-text: |
+            ${{ inputs.status-failure }} job: ${{ github.job }}

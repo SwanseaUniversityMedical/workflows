@@ -38,6 +38,7 @@ jobs:
 
   slack-pr-thread:
     runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: 5
 
     steps:
       - name: clone repo
@@ -49,21 +50,6 @@ jobs:
         id: head
         run: |
           echo "COMMIT_MESSAGE=$(git show -s --format=%s)" >> $GITHUB_ENV
-
-      - name: build message body
-        env:
-          SLACK_BODY: |
-            ```
-            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
-            Branch:   ${{ github.head_ref }}
-            Ref:      ${{ github.ref }} 
-            Sha:      ${{ github.event.pull_request.head.sha }}
-            Commit:   ${{ env.COMMIT_MESSAGE }}
-            Workflow: ${{ github.workflow }}
-            Run:      ${{ github.run_id }}
-            ```
-        run: |
-          echo "SLACK_BODY=${{ env.SLACK_BODY }}" >> $GITHUB_ENV
 
       - name: build message blocks
         env:
@@ -104,7 +90,7 @@ jobs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "${{ env.SLACK_BODY }}"
+                  "text": "```\nPR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}\nBranch:   ${{ github.head_ref }}\nRef:      ${{ github.ref }} \nSha:      ${{ github.event.pull_request.head.sha }}\nCommit:   ${{ env.COMMIT_MESSAGE }}\nWorkflow: ${{ github.workflow }}\nRun:      ${{ github.run_id }}\n```\n"
                 }
               }
             ]

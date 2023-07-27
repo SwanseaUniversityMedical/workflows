@@ -11,7 +11,6 @@ jobs:
   slack:
     uses: ./.github/workflows/slack-pr-thread.yaml
     with:
-      runs-on: "[self-hosted, linux, x64]"
       slack-channel: ${{ vars.SLACK_CHANNEL }}
     secrets:
       slack-token: ${{ secrets.SLACK_TOKEN }}
@@ -248,7 +247,6 @@ jobs:
     uses: ./.github/workflows/slack-pr-thread.yaml
     if: always()
     with:
-      runs-on: "[self-hosted, linux, x64]"
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
       status: ${{ contains(join(needs.*.result, ','), 'failure') && ':no_entry:' || ':white_check_mark:' }}

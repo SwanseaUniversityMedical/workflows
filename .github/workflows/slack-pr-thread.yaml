@@ -2,11 +2,6 @@ on:
   workflow_call:
     inputs:
 
-      runs-on:
-        description: "The Github Actions host runner to use for compute. i.e. ubuntu-latest is a Github hosted runner."
-        required: true
-        type: string
-
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
@@ -37,7 +32,7 @@ on:
 jobs:
 
   slack-pr-thread:
-    runs-on: ${{ fromJson(inputs.runs-on) }}
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
 
     outputs:

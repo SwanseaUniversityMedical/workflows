@@ -137,8 +137,8 @@ jobs:
 
       - name: tag container
         run: |
-          docker tag image ${{ env.PR_TAG }}
-          docker tag image ${{ env.PR_COMMIT_TAG }}
+          docker tag ${{ env.IMAGE }} ${{ env.PR_TAG }}
+          docker tag ${{ env.IMAGE }} ${{ env.PR_COMMIT_TAG }}
 
       - name: push container
         run: |

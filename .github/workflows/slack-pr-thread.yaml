@@ -53,7 +53,7 @@ jobs:
 
       - name: build message blocks
         env:
-          SLACK_BLOCKS: >-
+          SLACK_BLOCKS: >
             [
               {
                 "type": "header",

@@ -126,7 +126,7 @@ jobs:
         with:
           registry: ${{ inputs.container-registry }}
           username: ${{ inputs.container-registry-user }}
-          password: ${{ secrets.container-token }}
+          password: ${{ secrets.container-registry-token }}
 
       - name: pull container
         run: |

@@ -1,2 +1,2 @@
 # .workflows
-Reusable CI/CD workflows for the Organization
+Reusable CI/CD workflows for the Organization.

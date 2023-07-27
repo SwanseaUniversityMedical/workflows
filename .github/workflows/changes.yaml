@@ -2,6 +2,11 @@ on:
   workflow_call:
     inputs:
 
+      filters:
+        description: "YAML dictionary of lists of path filters."
+        required: true
+        type: string
+
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true

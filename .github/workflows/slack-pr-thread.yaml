@@ -26,7 +26,7 @@ on:
     outputs:
 
       thread:
-        description: "ID of the created Slack thread."
+        description: "ID of the created Slack thread.."
         value: ${{ jobs.slack-pr-thread.outputs.thread }}
 
 jobs:

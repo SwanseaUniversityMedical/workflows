@@ -2,6 +2,8 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
 
 env:
   WHALESAY_IMAGE: ${{ vars.HARBOR_REGISTRY }}/${{ vars.HARBOR_PROJECT }}/whalesay

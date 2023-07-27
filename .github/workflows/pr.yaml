@@ -24,13 +24,13 @@ jobs:
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
       github-app-id: ${{ vars.APP_ID }}
-      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
       filters: |
         container-whalesay:
           - './.github/workflows/pr.yaml'
           - './tests/container/**'
     secrets:
       slack-token: ${{ secrets.SLACK_TOKEN }}
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
   build-container-whalesay:
     needs: [slack, changes]

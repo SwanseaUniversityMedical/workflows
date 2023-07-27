@@ -80,17 +80,17 @@ jobs:
               ]
             }
 
-          env:
-            README: |
-              ```
-              PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
-              Branch:   ${{ github.head_ref }}
-              Workflow: ${{ github.workflow }}
-              Run:      ${{ github.run_id }}
-              Ref:      ${{ github.ref }} 
-              Sha:      ${{ github.event.pull_request.head.sha }}
-              Commit:   ${{ env.COMMIT_MESSAGE }}
-              ```
+        env:
+          README: |
+            ```
+            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
+            Branch:   ${{ github.head_ref }}
+            Workflow: ${{ github.workflow }}
+            Run:      ${{ github.run_id }}
+            Ref:      ${{ github.ref }} 
+            Sha:      ${{ github.event.pull_request.head.sha }}
+            Commit:   ${{ env.COMMIT_MESSAGE }}
+            ````
 
   changes:
     needs: slack

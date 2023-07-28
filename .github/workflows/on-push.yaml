@@ -40,4 +40,4 @@ jobs:
           curl -X DELETE \
                "${{ vars.HARBOR_REGISTRY }}/api/repositories/${{ vars.HARBOR_PROJECT }}/test/tags/a" \
                -H "accept: application/json" \
-               -u "${{ vars.HARBOR_USER }}:${{ secrets.HARBOR_TOKEN }}"
+               -u "robot\$SwanseaUniversityMedical:${{ secrets.HARBOR_TOKEN }}"

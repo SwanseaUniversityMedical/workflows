@@ -33,11 +33,11 @@ jobs:
 
       - name: pause to inspect harbor
         run: |
-          sleep 30
+          sleep 10
 
       - name: delete tag a from harbor
         run: |
           curl -X DELETE \
-               "${{ vars.HARBOR_REGISTRY }}/api/repositories/${{ vars.HARBOR_PROJECT }}/test/tags/a" \
+               "https://${{ vars.HARBOR_REGISTRY }}/api/repositories/${{ vars.HARBOR_PROJECT }}/test/tags/a" \
                -H "accept: application/json" \
                -u "robot\$SwanseaUniversityMedical:${{ secrets.HARBOR_TOKEN }}"

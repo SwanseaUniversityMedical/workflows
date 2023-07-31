@@ -1,0 +1,43 @@
+#name: Test delete tag
+#
+#on:
+#  push:
+#
+#jobs:
+#
+#  test-delete-tag:
+#    runs-on: [self-hosted, linux, x64]
+#
+#    steps:
+#
+#      - name: login to container registry
+#        uses: docker/login-action@v2
+#        with:
+#          registry: ${{ vars.HARBOR_REGISTRY }}
+#          username: ${{ vars.HARBOR_USER }}
+#          password: ${{ secrets.HARBOR_TOKEN }}
+#
+#      - name: build image uri
+#        run: |
+#          echo "IMAGE=${{ vars.HARBOR_REGISTRY }}/${{ vars.HARBOR_PROJECT }}/test" >> $GITHUB_ENV
+#
+#      - name: setup container with multiple tags
+#        run: |
+#          docker pull docker/whalesay
+#
+#          docker tag docker/whalesay $IMAGE:a
+#          docker push $IMAGE:a
+#
+#          docker tag docker/whalesay $IMAGE:b
+#          docker push $IMAGE:b
+#
+#      - name: pause to inspect harbor
+#        run: |
+#          sleep 10
+#
+#      - name: delete tag a from harbor
+#        run: |
+#          curl -X DELETE \
+#               "https://${{ vars.HARBOR_REGISTRY }}/api/repositories/${{ vars.HARBOR_PROJECT }}/test/tags/a" \
+#               -H "accept: application/json" \
+#               -u "robot\$SwanseaUniversityMedical:${{ secrets.HARBOR_TOKEN }}"

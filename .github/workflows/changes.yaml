@@ -98,6 +98,10 @@ jobs:
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
             ${{ inputs.status-success }} job: ${{ github.job }}
+            
+            ```
+            ${{ toYAML(jobs.changes.outputs.changes) }}
+            ```
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

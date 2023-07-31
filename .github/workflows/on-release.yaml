@@ -56,7 +56,7 @@ jobs:
     needs:
       - slack
       - version-container-whalesay
-    #if: fromJSON(needs.version-container-whalesay.outputs.release).new-release-published == 'true'
+    if: fromJSON(needs.version-container-whalesay.outputs.release).new-release-published == 'true'
     uses: ./.github/workflows/build-release-container.yaml
     with:
       release-version: ${{ fromJSON(needs.version-container-whalesay.outputs.release).release-version }}

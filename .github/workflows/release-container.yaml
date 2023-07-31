@@ -127,12 +127,12 @@ jobs:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         with:
           dry_run: false
-          branches: ${{ fromJSON(inputs.release-config).release-branches }}
-          tag_format: ${{ fromJSON(inputs.release-config).release-tag-format }}
+          branches: ${{ inputs.release-branches }}
+          tag_format: ${{ inputs.release-tag-format }}
           plugins: |-
             [
               ['@semantic-release/commit-analyzer', {
-                "releaseRules": ${{ fromJSON(inputs.release-config).release-rules }},
+                "releaseRules": ${{ inputs.release-rules }},
               }], 
               '@semantic-release/release-notes-generator',
               ['@semantic-release/github', {

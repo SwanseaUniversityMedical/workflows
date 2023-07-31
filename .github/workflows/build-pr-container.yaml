@@ -183,7 +183,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '```\ndocker pull ${{ env.PR_TAG }}\ndocker pull ${{ env.PR_COMMIT_TAG }}\ndocker pull ${{ env.DIGEST }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
+              body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR container assets!\n\ndocker pull ${{ env.PR_TAG }}\ndocker pull ${{ env.PR_COMMIT_TAG }}\ndocker pull ${{ env.DIGEST }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
             })
 
       - name: update slack thread success

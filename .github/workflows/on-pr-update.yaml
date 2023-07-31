@@ -77,7 +77,7 @@ jobs:
 
   slack-update:
     # Update the original Slack message with the final workflow status
-    # WARNING! ALL UPSTREAM JOBS MUST BE DECLARED HERE TO REPORT FAILURES CORRECTLY!
+    # WARNING ALL UPSTREAM JOBS MUST BE DECLARED HERE TO REPORT FAILURES CORRECTLY!
     needs:
       - slack
       - changes

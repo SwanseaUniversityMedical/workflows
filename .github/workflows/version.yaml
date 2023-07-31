@@ -86,7 +86,7 @@ on:
 
       release-rules:
         description: "JSON list of rule dicts for what commit types trigger releases."
-        value: ${{ inputs.release-branches }}
+        value: ${{ inputs.release-rules }}
 
       release-branches:
         description: "JSON list of regex branch filters."

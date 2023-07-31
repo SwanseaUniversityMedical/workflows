@@ -27,7 +27,7 @@ on:
 
       thread:
         description: "ID of the created Slack thread."
-        value: ${{ jobs.slack-pr-thread.outputs.thread }}
+        value: ${{ jobs.slack-release-thread.outputs.thread }}
 
 jobs:
 
@@ -59,7 +59,7 @@ jobs:
         ```\n
         Branch:   ${{ github.head_ref }}\n
         Ref:      ${{ github.ref }}\n
-        Sha:      ${{ github.event.pull_request.head.sha }}\n
+        Sha:      ${{ github.sha }}\n
         Workflow: ${{ github.workflow }}\n
         Run:      ${{ github.run_id }}\n
         ```\n"

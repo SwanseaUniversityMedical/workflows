@@ -156,8 +156,8 @@ jobs:
             ${{ inputs.status-success }} job: ${{ github.job }}
             
             ```
-            Status: ${{ toJSON(steps.release.outputs).new-release-published == 'true' && 'Eligible for release!' || 'Not eligible for release.' }}
-            Version: ${{ toJSON(steps.release.outputs).release-version }}
+            Status: ${{ steps.release.outputs.new-release-published == 'true' && 'Eligible for release!' || 'Not eligible for release.' }}
+            Version: ${{ steps.release.outputs.release-version }}
             ```
 
       - name: update slack thread failure

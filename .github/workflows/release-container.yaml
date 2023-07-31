@@ -141,7 +141,7 @@ jobs:
               }]
             ]
 
-      - name: check release succeeded
+      - name: fail when no release occurred
         if: toJSON(steps.release.outputs).new-release-published == 'false'
         run: |
           exit 1
@@ -185,8 +185,8 @@ jobs:
             ${{ inputs.status-success }} job: ${{ github.job }}
             
             ```
-            Status: Released!
-            Version: ${{ toJSON(steps.release.outputs).release-version }}
+            Status: Released new version!
+            Version: ${{ steps.release.outputs.release-version }}
             
             docker pull ${{ env.RELEASE_TAG }}
             ```

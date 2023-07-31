@@ -45,7 +45,7 @@ jobs:
             "type": "header",
             "text": {
               "type": "plain_text",
-              "text": "${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update",
+              "text": "${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update / ${{ github.repository }}",
               "emoji": true
             }
           },

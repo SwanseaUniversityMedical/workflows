@@ -45,7 +45,15 @@ jobs:
             "type": "header",
             "text": {
               "type": "plain_text",
-              "text": "${{ inputs.status }} Release from ${{ github.ref }} @ ${{ github.sha }} / ${{ github.repository }}",
+              "text": "${{ inputs.status }} Release ${{ github.ref }}",
+              "emoji": true
+            }
+          },
+          {
+            "type": "header",
+            "text": {
+              "type": "plain_text",
+              "text": "${{ github.repository }}",
               "emoji": true
             }
           },

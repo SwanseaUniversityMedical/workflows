@@ -105,12 +105,6 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     outputs:
-      config: >-
-        {
-          "release-rules": ${{ inputs.release-branches }},
-          "release-branches": ${{ inputs.release-branches }},
-          "release-tag-format": ${{ inputs.release-tag-format }},
-        }
       release: ${{ toJSON(steps.release.outputs) }}
 
     steps:
@@ -160,6 +154,11 @@ jobs:
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
             ${{ inputs.status-success }} job: ${{ github.job }}
+            
+            ```
+            Status: ${{ toJSON(steps.release.outputs).new-release-published == 'true' && 'Eligible for release!' || 'Not eligible for release.' }}
+            Version: ${{ toJSON(steps.release.outputs).release-version }}
+            ```
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

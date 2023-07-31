@@ -2,6 +2,11 @@ on:
   workflow_call:
     inputs:
 
+      job-name:
+        description: "Job name to display on Slack messages."
+        required: true
+        type: string
+
       release-rules:
         description: "JSON list of rule dicts for what commit types trigger releases."
         required: true
@@ -108,7 +113,7 @@ jobs:
           slack-channel: ${{ inputs.slack-channel }}
           slack-optional-thread_ts: ${{ inputs.slack-thread }}
           slack-text: |
-            ${{ inputs.status-running }} job: ${{ github.job }}
+            ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -182,7 +187,7 @@ jobs:
           slack-function: update-message
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
-            ${{ inputs.status-success }} job: ${{ github.job }}
+            ${{ inputs.status-success }}  job: ${{ github.job }} / ${{ inputs.job-name }}
             
             ```
             Status: Released new version!
@@ -200,4 +205,4 @@ jobs:
           slack-function: update-message
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
-            ${{ inputs.status-failure }} job: ${{ github.job }}
+            ${{ inputs.status-failure }}  job: ${{ github.job }} / ${{ inputs.job-name }}

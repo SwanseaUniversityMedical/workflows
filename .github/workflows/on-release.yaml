@@ -43,6 +43,7 @@ jobs:
     if: fromJSON(needs.changes.outputs.changes).container-whalesay == 'true'
     uses: ./.github/workflows/version.yaml
     with:
+      job-name: ${{ job.name }}
       release-tag-format: 'whalesay-${version}'
       github-app-id: ${{ vars.APP_ID }}
       slack-channel: ${{ vars.SLACK_CHANNEL }}
@@ -59,6 +60,7 @@ jobs:
     if: fromJSON(needs.version-container-whalesay.outputs.release).new-release-published == 'true'
     uses: ./.github/workflows/build-release-container.yaml
     with:
+      job-name: ${{ job.name }}
       release-version: ${{ fromJSON(needs.version-container-whalesay.outputs.release).release-version }}
       container-registry: ${{ vars.HARBOR_REGISTRY }}
       container-registry-user: ${{ vars.HARBOR_USER }}
@@ -79,6 +81,7 @@ jobs:
       - build-container-whalesay
     uses: ./.github/workflows/test-container.yaml
     with:
+      job-name: ${{ job.name }}
       container-registry: ${{ vars.HARBOR_REGISTRY }}
       container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-digest: ${{ needs.build-container-whalesay.outputs.digest }}
@@ -99,6 +102,7 @@ jobs:
       - test-container-whalesay
     uses: ./.github/workflows/release-container.yaml
     with:
+      job-name: ${{ job.name }}
       release-rules: ${{ needs.version-container-whalesay.outputs.release-rules }}
       release-branches: ${{ needs.version-container-whalesay.outputs.release-branches }}
       release-tag-format: ${{ needs.version-container-whalesay.outputs.release-tag-format }}

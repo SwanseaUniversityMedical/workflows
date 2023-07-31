@@ -2,6 +2,11 @@ on:
   workflow_call:
     inputs:
 
+      job-name:
+        description: "Job name to display on Slack messages."
+        required: true
+        type: string
+
       command:
         description: "Command to build the container named $IMAGE."
         required: true
@@ -115,7 +120,7 @@ jobs:
           slack-channel: ${{ inputs.slack-channel }}
           slack-optional-thread_ts: ${{ inputs.slack-thread }}
           slack-text: |
-            ${{ inputs.status-running }} job: ${{ github.job }}
+            ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
       - name: build image uri
         run: |
@@ -189,9 +194,11 @@ jobs:
           slack-function: update-message
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
-            ${{ inputs.status-success }} job: ${{ github.job }}
+            ${{ inputs.status-success }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
             ```
+            Status: Pushed PR container assets!
+            
             docker pull ${{ env.PR_TAG }}
             docker pull ${{ env.PR_COMMIT_TAG }}
             docker pull ${{ env.DIGEST }}
@@ -206,4 +213,4 @@ jobs:
           slack-function: update-message
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
-            ${{ inputs.status-failure }} job: ${{ github.job }}
+            ${{ inputs.status-failure }}  job: ${{ github.job }} / ${{ inputs.job-name }}

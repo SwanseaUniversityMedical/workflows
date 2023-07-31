@@ -41,6 +41,7 @@ jobs:
     if: fromJSON(needs.changes.outputs.changes).container-whalesay == 'true'
     uses: ./.github/workflows/build-pr-container.yaml
     with:
+      job-name: ${{ job.name }}
       container-registry: ${{ vars.HARBOR_REGISTRY }}
       container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-project: ${{ vars.HARBOR_PROJECT }}
@@ -62,6 +63,7 @@ jobs:
       - build-container-whalesay
     uses: ./.github/workflows/test-container.yaml
     with:
+      job-name: ${{ job.name }}
       container-registry: ${{ vars.HARBOR_REGISTRY }}
       container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-digest: ${{ needs.build-container-whalesay.outputs.digest }}

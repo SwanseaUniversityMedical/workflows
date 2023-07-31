@@ -2,6 +2,11 @@ on:
   workflow_call:
     inputs:
 
+      job-name:
+        description: "Job name to display on Slack messages."
+        required: true
+        type: string
+
       command:
         description: "Command to build the container named."
         required: true
@@ -70,7 +75,7 @@ jobs:
           slack-channel: ${{ inputs.slack-channel }}
           slack-optional-thread_ts: ${{ inputs.slack-thread }}
           slack-text: |
-            ${{ inputs.status-running }} job: ${{ github.job }}
+            ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
       - name: login to container registry
         uses: docker/login-action@v2
@@ -99,7 +104,7 @@ jobs:
           slack-function: update-message
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
-            ${{ inputs.status-success }} job: ${{ github.job }}
+            ${{ inputs.status-success }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
@@ -110,4 +115,4 @@ jobs:
           slack-function: update-message
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
-            ${{ inputs.status-failure }} job: ${{ github.job }}
+            ${{ inputs.status-failure }}  job: ${{ github.job }} / ${{ inputs.job-name }}

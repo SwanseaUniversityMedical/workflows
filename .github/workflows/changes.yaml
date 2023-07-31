@@ -100,7 +100,7 @@ jobs:
             ${{ inputs.status-success }} job: ${{ github.job }}
             
             ```
-            ${{ toJSON(steps.changes.outputs) }}
+            ${{ toJSON(steps.changes.outputs.changes) }}
             ```
 
       - name: update slack thread failure

@@ -144,7 +144,7 @@ jobs:
       - name: check release succeeded
         if: toJSON(steps.release.outputs).new-release-published == 'false'
         run: |
-          exit 0
+          exit 1
             
       - name: build image uri
         run: |

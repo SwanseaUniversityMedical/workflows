@@ -56,7 +56,6 @@ jobs:
               "text": "
         <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
         ```
-        Branch:   ${{ github.head_ref }}\n
         Ref:      ${{ github.ref }}\n
         Sha:      ${{ github.sha }}\n
         Workflow: ${{ github.workflow }}\n

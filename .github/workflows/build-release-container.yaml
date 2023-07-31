@@ -69,6 +69,18 @@ on:
 
     outputs:
 
+      registry:
+        description: "URL of the container registry."
+        value: ${{ inputs.container-registry }}
+
+      project:
+        description: "Project within container registry."
+        value: ${{ inputs.container-registry-project }}
+
+      repo:
+        description: "Repo within container registry project."
+        value: ${{ inputs.container-registry-repo }}
+
       digest:
         description: "Docker pull URI with digest."
         value: ${{ jobs.build.outputs.digest }}

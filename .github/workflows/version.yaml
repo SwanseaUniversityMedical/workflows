@@ -84,9 +84,17 @@ on:
 
     outputs:
 
-      config:
-        description: "JSON encoded dictionary of release inputs."
-        value: ${{ jobs.version.outputs.config }}
+      release-rules:
+        description: "JSON list of rule dicts for what commit types trigger releases."
+        value: ${{ inputs.release-branches }}
+
+      release-branches:
+        description: "JSON list of regex branch filters."
+        value: ${{ inputs.release-branches }}
+
+      release-tag-format:
+        description: "Semantic-release Github release tag format."
+        value: ${{ inputs.release-tag-format }}
 
       release:
         description: "JSON encoded dictionary of release outputs."

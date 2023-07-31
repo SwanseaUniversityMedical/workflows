@@ -59,6 +59,7 @@ jobs:
     #if: fromJSON(needs.version-container-whalesay.outputs.release).new-release-published == 'true'
     uses: ./.github/workflows/build-release-container.yaml
     with:
+      release-version: ${{ fromJSON(needs.version-container-whalesay.outputs.release).release-version }}
       container-registry: ${{ vars.HARBOR_REGISTRY }}
       container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-project: ${{ vars.HARBOR_PROJECT }}
@@ -98,7 +99,9 @@ jobs:
       - test-container-whalesay
     uses: ./.github/workflows/release-container.yaml
     with:
-      release-config: ${{ needs.version-container-whalesay.outputs.config }}
+      release-rules: ${{ needs.version-container-whalesay.outputs.release-rules }}
+      release-branches: ${{ needs.version-container-whalesay.outputs.release-branches }}
+      release-tag-format: ${{ needs.version-container-whalesay.outputs.release-tag-format }}
       container-registry: ${{ vars.HARBOR_REGISTRY }}
       container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-project: ${{ needs.build-container-whalesay.outputs.project }}

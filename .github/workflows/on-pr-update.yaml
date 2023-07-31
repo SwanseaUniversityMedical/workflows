@@ -2,8 +2,6 @@ name: PR Update
 
 on:
   pull_request:
-    branches-ignore:
-      - main
     types:
       - opened
       - reopened

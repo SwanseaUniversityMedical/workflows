@@ -2,11 +2,11 @@ on:
   workflow_call:
     inputs:
 
-      command:
-        description: "Command to build the container named."
+      release-config:
+        description: "Semantic-release config output from previous versioning job."
         required: true
         type: string
-
+        
       container-registry:
         description: "URL of the container registry."
         required: true
@@ -14,6 +14,16 @@ on:
 
       container-registry-user:
         description: "Username for the container registry."
+        required: true
+        type: string
+
+      container-registry-project:
+        description: "Project within container registry."
+        required: true
+        type: string
+
+      container-registry-repo:
+        description: "Repo within container registry project."
         required: true
         type: string
 
@@ -47,19 +57,37 @@ on:
         default: ':no_entry:'
         type: string
 
+      github-app-id:
+        description: "App ID for Github."
+        required: true
+        type: string
+
     secrets:
 
       slack-token:
         description: "Authentication token for Slack."
         required: true
-
+        
       container-registry-token:
         description: "Authentication token for the container registry."
         required: true
 
+      github-app-private-key:
+        description: "App private key for Github."
+        required: true
+
+    outputs:
+
+      release:
+        description: "JSON encoded dictionary of release parameters."
+        value: ${{ jobs.release.outputs.release }}
+
 jobs:
-  test:
+  release:
     runs-on: [self-hosted, linux, x64]
+
+    outputs:
+      release: ${{ toJSON(steps.release.outputs) }}
 
     steps:
       - name: update slack thread
@@ -72,6 +100,45 @@ jobs:
           slack-text: |
             ${{ inputs.status-running }} job: ${{ github.job }}
 
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
+        with:
+          app_id: ${{ inputs.github-app-id }}
+          private_key: ${{ secrets.github-app-private-key }}
+
+      - name: release
+        uses: docker://ghcr.io/codfish/semantic-release-action:v2
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        with:
+          dry_run: false
+          branches: ${{ fromJSON(inputs.release-config).release-branches }}
+          tag_format: ${{ fromJSON(inputs.release-config).release-tag-format }}
+          plugins: |-
+            [
+              ['@semantic-release/commit-analyzer', {
+                "releaseRules": ${{ fromJSON(inputs.release-config).release-rules }},
+              }], 
+              '@semantic-release/release-notes-generator',
+              ['@semantic-release/github', {
+                "successComment": false,
+                "failTitle": false
+              }]
+            ]
+            
+      - name: build image uri
+        run: |
+          echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
+
+      - name: create tag
+        run: |
+          echo "RELEASE_TAG=${{ env.IMAGE }}:${{ steps.release.outputs.release-version }}" >> $GITHUB_ENV 
+
       - name: login to container registry
         uses: docker/login-action@v2
         with:
@@ -79,16 +146,17 @@ jobs:
           username: ${{ inputs.container-registry-user }}
           password: ${{ secrets.container-registry-token }}
 
-      - name: build image uri
-        run: |
-          echo "IMAGE=${{ inputs.container-registry-digest }}" >> $GITHUB_ENV
-
       - name: pull container
         run: |
           docker pull ${{ inputs.container-registry-digest }}
 
-      - name: test container
-        run: ${{ inputs.command }}
+      - name: tag container
+        run: |
+          docker tag ${{ inputs.container-registry-digest }} ${{ env.RELEASE_TAG }}
+
+      - name: push container
+        run: |
+          docker push ${{ env.RELEASE_TAG }}
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0

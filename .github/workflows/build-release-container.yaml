@@ -3,7 +3,7 @@ on:
     inputs:
 
       command:
-        description: "Command to build the container named."
+        description: "Command to build the container named $IMAGE."
         required: true
         type: string
 
@@ -52,11 +52,6 @@ on:
         default: ':no_entry:'
         type: string
 
-      github-app-id:
-        description: "App ID for Github."
-        required: true
-        type: string
-
     secrets:
 
       slack-token:
@@ -67,32 +62,23 @@ on:
         description: "Authentication token for the container registry."
         required: true
 
-      github-app-private-key:
-        description: "App private key for Github."
-        required: true
-
     outputs:
 
       digest:
         description: "Docker pull URI with digest."
         value: ${{ jobs.build.outputs.digest }}
 
-      pr-tag:
-        description: "Docker pull URI with pr tag."
-        value: ${{ jobs.build.outputs.pr-tag }}
-
-      pr-commit-tag:
-        description: "Docker pull URI with pr and sha tag."
-        value: ${{ jobs.build.outputs.pr-commit-tag }}
+      rc-tag:
+        description: "Docker pull URI with rc tag."
+        value: ${{ jobs.build.outputs.rc-tag }}
 
 jobs:
   build:
     runs-on: [ self-hosted, linux, x64 ]
 
     outputs:
-      digest: ${{ steps.digest.outputs.digest }}
-      pr-tag: ${{ env.PR_TAG }}
-      pr-commit-tag: ${{ env.PR_COMMIT_TAG }}
+      digest: ${{ env.DIGEST }}
+      rc-tag: ${{ env.RC_TAG }}
 
     steps:
       - name: update slack thread
@@ -109,14 +95,9 @@ jobs:
         run: |
           echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
 
-      - name: get short commit sha
-        run: |
-          echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
-
       - name: create tags
         run: |
-          echo "PR_TAG=${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
-          echo "PR_COMMIT_TAG=${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
+          echo "RC_TAG=${{ env.IMAGE }}:rc-${{ inputs.release-version }}" >> $GITHUB_ENV 
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -130,44 +111,23 @@ jobs:
 
       - name: pull container
         run: |
-          docker pull ${{ env.PR_TAG }} || true
+          docker pull ${{ env.RC_TAG }} || true
 
       - name: build container
         run: ${{ inputs.command }}
 
       - name: tag container
         run: |
-          docker tag ${{ env.IMAGE }} ${{ env.PR_TAG }}
-          docker tag ${{ env.IMAGE }} ${{ env.PR_COMMIT_TAG }}
+          docker tag ${{ env.IMAGE }} ${{ env.RC_TAG }}
 
       - name: push container
         run: |
-          docker push ${{ env.PR_TAG }}
-          docker push ${{ env.PR_COMMIT_TAG }}
+          docker push ${{ env.RC_TAG }}
 
       - name: container digest
         id: digest
         run: |
-          echo "digest=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.PR_COMMIT_TAG }}`" >> "$GITHUB_OUTPUT"
-
-      - name: generate token
-        id: generate-token
-        uses: tibdex/github-app-token@v1.8.0
-        with:
-          app_id: ${{ inputs.github-app-id }}
-          private_key: ${{ secrets.github-app-private-key }}
-
-      - name: comment the image tags to the pr
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ steps.generate-token.outputs.token }}
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '```\ndocker pull ${{ env.PR_TAG }}\ndocker pull ${{ env.PR_COMMIT_TAG }}\ndocker pull ${{ steps.digest.outputs.digest }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
-            })
+          echo "DIGEST=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.RC_TAG }}`" >> $GITHUB_ENV
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
@@ -180,9 +140,8 @@ jobs:
             ${{ inputs.status-success }} job: ${{ github.job }}
 
             ```
-            docker pull ${{ env.PR_TAG }}
-            docker pull ${{ env.PR_COMMIT_TAG }}
-            docker pull ${{ steps.digest.outputs.digest }}
+            docker pull ${{ env.RC_TAG }}
+            docker pull ${{ env.DIGEST }}
             ```
 
       - name: update slack thread failure

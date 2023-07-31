@@ -7,7 +7,6 @@ jobs:
 
   slack:
     # Open a new PR thread on Slack for this CI run
-    name: slack
     uses: ./.github/workflows/slack-pr-thread.yaml
     with:
       slack-channel: ${{ vars.SLACK_CHANNEL }}
@@ -16,7 +15,6 @@ jobs:
 
   changes:
     # Detect which files have been changed on this PR's full history
-    name: changes
     needs: slack
     uses: ./.github/workflows/changes.yaml
     with:
@@ -25,7 +23,11 @@ jobs:
       github-app-id: ${{ vars.APP_ID }}
       filters: |
         container-whalesay:
-          - './.github/workflows/pr.yaml'
+          - './.github/workflows/on-pr-update.yaml'
+          - './.github/workflows/slack-pr-thread.yaml'
+          - './.github/workflows/changes.yaml'
+          - './.github/workflows/build-pr-container.yaml'
+          - './.github/workflows/test-container.yaml'
           - './tests/container/**'
     secrets:
       slack-token: ${{ secrets.SLACK_TOKEN }}
@@ -33,9 +35,11 @@ jobs:
 
   build-container-whalesay:
     # Build the whalesay container and push it as :pr-42 and :pr-42-fe45b3h
-    needs: [slack, changes]
+    needs:
+      - slack
+      - changes
     if: fromJSON(needs.changes.outputs.changes).container-whalesay == 'true'
-    uses: ./.github/workflows/build-container.yaml
+    uses: ./.github/workflows/build-pr-container.yaml
     with:
       container-registry: ${{ vars.HARBOR_REGISTRY }}
       container-registry-user: ${{ vars.HARBOR_USER }}
@@ -53,12 +57,14 @@ jobs:
 
   test-container-whalesay:
     # Test the whalesay container
-    needs: [slack, build-container-whalesay]
+    needs:
+      - slack
+      - build-container-whalesay
     uses: ./.github/workflows/test-container.yaml
     with:
       container-registry: ${{ vars.HARBOR_REGISTRY }}
       container-registry-user: ${{ vars.HARBOR_USER }}
-      container-registry-image: ${{ needs.build-container-whalesay.outputs.digest }}
+      container-registry-digest: ${{ needs.build-container-whalesay.outputs.digest }}
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
       command: |
@@ -70,7 +76,11 @@ jobs:
   slack-update:
     # Update the original Slack message with the final workflow status
     # WARNING! ALL UPSTREAM JOBS MUST BE DECLARED HERE TO REPORT FAILURES CORRECTLY!
-    needs: [slack, changes, build-container-whalesay, test-container-whalesay]
+    needs:
+      - slack
+      - changes
+      - build-container-whalesay
+      - test-container-whalesay
     uses: ./.github/workflows/slack-pr-thread.yaml
     if: always()
     with:

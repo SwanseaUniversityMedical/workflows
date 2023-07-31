@@ -1,0 +1,135 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  slack:
+    # Open a new PR thread on Slack for this CI run
+    uses: ./.github/workflows/slack-release-thread.yaml
+    with:
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+    secrets:
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+
+  changes:
+    # Detect which files have been changed on this PR's full history
+    needs: slack
+    uses: ./.github/workflows/changes.yaml
+    with:
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
+      github-app-id: ${{ vars.APP_ID }}
+      filters: |
+        container-whalesay:
+          - './.github/workflows/on-release.yaml'
+          - './.github/workflows/slack-release-thread.yaml'
+          - './.github/workflows/changes.yaml'
+          - './.github/workflows/version.yaml'
+          - './.github/workflows/build-release-container.yaml'
+          - './.github/workflows/test-container.yaml'
+          - './.github/workflows/release-container.yaml'
+          - './tests/container/**'
+    secrets:
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+  version-container-whalesay:
+    # Determine if a release should happen and what its version would be
+    needs:
+      - slack
+      - changes
+    if: fromJSON(needs.changes.outputs.changes).container-whalesay == 'true'
+    uses: ./.github/workflows/version.yaml
+    with:
+      release-tag-format: 'whalesay-${version}'
+      github-app-id: ${{ vars.APP_ID }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
+    secrets:
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+
+  build-container-whalesay:
+    # Build the whalesay container and push it as :rc-1.0.0
+    needs:
+      - slack
+      - version-container-whalesay
+    #if: fromJSON(needs.version-container-whalesay.outputs.release).new-release-published == 'true'
+    uses: ./.github/workflows/build-release-container.yaml
+    with:
+      container-registry: ${{ vars.HARBOR_REGISTRY }}
+      container-registry-user: ${{ vars.HARBOR_USER }}
+      container-registry-project: ${{ vars.HARBOR_PROJECT }}
+      container-registry-repo: whalesay
+      github-app-id: ${{ vars.APP_ID }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
+      command: |
+        docker build -t $IMAGE -f tests/container/Dockerfile tests/container
+    secrets:
+      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+
+  test-container-whalesay:
+    # Test the whalesay container
+    needs:
+      - slack
+      - build-container-whalesay
+    uses: ./.github/workflows/test-container.yaml
+    with:
+      container-registry: ${{ vars.HARBOR_REGISTRY }}
+      container-registry-user: ${{ vars.HARBOR_USER }}
+      container-registry-digest: ${{ needs.build-container-whalesay.outputs.digest }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
+      command: |
+        docker run $IMAGE cowsay boo
+    secrets:
+      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+      
+  release-container-whalesay:
+    # Release the whalesay container re-tagging it as :1.0.0
+    needs:
+      - slack
+      - version-container-whalesay
+      - build-container-whalesay
+      - test-container-whalesay
+    uses: ./.github/workflows/release-container.yaml
+    with:
+      release-config: ${{ needs.version-container-whalesay.outputs.config }}
+      container-registry: ${{ vars.HARBOR_REGISTRY }}
+      container-registry-user: ${{ vars.HARBOR_USER }}
+      container-registry-project: ${{ needs.build-container-whalesay.outputs.project }}
+      container-registry-repo: ${{ needs.build-container-whalesay.outputs.repo }}
+      container-registry-digest: ${{ needs.build-container-whalesay.outputs.digest }}
+      github-app-id: ${{ vars.APP_ID }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
+    secrets:
+      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+
+  slack-update:
+    # Update the original Slack message with the final workflow status
+    # WARNING! ALL UPSTREAM JOBS MUST BE DECLARED HERE TO REPORT FAILURES CORRECTLY!
+    needs:
+      - slack
+      - changes
+      - build-container-whalesay
+      - test-container-whalesay
+      - release-container-whalesay
+    uses: ./.github/workflows/slack-pr-thread.yaml
+    if: always()
+    with:
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
+      status: ${{ contains(join(needs.*.result, ','), 'failure') && ':no_entry:' || ':white_check_mark:' }}
+    secrets:
+      slack-token: ${{ secrets.SLACK_TOKEN }}

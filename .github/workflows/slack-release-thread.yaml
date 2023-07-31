@@ -31,7 +31,7 @@ on:
 
 jobs:
 
-  slack-pr-thread:
+  slack-release-thread:
     runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
 
@@ -45,7 +45,7 @@ jobs:
             "type": "header",
             "text": {
               "type": "plain_text",
-              "text": "${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update",
+              "text": "${{ inputs.status }} Release from ${{ github.ref }} @ ${{ github.sha }}",
               "emoji": true
             }
           },
@@ -57,7 +57,6 @@ jobs:
         <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
         <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
         ```\n
-        PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}\n
         Branch:   ${{ github.head_ref }}\n
         Ref:      ${{ github.ref }}\n
         Sha:      ${{ github.event.pull_request.head.sha }}\n

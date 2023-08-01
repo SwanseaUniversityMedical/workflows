@@ -170,7 +170,7 @@ jobs:
           helm cm-push ${{ inputs.chart }} --version $PR_TAG --app-version $PR_TAG remote
           helm cm-push ${{ inputs.chart }} --version $PR_COMMIT_TAG --app-version $PR_COMMIT_TAG remote
 
-      - name: comment the image tags to the pr
+      - name: comment the chart tags to the pr
         uses: actions/github-script@v6
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
@@ -179,7 +179,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR chart assets!\n\nhelm repo add --pass-credentials --username '<user>' --password '<token>' <repo> https://${{ env.CHART_REPO }}\nhelm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}\nhelm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}\n```\n\n:robot: :wheel_of_dharma: :package: :passenger_ship:\n'
+              body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR chart assets!\n\nhelm repo add --pass-credentials --username 'user' --password 'token' repo https://${{ env.CHART_REPO }}\nhelm pull --version ${{ env.PR_TAG }} repo/${{ inputs.chart-registry-repo }}\nhelm pull --version ${{ env.PR_COMMIT_TAG }} repo/${{ inputs.chart-registry-repo }}\n```\n\n:robot: :wheel_of_dharma: :package: :passenger_ship:\n'
             })
 
       - name: update slack thread success
@@ -195,9 +195,9 @@ jobs:
             ```
             Status: Pushed PR chart assets!
             
-            helm repo add --pass-credentials --username '<user>' --password '<token>' <repo> https://${{ env.CHART_REPO }}
-            helm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}
-            helm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}
+            helm repo add --pass-credentials --username 'user' --password 'token' repo https://${{ env.CHART_REPO }}
+            helm pull --version ${{ env.PR_TAG }} repo/${{ inputs.chart-registry-repo }}
+            helm pull --version ${{ env.PR_COMMIT_TAG }} repo/${{ inputs.chart-registry-repo }}
             ```
 
       - name: update slack thread failure

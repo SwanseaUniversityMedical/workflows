@@ -110,7 +110,7 @@ jobs:
 
     secrets:
 
-      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
+      chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
 

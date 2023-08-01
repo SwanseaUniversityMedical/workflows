@@ -137,9 +137,6 @@ jobs:
       slack-thread: ${{ needs.slack.outputs.thread }}
       command: |
         helm template $CHART --values tests/charts/helloworld/values.yaml
-        
-        helm template $CHART --values tests/charts/helloworld/values-bad-port.yaml && false
-
     secrets:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

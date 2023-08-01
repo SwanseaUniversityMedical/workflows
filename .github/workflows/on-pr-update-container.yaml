@@ -1,0 +1,137 @@
+on:
+  workflow_call:
+    inputs:
+
+      job-name:
+        description: "Job name to display on Slack messages."
+        required: true
+        type: string
+
+      build-command:
+        description: "Command to build the container named $IMAGE."
+        required: true
+        type: string
+
+      test-command:
+        description: "Command to test the container named $IMAGE."
+        required: true
+        type: string
+
+      container-registry:
+        description: "URL of the container registry."
+        required: true
+        type: string
+
+      container-registry-user:
+        description: "Username for the container registry."
+        required: true
+        type: string
+
+      container-registry-project:
+        description: "Project within container registry."
+        required: true
+        type: string
+
+      container-registry-repo:
+        description: "Repo within container registry project."
+        required: true
+        type: string
+
+      slack-channel:
+        description: "ID of the Slack channel to post updates to."
+        required: true
+        type: string
+
+      slack-thread:
+        description: "Slack thread to reply to."
+        required: true
+        type: string
+
+      status-running:
+        description: "Running status for the message header."
+        default: ':hammer_and_wrench:'
+        type: string
+
+      status-success:
+        description: "Success status for the message header."
+        default: ':white_check_mark:'
+        type: string
+
+      status-failure:
+        description: "Failure status for the message header."
+        default: ':no_entry:'
+        type: string
+
+      github-app-id:
+        description: "App ID for Github."
+        required: true
+        type: string
+
+    secrets:
+
+      slack-token:
+        description: "Authentication token for Slack."
+        required: true
+
+      container-registry-token:
+        description: "Authentication token for the container registry."
+        required: true
+
+      github-app-private-key:
+        description: "App private key for Github."
+        required: true
+
+    outputs:
+
+      digest:
+        description: "Docker pull URI with digest."
+        value: ${{ jobs.build.outputs.digest }}
+
+      pr-tag:
+        description: "Docker pull URI with pr tag."
+        value: ${{ jobs.build.outputs.pr-tag }}
+
+      pr-commit-tag:
+        description: "Docker pull URI with pr and sha tag."
+        value: ${{ jobs.build.outputs.pr-commit-tag }}
+
+jobs:
+  build:
+    # Build the container and push it as :pr-42 and :pr-42-fe45b3h
+    uses: ./.github/workflows/build-pr-container.yaml
+    with:
+      job-name: ${{ inputs.job-name }}
+      container-registry: ${{ inputs.container-registry }}
+      container-registry-user: ${{ inputs.container-registry-user }}
+      container-registry-project: ${{ inputs.container-registry-project }}
+      container-registry-repo: ${{ inputs.container-registry-repo }}
+      github-app-id: ${{ inputs.github-app-id }}
+      slack-channel: ${{ inputs.slack-channel }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
+      status-running: ${{ inputs.status-running }}
+      status-success: ${{ inputs.status-success }}
+      status-failure: ${{ inputs.status-failure }}
+      command: ${{ inputs.build-command }}
+    secrets:
+      container-registry-token: ${{ secrets.container-registry-token }}
+      github-app-private-key: ${{ secrets.github-app-private-key }}
+      slack-token: ${{ secrets.slack-token }}
+
+  test:
+    # Test the container
+    needs: build
+    uses: ./.github/workflows/test-container.yaml
+    with:
+      job-name: ${{ inputs.job-name }}
+      container-registry: ${{ inputs.container-registry }}
+      container-registry-user: ${{ inputs.container-registry-user }}
+      container-registry-digest: ${{ needs.build.outputs.digest }}
+      slack-channel: ${{ inputs.slack-channel }}
+      slack-thread: ${{ inputs.slack-thread }}
+      status-running: ${{ inputs.status-running }}
+      status-success: ${{ inputs.status-success }}
+      status-failure: ${{ inputs.status-failure }}
+      command: ${{ inputs.test-command }}
+    secrets:
+      container-registry-token: ${{ secrets.container-registry-token }}
+      slack-token: ${{ secrets.slack-token }}

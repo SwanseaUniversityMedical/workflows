@@ -42,9 +42,9 @@ jobs:
           - './.github/workflows/slack-release-thread.yaml'
           - './.github/workflows/changes.yaml'
           - './.github/workflows/version.yaml'
-          - './.github/workflows/build-release-container.yaml'
-          - './.github/workflows/test-container.yaml'
-          - './.github/workflows/release-container.yaml'
+          - './.github/workflows/build-release-chart.yaml'
+          - './.github/workflows/test-chart.yaml'
+          - './.github/workflows/release-chart.yaml'
           - './charts/helloworld/**'
     secrets:
       slack-token: ${{ secrets.SLACK_TOKEN }}

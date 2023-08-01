@@ -7,23 +7,28 @@ on:
         required: true
         type: string
 
-      command:
-        description: "Command to build the container named."
+      chart-registry:
+        description: "URL of the chart registry."
         required: true
         type: string
 
-      container-registry:
-        description: "URL of the container registry."
+      chart-registry-user:
+        description: "Username for the chart registry."
         required: true
         type: string
 
-      container-registry-user:
-        description: "Username for the container registry."
+      chart-registry-project:
+        description: "Project within chart registry."
         required: true
         type: string
 
-      container-registry-digest:
-        description: "URI of the container."
+      chart-registry-repo:
+        description: "Repo within chart registry project."
+        required: true
+        type: string
+
+      chart-registry-digest:
+        description: "Version of the chart from within chart registry repo."
         required: true
         type: string
 
@@ -52,18 +57,27 @@ on:
         default: ':no_entry:'
         type: string
 
+      github-app-id:
+        description: "App ID for Github."
+        required: true
+        type: string
+
     secrets:
 
       slack-token:
         description: "Authentication token for Slack."
         required: true
 
-      container-registry-token:
-        description: "Authentication token for the container registry."
+      chart-registry-token:
+        description: "Authentication token for the chart registry."
+        required: true
+
+      github-app-private-key:
+        description: "App private key for Github."
         required: true
 
 jobs:
-  test-container:
+  test-chart:
     runs-on: [self-hosted, linux, x64]
 
     steps:
@@ -77,23 +91,44 @@ jobs:
           slack-text: |
             ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
-      - name: login to container registry
-        uses: docker/login-action@v2
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: generate token
+        id: generate-token
+        uses: tibdex/github-app-token@v1.8.0
         with:
-          registry: ${{ inputs.container-registry }}
-          username: ${{ inputs.container-registry-user }}
-          password: ${{ secrets.container-registry-token }}
+          app_id: ${{ inputs.github-app-id }}
+          private_key: ${{ secrets.github-app-private-key }}
 
-      - name: build image uri
+      - name: install helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: setup chart-museum push plugin
+        # TODO Can be changed to modern OCI style chart push after we upgrade harbor to latest
         run: |
-          echo "IMAGE=${{ inputs.container-registry-digest }}" >> $GITHUB_ENV
+          helm plugin install https://github.com/chartmuseum/helm-push
 
-      - name: pull container
+      - name: login to chart registry
         run: |
-          docker pull ${{ inputs.container-registry-digest }}
+          set -x
+          helm repo add --pass-credentials --username '${{ inputs.chart-registry-user }}' --password '${{ secrets.chart-registry-token }}' remote https://${{ env.CHART_REPO }}
 
-      - name: test container
-        run: ${{ inputs.command }}
+      - name: update charts list
+        run: |
+          helm repo update
+
+      - name: pull charts
+        run: |
+          helm pull remote/${{ secrets.chart-registry-repo }} --version ${{ secrets.chart-registry-digest }}
+          ls -la
+
+      - name: lint chart
+        run: |
+          helm lint $(echo ${{ secrets.chart-registry-repo }}-*.tgz)
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0

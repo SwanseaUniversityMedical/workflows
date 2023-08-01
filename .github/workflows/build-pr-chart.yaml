@@ -90,6 +90,10 @@ on:
         description: "Repo within chart registry project."
         value: ${{ inputs.chart-registry-repo }}
 
+      digest:
+        description: "Docker pull URI with digest."
+        value: ${{ jobs.build-pr-chart.outputs.digest }}
+
       pr-tag:
         description: "Docker pull URI with pr tag."
         value: ${{ jobs.build-pr-chart.outputs.pr-tag }}
@@ -100,9 +104,10 @@ on:
 
 jobs:
   build-pr-chart:
-    runs-on: [ self-hosted, linux, x64 ]
+    runs-on: [self-hosted, linux, x64]
 
     outputs:
+      digest: ${{ env.PR_COMMIT_TAG }}
       pr-tag: ${{ env.PR_TAG }}
       pr-commit-tag: ${{ env.PR_COMMIT_TAG }}
 
@@ -174,7 +179,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR chart assets!\n\nhelm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}\nhelm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}\n```\n\n:robot: :wheel_of_dharma: :package: :passenger_ship:\n'
+              body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR chart assets!\n\nhelm repo add --pass-credentials --username '<user>' --password '<token>' <repo> https://${{ env.CHART_REPO }}\nhelm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}\nhelm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}\n```\n\n:robot: :wheel_of_dharma: :package: :passenger_ship:\n'
             })
 
       - name: update slack thread success
@@ -190,6 +195,7 @@ jobs:
             ```
             Status: Pushed PR chart assets!
             
+            helm repo add --pass-credentials --username '<user>' --password '<token>' <repo> https://${{ env.CHART_REPO }}
             helm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}
             helm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}
             ```

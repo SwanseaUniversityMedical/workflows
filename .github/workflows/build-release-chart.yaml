@@ -166,7 +166,7 @@ jobs:
 
       - name: push charts
         run: |
-          helm cm-push ${{ inputs.chart }} --version $RC_TAG --app-version $RC_TAG remote
+          helm cm-push ${{ inputs.chart }} --version ${{ env.RC_TAG }} --app-version ${{ env.RC_TAG }} remote
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0

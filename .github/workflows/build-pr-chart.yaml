@@ -154,7 +154,11 @@ jobs:
         # TODO Can be changed to modern OCI style chart push after we upgrade harbor to latest
         run: |
           helm plugin install https://github.com/chartmuseum/helm-push
-          helm repo add --pass-credentials --username "${{ inputs.chart-registry-user }}" --password "${{ secrets.chart-registry-token }}" remote ${{ env.CHART_REPO }}
+
+      - name: login to chart registry
+        run: |
+          set -x
+          helm repo add --pass-credentials --username "${{ inputs.chart-registry-user }}" --password "${{ secrets.chart-registry-token }}" remote https://${{ env.CHART_REPO }}
 
       - name: push charts
         run: |

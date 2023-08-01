@@ -7,28 +7,28 @@ on:
         required: true
         type: string
 
-      command:
-        description: "Command to build the container named $IMAGE."
+      chart:
+        description: "Path to the helm chart."
         required: true
         type: string
 
-      container-registry:
-        description: "URL of the container registry."
+      chart-registry:
+        description: "URL of the chart registry."
         required: true
         type: string
 
-      container-registry-user:
-        description: "Username for the container registry."
+      chart-registry-user:
+        description: "Username for the chart registry."
         required: true
         type: string
 
-      container-registry-project:
-        description: "Project within container registry."
+      chart-registry-project:
+        description: "Project within chart registry."
         required: true
         type: string
 
-      container-registry-repo:
-        description: "Repo within container registry project."
+      chart-registry-repo:
+        description: "Repo within chart registry project."
         required: true
         type: string
 
@@ -68,8 +68,8 @@ on:
         description: "Authentication token for Slack."
         required: true
 
-      container-registry-token:
-        description: "Authentication token for the container registry."
+      chart-registry-token:
+        description: "Authentication token for the chart registry."
         required: true
 
       github-app-private-key:
@@ -79,35 +79,35 @@ on:
     outputs:
 
       registry:
-        description: "URL of the container registry."
-        value: ${{ inputs.container-registry }}
+        description: "URL of the chart registry."
+        value: ${{ inputs.chart-registry }}
 
       project:
-        description: "Project within container registry."
-        value: ${{ inputs.container-registry-project }}
+        description: "Project within chart registry."
+        value: ${{ inputs.chart-registry-project }}
 
       repo:
-        description: "Repo within container registry project."
-        value: ${{ inputs.container-registry-repo }}
+        description: "Repo within chart registry project."
+        value: ${{ inputs.chart-registry-repo }}
 
       digest:
         description: "Docker pull URI with digest."
-        value: ${{ jobs.build-pr-container.outputs.digest }}
+        value: ${{ jobs.build-pr-chart.outputs.digest }}
 
       pr-tag:
         description: "Docker pull URI with pr tag."
-        value: ${{ jobs.build-pr-container.outputs.pr-tag }}
+        value: ${{ jobs.build-pr-chart.outputs.pr-tag }}
 
       pr-commit-tag:
         description: "Docker pull URI with pr and sha tag."
-        value: ${{ jobs.build-pr-container.outputs.pr-commit-tag }}
+        value: ${{ jobs.build-pr-chart.outputs.pr-commit-tag }}
 
 jobs:
-  build-pr-container:
-    runs-on: [ self-hosted, linux, x64 ]
+  build-pr-chart:
+    runs-on: [self-hosted, linux, x64]
 
     outputs:
-      digest: ${{ env.DIGEST }}
+      digest: ${{ env.PR_COMMIT_TAG }}
       pr-tag: ${{ env.PR_TAG }}
       pr-commit-tag: ${{ env.PR_COMMIT_TAG }}
 
@@ -122,9 +122,9 @@ jobs:
           slack-text: |
             ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
-      - name: build image uri
+      - name: build chart uri
         run: |
-          echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
+          echo "CHART_REPO=${{ inputs.chart-registry }}/chartrepo/${{ inputs.chart-registry-project }}" >> $GITHUB_ENV
 
       - name: get short commit sha
         run: |
@@ -132,40 +132,11 @@ jobs:
 
       - name: create tags
         run: |
-          echo "PR_TAG=${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
-          echo "PR_COMMIT_TAG=${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
+          echo "PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
+          echo "PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}.${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
 
       - name: clone repo
         uses: actions/checkout@v3
-
-      - name: login to container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ inputs.container-registry }}
-          username: ${{ inputs.container-registry-user }}
-          password: ${{ secrets.container-registry-token }}
-
-      - name: pull container
-        run: |
-          docker pull ${{ env.PR_TAG }} || true
-
-      - name: build container
-        run: ${{ inputs.command }}
-
-      - name: tag container
-        run: |
-          docker tag ${{ env.IMAGE }} ${{ env.PR_TAG }}
-          docker tag ${{ env.IMAGE }} ${{ env.PR_COMMIT_TAG }}
-
-      - name: push container
-        run: |
-          docker push ${{ env.PR_TAG }}
-          docker push ${{ env.PR_COMMIT_TAG }}
-
-      - name: container digest
-        id: digest
-        run: |
-          echo "DIGEST=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.PR_COMMIT_TAG }}`" >> $GITHUB_ENV
 
       - name: generate token
         id: generate-token
@@ -174,7 +145,32 @@ jobs:
           app_id: ${{ inputs.github-app-id }}
           private_key: ${{ secrets.github-app-private-key }}
 
-      - name: comment the image tags to the pr
+      - name: install helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: update chart dependencies
+        run: |
+          helm dependency update ${{ inputs.chart }}
+
+      - name: setup chart-museum push plugin
+        # TODO Can be changed to modern OCI style chart push after we upgrade harbor to latest
+        run: |
+          helm plugin install https://github.com/chartmuseum/helm-push
+
+      - name: login to chart registry
+        run: |
+          set -x
+          helm repo add --pass-credentials --username '${{ inputs.chart-registry-user }}' --password '${{ secrets.chart-registry-token }}' remote https://${{ env.CHART_REPO }}
+
+      - name: push charts
+        run: |
+          helm cm-push ${{ inputs.chart }} --version $PR_TAG --app-version $PR_TAG remote
+          helm cm-push ${{ inputs.chart }} --version $PR_COMMIT_TAG --app-version $PR_COMMIT_TAG remote
+
+      - name: comment the chart tags to the pr
         uses: actions/github-script@v6
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
@@ -183,7 +179,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR container assets!\n\ndocker pull ${{ env.PR_TAG }}\ndocker pull ${{ env.PR_COMMIT_TAG }}\ndocker pull ${{ env.DIGEST }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
+              body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR chart assets!\n\nhelm repo add --pass-credentials --username \'<user>\' --password \'<token>\' <repo> https://${{ env.CHART_REPO }}\nhelm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}\nhelm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}\n```\n\n:robot: :wheel_of_dharma: :package: :passenger_ship:\n'
             })
 
       - name: update slack thread success
@@ -197,11 +193,11 @@ jobs:
             ${{ inputs.status-success }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
             ```
-            Status: Pushed PR container assets!
+            Status: Pushed PR chart assets!
             
-            docker pull ${{ env.PR_TAG }}
-            docker pull ${{ env.PR_COMMIT_TAG }}
-            docker pull ${{ env.DIGEST }}
+            helm repo add --pass-credentials --username '<user>' --password '<token>' <repo> https://${{ env.CHART_REPO }}
+            helm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}
+            helm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}
             ```
 
       - name: update slack thread failure

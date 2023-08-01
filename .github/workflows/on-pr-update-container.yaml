@@ -100,19 +100,26 @@ jobs:
     # Build the container and push it as :pr-42 and :pr-42-fe45b3h
     uses: ./.github/workflows/build-pr-container.yaml
     with:
+
       job-name: ${{ inputs.job-name }}
+
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-project: ${{ inputs.container-registry-project }}
       container-registry-repo: ${{ inputs.container-registry-repo }}
+
       github-app-id: ${{ inputs.github-app-id }}
+
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ needs.slack.outputs.thread }}
+      slack-thread: ${{ inputs.slack-thread }}
       status-running: ${{ inputs.status-running }}
       status-success: ${{ inputs.status-success }}
       status-failure: ${{ inputs.status-failure }}
+
       command: ${{ inputs.build-command }}
+
     secrets:
+
       container-registry-token: ${{ secrets.container-registry-token }}
       github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
@@ -122,16 +129,22 @@ jobs:
     needs: build
     uses: ./.github/workflows/test-container.yaml
     with:
+
       job-name: ${{ inputs.job-name }}
+
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-digest: ${{ needs.build.outputs.digest }}
+
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
       status-running: ${{ inputs.status-running }}
       status-success: ${{ inputs.status-success }}
       status-failure: ${{ inputs.status-failure }}
+
       command: ${{ inputs.test-command }}
+
     secrets:
+
       container-registry-token: ${{ secrets.container-registry-token }}
       slack-token: ${{ secrets.slack-token }}

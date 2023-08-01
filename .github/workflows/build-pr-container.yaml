@@ -92,18 +92,18 @@ on:
 
       digest:
         description: "Docker pull URI with digest."
-        value: ${{ jobs.build.outputs.digest }}
+        value: ${{ jobs.build-pr-container.outputs.digest }}
 
       pr-tag:
         description: "Docker pull URI with pr tag."
-        value: ${{ jobs.build.outputs.pr-tag }}
+        value: ${{ jobs.build-pr-container.outputs.pr-tag }}
 
       pr-commit-tag:
         description: "Docker pull URI with pr and sha tag."
-        value: ${{ jobs.build.outputs.pr-commit-tag }}
+        value: ${{ jobs.build-pr-container.outputs.pr-commit-tag }}
 
 jobs:
-  build:
+  build-pr-container:
     runs-on: [ self-hosted, linux, x64 ]
 
     outputs:

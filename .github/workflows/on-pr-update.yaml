@@ -40,8 +40,8 @@ jobs:
           - './.github/workflows/on-pr-update.yaml'
           - './.github/workflows/slack-pr-thread.yaml'
           - './.github/workflows/changes.yaml'
-          - './.github/workflows/build-pr-container.yaml'
-          - './.github/workflows/test-container.yaml'
+          - './.github/workflows/build-pr-chart.yaml'
+          - './.github/workflows/test-chart.yaml'
           - './charts/helloworld/**'
     secrets:
       slack-token: ${{ secrets.SLACK_TOKEN }}

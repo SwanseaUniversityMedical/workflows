@@ -97,15 +97,15 @@ on:
 
       digest:
         description: "Docker pull URI with digest."
-        value: ${{ jobs.build-pr-chart.outputs.digest }}
+        value: ${{ jobs.build-release-chart.outputs.digest }}
 
       pr-tag:
         description: "Docker pull URI with pr tag."
-        value: ${{ jobs.build-pr-chart.outputs.pr-tag }}
+        value: ${{ jobs.build-release-chart.outputs.pr-tag }}
 
       pr-commit-tag:
         description: "Docker pull URI with pr and sha tag."
-        value: ${{ jobs.build-pr-chart.outputs.pr-commit-tag }}
+        value: ${{ jobs.build-release-chart.outputs.pr-commit-tag }}
 
 jobs:
   build-release-chart:

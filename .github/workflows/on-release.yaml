@@ -32,7 +32,7 @@ jobs:
           - './.github/workflows/build-release-container.yaml'
           - './.github/workflows/test-container.yaml'
           - './.github/workflows/release-container.yaml'
-          - './tests/container/**'
+          - './tests/container/whalesay/**'
     secrets:
       slack-token: ${{ secrets.SLACK_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -71,7 +71,7 @@ jobs:
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
       command: |
-        docker build -t $IMAGE -f tests/container/Dockerfile tests/container
+        docker build -t $IMAGE -f tests/container/whalesay/Dockerfile tests/container/whalesay
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}

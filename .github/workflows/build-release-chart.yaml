@@ -112,9 +112,8 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     outputs:
-      digest: ${{ env.PR_COMMIT_TAG }}
-      pr-tag: ${{ env.PR_TAG }}
-      pr-commit-tag: ${{ env.PR_COMMIT_TAG }}
+      digest: ${{ env.RC_TAG }}
+      rc-tag: ${{ env.RC_TAG }}
 
     steps:
       - name: update slack thread

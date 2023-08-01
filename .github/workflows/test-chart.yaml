@@ -127,12 +127,12 @@ jobs:
 
       - name: pull charts
         run: |
-          helm pull remote/${{ secrets.chart-registry-repo }} --version ${{ secrets.chart-registry-digest }}
+          helm pull remote/${{ inputs.chart-registry-repo }} --version ${{ inputs.chart-registry-digest }}
           ls -la
 
       - name: lint chart
         run: |
-          helm lint $(echo ${{ secrets.chart-registry-repo }}-*.tgz)
+          helm lint $(echo ${{ inputs.chart-registry-repo }}-*.tgz)
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0

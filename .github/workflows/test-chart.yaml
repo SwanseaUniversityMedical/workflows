@@ -7,6 +7,11 @@ on:
         required: true
         type: string
 
+      command:
+        description: "Command to test the chart named $CHART."
+        required: true
+        type: string
+
       chart-registry:
         description: "URL of the chart registry."
         required: true
@@ -125,14 +130,16 @@ jobs:
         run: |
           helm repo update
 
-      - name: pull charts
+      - name: pull chart
         run: |
           helm pull remote/${{ inputs.chart-registry-repo }} --version ${{ inputs.chart-registry-digest }}
-          ls -la
 
-      - name: lint chart
+      - name: build chart install name
         run: |
-          helm lint $(echo ${{ inputs.chart-registry-repo }}-*.tgz)
+          echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
+
+      - name: test chart
+        run: ${{ inputs.command }}
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0

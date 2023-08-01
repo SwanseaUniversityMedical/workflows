@@ -35,14 +35,14 @@ jobs:
           - './.github/workflows/changes.yaml'
           - './.github/workflows/build-pr-container.yaml'
           - './.github/workflows/test-container.yaml'
-          - './tests/containers/whalesay/**'
+          - './containers/whalesay/**'
         chart-helloworld:
           - './.github/workflows/on-pr-update.yaml'
           - './.github/workflows/slack-pr-thread.yaml'
           - './.github/workflows/changes.yaml'
           - './.github/workflows/build-pr-container.yaml'
           - './.github/workflows/test-container.yaml'
-          - './tests/charts/helloworld/**'
+          - './charts/helloworld/**'
     secrets:
       slack-token: ${{ secrets.SLACK_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -68,7 +68,7 @@ jobs:
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
       command: |
-        docker build -t $IMAGE -f tests/containers/whalesay/Dockerfile tests/containers/whalesay
+        docker build -t $IMAGE -f containers/whalesay/Dockerfile containers/whalesay
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -113,7 +113,7 @@ jobs:
       github-app-id: ${{ vars.APP_ID }}
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
-      chart: tests/charts/helloworld
+      chart: charts/helloworld
     secrets:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -135,6 +135,15 @@ jobs:
       github-app-id: ${{ vars.APP_ID }}
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
+      command: |
+        set -x
+        
+        helm template $CHART --values tests/charts/helloworld/values.yaml \
+          && true
+        
+        helm template $CHART --values tests/charts/helloworld/values-bad-port.yaml \
+          && false
+
     secrets:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

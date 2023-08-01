@@ -8,7 +8,7 @@ on:
         type: string
 
       command:
-        description: "Command to build the container named."
+        description: "Command to test the container named $IMAGE."
         required: true
         type: string
 

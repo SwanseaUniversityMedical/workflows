@@ -141,7 +141,6 @@ jobs:
           private_key: ${{ secrets.github-app-private-key }}
 
       - name: install helm
-        if: steps.chart-changes.outputs.src == 'true'
         uses: azure/setup-helm@v3
         with:
           version: 'latest'

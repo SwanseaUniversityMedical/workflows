@@ -167,6 +167,7 @@ jobs:
     uses: ./.github/workflows/build-release-chart.yaml
     with:
       job-name: chart-helloworld
+      release-version: ${{ fromJSON(needs.version-chart-helloworld.outputs.release).release-version }}
       chart-registry: ${{ vars.HARBOR_REGISTRY }}
       chart-registry-user: ${{ vars.HARBOR_USER }}
       chart-registry-project: ${{ vars.HARBOR_PROJECT }}

@@ -169,18 +169,6 @@ jobs:
         run: |
           helm cm-push ${{ inputs.chart }} --version $RC_TAG --app-version $RC_TAG remote
 
-      - name: comment the chart tags to the pr
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ steps.generate-token.outputs.token }}
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed release candidate chart assets!\n\nhelm repo add --pass-credentials --username \'<user>\' --password \'<token>\' <repo> https://${{ env.CHART_REPO }}\nhelm pull --version ${{ env.RC_TAG }} <repo>/${{ inputs.chart-registry-repo }}\n```\n\n:robot: :wheel_of_dharma: :package: :passenger_ship:\n'
-            })
-
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
         with:

@@ -138,10 +138,10 @@ jobs:
       command: |
         set -x
         
-        helm template $CHART --values tests/charts/helloworld/values.yaml \
+        helm template $CHART --values tests/charts/helloworld/values.yaml 2>&1 \
           && true
         
-        helm template $CHART --values tests/charts/helloworld/values-bad-port.yaml \
+        helm template $CHART --values tests/charts/helloworld/values-bad-port.yaml 2>&1 \
           && false
 
     secrets:

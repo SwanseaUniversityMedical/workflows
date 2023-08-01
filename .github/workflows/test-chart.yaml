@@ -91,6 +91,10 @@ jobs:
           slack-text: |
             ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
+      - name: build chart uri
+        run: |
+          echo "CHART_REPO=${{ inputs.chart-registry }}/chartrepo/${{ inputs.chart-registry-project }}" >> $GITHUB_ENV
+
       - name: clone repo
         uses: actions/checkout@v3
 

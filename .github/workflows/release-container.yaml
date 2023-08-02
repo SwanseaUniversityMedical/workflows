@@ -147,7 +147,7 @@ jobs:
             ]
 
       - name: fail when no release occurred
-        if: toJSON(steps.release.outputs).new-release-published == 'false'
+        if: steps.release.outputs.new-release-published != 'true'
         run: |
           exit 1
             

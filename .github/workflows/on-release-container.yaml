@@ -122,7 +122,6 @@ jobs:
       container-registry-project: ${{ inputs.container-registry-project }}
       container-registry-repo: ${{ inputs.container-registry-repo }}
 
-      github-app-id: ${{ inputs.github-app-id }}
 
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
@@ -135,7 +134,6 @@ jobs:
     secrets:
 
       container-registry-token: ${{ secrets.container-registry-token }}
-      github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
 #
 #  test:

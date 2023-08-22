@@ -37,7 +37,7 @@ on:
         description: "JSON list of regex branch filters."
         default: |
           [
-            ci/create-on-release-chart-using-reusable-workflows
+            'ci/create-on-release-chart-using-reusable-workflows'
           ]
         type: string
 

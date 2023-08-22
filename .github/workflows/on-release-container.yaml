@@ -106,37 +106,38 @@ jobs:
       github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
 
-#  build:
-#    needs:
-#      - # Build the container and push it as :rc-1.0.0
-#      - slack
-#      - version-container-whalesay
-#    if: fromJSON(needs.version-container-whalesay.outputs.release).new-release-published == 'true'
-#    uses: ./.github/workflows/build-release-container.yaml
-#    with:
-#
-#      job-name: ${{ inputs.job-name }}
-#
-#      release-version: ${{ fromJSON(needs.version-container-whalesay.outputs.release).release-version }}
-#      container-registry: ${{ inputs.container-registry }}
-#      container-registry-user: ${{ inputs.container-registry-user }}
-#      container-registry-project: ${{ inputs.container-registry-project }}
-#      container-registry-repo: ${{ inputs.container-registry-repo }}
-#
-#      github-app-id: ${{ inputs.github-app-id }}
-#
-#      slack-channel: ${{ inputs.slack-channel }}
-#      slack-thread: ${{ inputs.slack-thread }}
-#      status-running: ${{ inputs.status-running }}
-#      status-success: ${{ inputs.status-success }}
-#      status-failure: ${{ inputs.status-failure }}
-#
-#      command: ${{ inputs.build-command }}
-#
-#    secrets:
-#
-#      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
-#      slack-token: ${{ secrets.SLACK_TOKEN }}
+  build:
+    # Build the container and push it as :rc-1.0.0
+    needs:
+      - slack
+      - version
+    if: fromJSON(needs.version.outputs.release).new-release-published == 'true'
+    uses: ./.github/workflows/build-release-container.yaml
+    with:
+
+      job-name: ${{ inputs.job-name }}
+
+      release-version: ${{ fromJSON(needs.version.release).release-version }}
+      container-registry: ${{ inputs.container-registry }}
+      container-registry-user: ${{ inputs.container-registry-user }}
+      container-registry-project: ${{ inputs.container-registry-project }}
+      container-registry-repo: ${{ inputs.container-registry-repo }}
+
+      github-app-id: ${{ inputs.github-app-id }}
+
+      slack-channel: ${{ inputs.slack-channel }}
+      slack-thread: ${{ inputs.slack-thread }}
+      status-running: ${{ inputs.status-running }}
+      status-success: ${{ inputs.status-success }}
+      status-failure: ${{ inputs.status-failure }}
+
+      command: ${{ inputs.build-command }}
+
+    secrets:
+
+      container-registry-token: ${{ secrets.container-registry-token }}
+      github-app-private-key: ${{ secrets.github-app-private-key }}
+      slack-token: ${{ secrets.slack-token }}
 #
 #  test:
 #    # Test the container

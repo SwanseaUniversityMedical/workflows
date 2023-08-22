@@ -101,7 +101,7 @@ jobs:
       release-tag-format: '${{ inputs.container-registry-repo }}-${version}'
       github-app-id: ${{ vars.APP_ID }}
       slack-channel: ${{ vars.SLACK_CHANNEL }}
-      slack-thread: ${{ needs.slack.outputs.thread }}
+      slack-thread: ${{ vars.SLACK_THREAD }}
     secrets:
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
       slack-token: ${{ secrets.SLACK_TOKEN }}

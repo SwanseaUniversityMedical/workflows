@@ -95,6 +95,7 @@ jobs:
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
   test-container-whalesay:
     # Test the whalesay container

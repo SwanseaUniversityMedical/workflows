@@ -97,12 +97,18 @@ jobs:
     # Determine if a release should happen and what its version would be
     uses: ./.github/workflows/version.yaml
     with:
+
       job-name: ${{ inputs.job-name }}
+
       release-tag-format: '${{ inputs.container-registry-repo }}-${version}'
+
       github-app-id: ${{ inputs.github-app-id }}
+
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
+
     secrets:
+
       github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
 
@@ -164,25 +170,30 @@ jobs:
   release-container:
     # Release the container re-tagging it as :1.0.0
     needs:
-
       - version
       - build
       - test
     uses: ./.github/workflows/release-container.yaml
     with:
+
       job-name: ${{ inputs.job-name }}
+
       release-rules: ${{ needs.version.outputs.release-rules }}
       release-branches: ${{ needs.version.outputs.release-branches }}
       release-tag-format: ${{ needs.version.outputs.release-tag-format }}
+
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-digest: ${{ needs.build.outputs.digest }}
       container-registry-project: ${{ inputs.container-registry-project }}
       container-registry-repo: ${{ inputs.container-registry-repo }}
+
       github-app-id: ${{ inputs.github-app-id }}
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
+
     secrets:
+
       github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
       container-registry-token: ${{ secrets.container-registry-token }}

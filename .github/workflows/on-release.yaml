@@ -186,7 +186,6 @@ jobs:
       - version-chart-helloworld
       - build-chart-helloworld
       - test-chart-helloworld
-      - bump-versions
     uses: ./.github/workflows/slack-release-thread.yaml
     if: always()
     with:

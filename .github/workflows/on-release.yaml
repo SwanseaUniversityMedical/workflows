@@ -76,7 +76,8 @@ jobs:
     # Build the whalesay container and push it as :rc-1.0.0
     needs:
       - slack
-    if: fromJSON(needs.version-container-whalesay.outputs.release).new-release-published == 'true'
+      - changes
+    if: fromJSON(needs.changes.outputs.changes).container-whalesay == 'true'
     uses: ./.github/workflows/on-release-container.yaml
     with:
       job-name: container-whalesay

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - ci/create-on-release-chart-using-reusable-workflows
 
 jobs:
 

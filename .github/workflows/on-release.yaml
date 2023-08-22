@@ -97,24 +97,24 @@ jobs:
       slack-token: ${{ secrets.SLACK_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-  test-container-whalesay:
-    # Test the whalesay container
-    needs:
-      - slack
-      - container-whalesay
-    uses: ./.github/workflows/test-container.yaml
-    with:
-      job-name: container-whalesay
-      container-registry: ${{ vars.HARBOR_REGISTRY }}
-      container-registry-user: ${{ vars.HARBOR_USER }}
-      container-registry-digest: ${{ needs.build-container-whalesay.outputs.digest }}
-      slack-channel: ${{ vars.SLACK_CHANNEL }}
-      slack-thread: ${{ needs.slack.outputs.thread }}
-      command: |
-        docker run $IMAGE cowsay boo
-    secrets:
-      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
-      slack-token: ${{ secrets.SLACK_TOKEN }}
+#  test-container-whalesay:
+#    # Test the whalesay container
+#    needs:
+#      - slack
+#      - container-whalesay
+#    uses: ./.github/workflows/test-container.yaml
+#    with:
+#      job-name: container-whalesay
+#      container-registry: ${{ vars.HARBOR_REGISTRY }}
+#      container-registry-user: ${{ vars.HARBOR_USER }}
+#      container-registry-digest: ${{ needs.build-container-whalesay.outputs.digest }}
+#      slack-channel: ${{ vars.SLACK_CHANNEL }}
+#      slack-thread: ${{ needs.slack.outputs.thread }}
+#      command: |
+#        docker run $IMAGE cowsay boo
+#    secrets:
+#      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
+#      slack-token: ${{ secrets.SLACK_TOKEN }}
       
 #  release-container-whalesay:
 #    # Release the whalesay container re-tagging it as :1.0.0
@@ -245,7 +245,7 @@ jobs:
       - changes
       #- version-container-whalesay
       - container-whalesay
-      - test-container-whalesay
+      #- test-container-whalesay
       #- release-container-whalesay
       - version-chart-helloworld
       - build-chart-helloworld
@@ -265,7 +265,7 @@ jobs:
       - changes
       #- version-container-whalesay
       - container-whalesay
-      - test-container-whalesay
+      #- test-container-whalesay
       #- release-container-whalesay
       - version-chart-helloworld
       - build-chart-helloworld

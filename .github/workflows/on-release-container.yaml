@@ -135,28 +135,28 @@ jobs:
 
       container-registry-token: ${{ secrets.container-registry-token }}
       slack-token: ${{ secrets.slack-token }}
-#
-#  test:
-#    # Test the container
-#    needs: build
-#    uses: ./.github/workflows/test-container.yaml
-#    with:
-#
-#      job-name: ${{ inputs.job-name }}
-#
-#      container-registry: ${{ inputs.container-registry }}
-#      container-registry-user: ${{ inputs.container-registry-user }}
-#      container-registry-digest: ${{ needs.build.outputs.digest }}
-#
-#      slack-channel: ${{ inputs.slack-channel }}
-#      slack-thread: ${{ inputs.slack-thread }}
-#      status-running: ${{ inputs.status-running }}
-#      status-success: ${{ inputs.status-success }}
-#      status-failure: ${{ inputs.status-failure }}
-#
-#      command: ${{ inputs.test-command }}
-#
-#    secrets:
-#
-#      container-registry-token: ${{ secrets.container-registry-token }}
-#      slack-token: ${{ secrets.slack-token }}
+
+  test:
+    # Test the container
+    needs: build
+    uses: ./.github/workflows/test-container.yaml
+    with:
+
+      job-name: ${{ inputs.job-name }}
+
+      container-registry: ${{ inputs.container-registry }}
+      container-registry-user: ${{ inputs.container-registry-user }}
+      container-registry-digest: ${{ needs.build.outputs.digest }}
+
+      slack-channel: ${{ inputs.slack-channel }}
+      slack-thread: ${{ inputs.slack-thread }}
+      status-running: ${{ inputs.status-running }}
+      status-success: ${{ inputs.status-success }}
+      status-failure: ${{ inputs.status-failure }}
+
+      command: ${{ inputs.test-command }}
+
+    secrets:
+
+      container-registry-token: ${{ secrets.container-registry-token }}
+      slack-token: ${{ secrets.slack-token }}

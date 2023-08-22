@@ -109,7 +109,6 @@ jobs:
   build:
     # Build the container and push it as :rc-1.0.0
     needs:
-      - slack
       - version
     if: fromJSON(needs.version.outputs.release).new-release-published == 'true'
     uses: ./.github/workflows/build-release-container.yaml

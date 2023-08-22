@@ -116,7 +116,7 @@ jobs:
 
       job-name: ${{ inputs.job-name }}
 
-      release-version: ${{ fromJSON(needs.version.release).release-version }}
+      release-version: ${{ fromJSON(needs.version.outputs.release).release-version }}
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-project: ${{ inputs.container-registry-project }}

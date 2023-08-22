@@ -87,13 +87,10 @@ on:
         description: "Docker pull URI with digest."
         value: ${{ jobs.build.outputs.digest }}
 
-      pr-tag:
-        description: "Docker pull URI with pr tag."
-        value: ${{ jobs.build.outputs.pr-tag }}
+      rc-tag:
+        description: "Docker pull URI with rc tag."
+        value: ${{ jobs.build.outputs.rc-tag }}
 
-      pr-commit-tag:
-        description: "Docker pull URI with pr and sha tag."
-        value: ${{ jobs.build.outputs.pr-commit-tag }}
 
 jobs:
   version:

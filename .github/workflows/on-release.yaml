@@ -3,7 +3,6 @@ name: Release
 on:
   push:
     branches:
-      - ci/create-on-release-container-using-reusable-workflows
       - main
 
 jobs:

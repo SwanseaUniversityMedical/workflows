@@ -55,24 +55,24 @@ jobs:
   # Container Whalesay Tasks
   ######################################################################################################################
 
-  version-container-whalesay:
-    # Determine if a release should happen and what its version would be
-    needs:
-      - slack
-      - changes
-    if: fromJSON(needs.changes.outputs.changes).container-whalesay == 'true'
-    uses: ./.github/workflows/version.yaml
-    with:
-      job-name: container-whalesay
-      release-tag-format: 'whalesay-${version}'
-      github-app-id: ${{ vars.APP_ID }}
-      slack-channel: ${{ vars.SLACK_CHANNEL }}
-      slack-thread: ${{ needs.slack.outputs.thread }}
-    secrets:
-      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
-      slack-token: ${{ secrets.SLACK_TOKEN }}
+#  version-container-whalesay:
+#    # Determine if a release should happen and what its version would be
+#    needs:
+#      - slack
+#      - changes
+#    if: fromJSON(needs.changes.outputs.changes).container-whalesay == 'true'
+#    uses: ./.github/workflows/version.yaml
+#    with:
+#      job-name: container-whalesay
+#      release-tag-format: 'whalesay-${version}'
+#      github-app-id: ${{ vars.APP_ID }}
+#      slack-channel: ${{ vars.SLACK_CHANNEL }}
+#      slack-thread: ${{ needs.slack.outputs.thread }}
+#    secrets:
+#      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+#      slack-token: ${{ secrets.SLACK_TOKEN }}
 
-  build-container-whalesay:
+  container-whalesay:
     # Build the whalesay container and push it as :rc-1.0.0
     needs:
       - slack
@@ -243,8 +243,8 @@ jobs:
     needs:
       - slack
       - changes
-      - version-container-whalesay
-      - build-container-whalesay
+      #- version-container-whalesay
+      - container-whalesay
       - test-container-whalesay
       #- release-container-whalesay
       - version-chart-helloworld
@@ -263,8 +263,8 @@ jobs:
     needs:
       - slack
       - changes
-      - version-container-whalesay
-      - build-container-whalesay
+      #- version-container-whalesay
+      - container-whalesay
       - test-container-whalesay
       #- release-container-whalesay
       - version-chart-helloworld

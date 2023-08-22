@@ -81,7 +81,6 @@ jobs:
     uses: ./.github/workflows/on-release-container.yaml
     with:
       job-name: container-whalesay
-      release-version: ${{ fromJSON(needs.version-container-whalesay.outputs.release).release-version }}
       container-registry: ${{ vars.HARBOR_REGISTRY }}
       github-app-id: ${{ vars.APP_ID }}
       container-registry-user: ${{ vars.HARBOR_USER }}

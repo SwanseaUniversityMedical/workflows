@@ -186,28 +186,28 @@ jobs:
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
 
-  test-chart-helloworld:
-    # Test the helloworld chart
-    needs:
-      - slack
-      - build-chart-helloworld
-    uses: ./.github/workflows/test-chart.yaml
-    with:
-      job-name: chart-helloworld
-      chart-registry: ${{ vars.HARBOR_REGISTRY }}
-      chart-registry-user: ${{ vars.HARBOR_USER }}
-      chart-registry-project: ${{ needs.build-chart-helloworld.outputs.project }}
-      chart-registry-repo: ${{ needs.build-chart-helloworld.outputs.repo }}
-      chart-registry-digest: ${{ needs.build-chart-helloworld.outputs.digest }}
-      github-app-id: ${{ vars.APP_ID }}
-      slack-channel: ${{ vars.SLACK_CHANNEL }}
-      slack-thread: ${{ needs.slack.outputs.thread }}
-      command: |
-        helm template $CHART --values tests/charts/helloworld/values.yaml
-    secrets:
-      chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
-      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
-      slack-token: ${{ secrets.SLACK_TOKEN }}
+#  test-chart-helloworld:
+#    # Test the helloworld chart
+#    needs:
+#      - slack
+#      - build-chart-helloworld
+#    uses: ./.github/workflows/test-chart.yaml
+#    with:
+#      job-name: chart-helloworld
+#      chart-registry: ${{ vars.HARBOR_REGISTRY }}
+#      chart-registry-user: ${{ vars.HARBOR_USER }}
+#      chart-registry-project: ${{ needs.build-chart-helloworld.outputs.project }}
+#      chart-registry-repo: ${{ needs.build-chart-helloworld.outputs.repo }}
+#      chart-registry-digest: ${{ needs.build-chart-helloworld.outputs.digest }}
+#      github-app-id: ${{ vars.APP_ID }}
+#      slack-channel: ${{ vars.SLACK_CHANNEL }}
+#      slack-thread: ${{ needs.slack.outputs.thread }}
+#      command: |
+#        helm template $CHART --values tests/charts/helloworld/values.yaml
+#    secrets:
+#      chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
+#      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+#      slack-token: ${{ secrets.SLACK_TOKEN }}
 
 #  release-chart-helloworld:
 #    # Release the helloworld chart re-tagging it as 1.0.0

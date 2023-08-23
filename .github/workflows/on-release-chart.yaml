@@ -1,0 +1,176 @@
+on:
+  workflow_call:
+    inputs:
+
+      job-name:
+        description: "Job name to display on Slack messages."
+        required: true
+        type: string
+
+      chart:
+        description: "Path to the helm chart."
+        required: true
+        type: string
+
+      test-command:
+        description: "Command to test the chart named $CHART."
+        required: true
+        type: string
+
+      chart-registry:
+        description: "URL of the chart registry."
+        required: true
+        type: string
+
+      chart-registry-user:
+        description: "Username for the chart registry."
+        required: true
+        type: string
+
+      chart-registry-project:
+        description: "Project within chart registry."
+        required: true
+        type: string
+
+      chart-registry-repo:
+        description: "Repo within chart registry project."
+        required: true
+        type: string
+
+      slack-channel:
+        description: "ID of the Slack channel to post updates to."
+        required: true
+        type: string
+
+      slack-thread:
+        description: "Slack thread to reply to."
+        required: true
+        type: string
+
+      status-running:
+        description: "Running status for the message header."
+        default: ':hammer_and_wrench:'
+        type: string
+
+      status-success:
+        description: "Success status for the message header."
+        default: ':white_check_mark:'
+        type: string
+
+      status-failure:
+        description: "Failure status for the message header."
+        default: ':no_entry:'
+        type: string
+
+      github-app-id:
+        description: "App ID for Github."
+        required: true
+        type: string
+
+    secrets:
+
+      slack-token:
+        description: "Authentication token for Slack."
+        required: true
+
+      chart-registry-token:
+        description: "Authentication token for the chart registry."
+        required: true
+
+      github-app-private-key:
+        description: "App private key for Github."
+        required: true
+
+    outputs:
+
+      digest:
+        description: "Chart version with digest."
+        value: ${{ jobs.build.outputs.digest }}
+
+      pr-tag:
+        description: "Chart with pr tag."
+        value: ${{ jobs.build.outputs.pr-tag }}
+
+      pr-commit-tag:
+        description: "Chart with pr and sha tag."
+        value: ${{ jobs.build.outputs.pr-commit-tag }}
+
+jobs:
+
+  version:
+    # Determine if a release should happen and what its version would be
+    uses: ./.github/workflows/version.yaml
+    with:
+
+      job-name: ${{ inputs.job-name }}
+
+      release-tag-format: '${{ inputs.container-registry-repo }}-${version}'
+
+      github-app-id: ${{ inputs.github-app-id }}
+
+      slack-channel: ${{ inputs.slack-channel }}
+      slack-thread: ${{ inputs.slack-thread }}
+
+    secrets:
+
+      github-app-private-key: ${{ secrets.github-app-private-key }}
+      slack-token: ${{ secrets.slack-token }}
+
+
+#  build:
+#    # Build the chart and push it
+#    uses: ./.github/workflows/build-pr-chart.yaml
+#    with:
+#
+#      job-name: ${{ inputs.job-name }}
+#
+#      chart-registry: ${{ inputs.chart-registry }}
+#      chart-registry-user: ${{ inputs.chart-registry-user }}
+#      chart-registry-project: ${{ inputs.chart-registry-project }}
+#      chart-registry-repo: ${{ inputs.chart-registry-repo }}
+#
+#      github-app-id: ${{ inputs.github-app-id }}
+#
+#      slack-channel: ${{ inputs.slack-channel }}
+#      slack-thread: ${{ inputs.slack-thread }}
+#      status-running: ${{ inputs.status-running }}
+#      status-success: ${{ inputs.status-success }}
+#      status-failure: ${{ inputs.status-failure }}
+#
+#      chart: ${{ inputs.chart }}
+#
+#    secrets:
+#
+#      chart-registry-token: ${{ secrets.chart-registry-token }}
+#      github-app-private-key: ${{ secrets.github-app-private-key }}
+#      slack-token: ${{ secrets.slack-token }}
+#
+#  test:
+#    # Test the chart
+#    needs: build
+#    uses: ./.github/workflows/test-chart.yaml
+#    with:
+#
+#      job-name: ${{ inputs.job-name }}
+#
+#      chart-registry: ${{ inputs.chart-registry }}
+#      chart-registry-user: ${{ inputs.chart-registry-user }}
+#      chart-registry-project: ${{ inputs.chart-registry-project }}
+#      chart-registry-repo: ${{ inputs.chart-registry-repo }}
+#      chart-registry-digest: ${{ needs.build.outputs.digest }}
+#
+#      github-app-id: ${{ inputs.github-app-id }}
+#
+#      slack-channel: ${{ inputs.slack-channel }}
+#      slack-thread: ${{ inputs.slack-thread }}
+#      status-running: ${{ inputs.status-running }}
+#      status-success: ${{ inputs.status-success }}
+#      status-failure: ${{ inputs.status-failure }}
+#
+#      command: ${{ inputs.test-command }}
+#
+#    secrets:
+#
+#      chart-registry-token: ${{ secrets.chart-registry-token }}
+#      github-app-private-key: ${{ secrets.github-app-private-key }}
+#      slack-token: ${{ secrets.slack-token }}

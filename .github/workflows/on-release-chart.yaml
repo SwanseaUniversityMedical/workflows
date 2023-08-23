@@ -117,33 +117,38 @@ jobs:
       slack-token: ${{ secrets.slack-token }}
 
 
-#  build:
-#    # Build the chart and push it
-#    uses: ./.github/workflows/build-pr-chart.yaml
-#    with:
-#
-#      job-name: ${{ inputs.job-name }}
-#
-#      chart-registry: ${{ inputs.chart-registry }}
-#      chart-registry-user: ${{ inputs.chart-registry-user }}
-#      chart-registry-project: ${{ inputs.chart-registry-project }}
-#      chart-registry-repo: ${{ inputs.chart-registry-repo }}
-#
-#      github-app-id: ${{ inputs.github-app-id }}
-#
-#      slack-channel: ${{ inputs.slack-channel }}
-#      slack-thread: ${{ inputs.slack-thread }}
-#      status-running: ${{ inputs.status-running }}
-#      status-success: ${{ inputs.status-success }}
-#      status-failure: ${{ inputs.status-failure }}
-#
-#      chart: ${{ inputs.chart }}
-#
-#    secrets:
-#
-#      chart-registry-token: ${{ secrets.chart-registry-token }}
-#      github-app-private-key: ${{ secrets.github-app-private-key }}
-#      slack-token: ${{ secrets.slack-token }}
+  build:
+    # Build the chart and push it
+    needs:
+      - version
+    if: fromJSON(needs.version.outputs.release).new-release-published == 'true'
+    uses: ./.github/workflows/build-release-chart.yaml
+    with:
+
+      job-name: ${{ inputs.job-name }}
+
+      release-version: ${{ fromJSON(needs.version.outputs.release).release-version }}
+
+      chart-registry: ${{ inputs.chart-registry }}
+      chart-registry-user: ${{ inputs.chart-registry-user }}
+      chart-registry-project: ${{ inputs.chart-registry-project }}
+      chart-registry-repo: ${{ inputs.chart-registry-repo }}
+
+      github-app-id: ${{ inputs.github-app-id }}
+
+      slack-channel: ${{ inputs.slack-channel }}
+      slack-thread: ${{ inputs.slack-thread }}
+      status-running: ${{ inputs.status-running }}
+      status-success: ${{ inputs.status-success }}
+      status-failure: ${{ inputs.status-failure }}
+
+      chart: ${{ inputs.chart }}
+
+    secrets:
+
+      chart-registry-token: ${{ secrets.chart-registry-token }}
+      github-app-private-key: ${{ secrets.github-app-private-key }}
+      slack-token: ${{ secrets.slack-token }}
 #
 #  test:
 #    # Test the chart

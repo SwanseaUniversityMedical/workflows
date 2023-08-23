@@ -143,34 +143,15 @@ jobs:
   # Chart HelloWorld Tasks
   ######################################################################################################################
 
-#  version-chart-helloworld:
-#    # Determine if a release should happen and what its version would be
-#    needs:
-#      - slack
-#      - changes
-#    if: fromJSON(needs.changes.outputs.changes).chart-helloworld == 'true'
-#    uses: ./.github/workflows/version.yaml
-#    with:
-#      job-name: chart-helloworld
-#      release-tag-format: 'helloworld-${version}'
-#      github-app-id: ${{ vars.APP_ID }}
-#      slack-channel: ${{ vars.SLACK_CHANNEL }}
-#      slack-thread: ${{ needs.slack.outputs.thread }}
-#    secrets:
-#      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
-#      slack-token: ${{ secrets.SLACK_TOKEN }}
-
   build-chart-helloworld:
     # Build the helloworld chart and push it as x.y.z-rc
     needs:
       - slack
       - changes
-      #- version-chart-helloworld
     if: fromJSON(needs.changes.outputs.changes).chart-helloworld == 'true'
     uses: ./.github/workflows/on-release-chart.yaml
     with:
       job-name: chart-helloworld
-      #release-version: ${{ fromJSON(needs.version-chart-helloworld.outputs.release).release-version }}
       chart-registry: ${{ vars.HARBOR_REGISTRY }}
       chart-registry-user: ${{ vars.HARBOR_USER }}
       chart-registry-project: ${{ vars.HARBOR_PROJECT }}
@@ -186,55 +167,6 @@ jobs:
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
 
-#  test-chart-helloworld:
-#    # Test the helloworld chart
-#    needs:
-#      - slack
-#      - build-chart-helloworld
-#    uses: ./.github/workflows/test-chart.yaml
-#    with:
-#      job-name: chart-helloworld
-#      chart-registry: ${{ vars.HARBOR_REGISTRY }}
-#      chart-registry-user: ${{ vars.HARBOR_USER }}
-#      chart-registry-project: ${{ needs.build-chart-helloworld.outputs.project }}
-#      chart-registry-repo: ${{ needs.build-chart-helloworld.outputs.repo }}
-#      chart-registry-digest: ${{ needs.build-chart-helloworld.outputs.digest }}
-#      github-app-id: ${{ vars.APP_ID }}
-#      slack-channel: ${{ vars.SLACK_CHANNEL }}
-#      slack-thread: ${{ needs.slack.outputs.thread }}
-#      command: |
-#        helm template $CHART --values tests/charts/helloworld/values.yaml
-#    secrets:
-#      chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
-#      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
-#      slack-token: ${{ secrets.SLACK_TOKEN }}
-
-#  release-chart-helloworld:
-#    # Release the helloworld chart re-tagging it as 1.0.0
-#    needs:
-#      - slack
-#      - version-chart-helloworld
-#      - build-chart-helloworld
-#      - test-chart-helloworld
-#    uses: ./.github/workflows/release-chart.yaml
-#    with:
-#      job-name: chart-helloworld
-#      release-rules: ${{ needs.version-chart-helloworld.outputs.release-rules }}
-#      release-branches: ${{ needs.version-chart-helloworld.outputs.release-branches }}
-#      release-tag-format: ${{ needs.version-chart-helloworld.outputs.release-tag-format }}
-#      chart-registry: ${{ vars.HARBOR_REGISTRY }}
-#      chart-registry-user: ${{ vars.HARBOR_USER }}
-#      chart-registry-project: ${{ needs.build-chart-helloworld.outputs.project }}
-#      chart-registry-repo: ${{ needs.build-chart-helloworld.outputs.repo }}
-#      chart-registry-digest: ${{ needs.build-chart-helloworld.outputs.digest }}
-#      github-app-id: ${{ vars.APP_ID }}
-#      slack-channel: ${{ vars.SLACK_CHANNEL }}
-#      slack-thread: ${{ needs.slack.outputs.thread }}
-#    secrets:
-#      chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
-#      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
-#      slack-token: ${{ secrets.SLACK_TOKEN }}
-
   ######################################################################################################################
   # Post-Tasks
   ######################################################################################################################
@@ -249,11 +181,7 @@ jobs:
       - version-container-whalesay
       - build-container-whalesay
       - test-container-whalesay
-      #- release-container-whalesay
-      #- version-chart-helloworld
       - build-chart-helloworld
-      #- test-chart-helloworld
-     # - release-chart-helloworld
 
     uses: ./.github/workflows/slack-release-thread.yaml
     if: always()

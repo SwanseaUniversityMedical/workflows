@@ -164,7 +164,9 @@ jobs:
     # Build the helloworld chart and push it as x.y.z-rc
     needs:
       - slack
+      - changes
       #- version-chart-helloworld
+    if: fromJSON(needs.changes.outputs.changes).chart-helloworld == 'true'
     uses: ./.github/workflows/on-release-chart.yaml
     with:
       job-name: chart-helloworld

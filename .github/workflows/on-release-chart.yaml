@@ -104,7 +104,7 @@ jobs:
 
       job-name: ${{ inputs.job-name }}
 
-      release-tag-format: '${{ inputs.container-registry-repo }}-${version}'
+      release-tag-format: '${{ inputs.chart-registry-repo }}-${version}'
 
       github-app-id: ${{ inputs.github-app-id }}
 

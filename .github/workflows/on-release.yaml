@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - ci/create-on-release-chart-using-reusable-workflows
 
 jobs:
 
@@ -113,45 +112,62 @@ jobs:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
       
-#  release-container-whalesay:
-#    # Release the whalesay container re-tagging it as :1.0.0
-#    needs:
-#      - slack
-#      - version-container-whalesay
-#      - build-container-whalesay
-#      - test-container-whalesay
-#    uses: ./.github/workflows/release-container.yaml
-#    with:
-#      job-name: container-whalesay
-#      release-rules: ${{ needs.version-container-whalesay.outputs.release-rules }}
-#      release-branches: ${{ needs.version-container-whalesay.outputs.release-branches }}
-#      release-tag-format: ${{ needs.version-container-whalesay.outputs.release-tag-format }}
-#      container-registry: ${{ vars.HARBOR_REGISTRY }}
-#      container-registry-user: ${{ vars.HARBOR_USER }}
-#      container-registry-project: ${{ needs.build-container-whalesay.outputs.project }}
-#      container-registry-repo: ${{ needs.build-container-whalesay.outputs.repo }}
-#      container-registry-digest: ${{ needs.build-container-whalesay.outputs.digest }}
-#      github-app-id: ${{ vars.APP_ID }}
-#      slack-channel: ${{ vars.SLACK_CHANNEL }}
-#      slack-thread: ${{ needs.slack.outputs.thread }}
-#    secrets:
-#      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
-#      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
-#      slack-token: ${{ secrets.SLACK_TOKEN }}
+  release-container-whalesay:
+    # Release the whalesay container re-tagging it as :1.0.0
+    needs:
+      - slack
+      - version-container-whalesay
+      - build-container-whalesay
+      - test-container-whalesay
+    uses: ./.github/workflows/release-container.yaml
+    with:
+      job-name: container-whalesay
+      release-rules: ${{ needs.version-container-whalesay.outputs.release-rules }}
+      release-branches: ${{ needs.version-container-whalesay.outputs.release-branches }}
+      release-tag-format: ${{ needs.version-container-whalesay.outputs.release-tag-format }}
+      container-registry: ${{ vars.HARBOR_REGISTRY }}
+      container-registry-user: ${{ vars.HARBOR_USER }}
+      container-registry-project: ${{ needs.build-container-whalesay.outputs.project }}
+      container-registry-repo: ${{ needs.build-container-whalesay.outputs.repo }}
+      container-registry-digest: ${{ needs.build-container-whalesay.outputs.digest }}
+      github-app-id: ${{ vars.APP_ID }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
+    secrets:
+      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      slack-token: ${{ secrets.SLACK_TOKEN }}
 
   ######################################################################################################################
   # Chart HelloWorld Tasks
   ######################################################################################################################
 
-  build-chart-helloworld:
-    # Build the helloworld chart and push it as x.y.z-rc
+  version-chart-helloworld:
+    # Determine if a release should happen and what its version would be
     needs:
       - slack
       - changes
     if: fromJSON(needs.changes.outputs.changes).chart-helloworld == 'true'
-    uses: ./.github/workflows/on-release-chart.yaml
+    uses: ./.github/workflows/version.yaml
     with:
       job-name: chart-helloworld
+      release-tag-format: 'helloworld-${version}'
+      github-app-id: ${{ vars.APP_ID }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
+    secrets:
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+
+  build-chart-helloworld:
+    # Build the helloworld chart and push it as x.y.z-rc
+    needs:
+      - slack
+      - version-chart-helloworld
+    uses: ./.github/workflows/build-release-chart.yaml
+    with:
+      job-name: chart-helloworld
+      release-version: ${{ fromJSON(needs.version-chart-helloworld.outputs.release).release-version }}
       chart-registry: ${{ vars.HARBOR_REGISTRY }}
       chart-registry-user: ${{ vars.HARBOR_USER }}
       chart-registry-project: ${{ vars.HARBOR_PROJECT }}
@@ -160,8 +176,55 @@ jobs:
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
       chart: charts/helloworld
-      test-command: |
-        helm template $CHART --values charts/helloworld/values.yaml
+    secrets:
+      chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+
+  test-chart-helloworld:
+    # Test the helloworld chart
+    needs:
+      - slack
+      - build-chart-helloworld
+    uses: ./.github/workflows/test-chart.yaml
+    with:
+      job-name: chart-helloworld
+      chart-registry: ${{ vars.HARBOR_REGISTRY }}
+      chart-registry-user: ${{ vars.HARBOR_USER }}
+      chart-registry-project: ${{ needs.build-chart-helloworld.outputs.project }}
+      chart-registry-repo: ${{ needs.build-chart-helloworld.outputs.repo }}
+      chart-registry-digest: ${{ needs.build-chart-helloworld.outputs.digest }}
+      github-app-id: ${{ vars.APP_ID }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
+      command: |
+        helm template $CHART --values tests/charts/helloworld/values.yaml
+    secrets:
+      chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
+      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      slack-token: ${{ secrets.SLACK_TOKEN }}
+
+  release-chart-helloworld:
+    # Release the helloworld chart re-tagging it as 1.0.0
+    needs:
+      - slack
+      - version-chart-helloworld
+      - build-chart-helloworld
+      - test-chart-helloworld
+    uses: ./.github/workflows/release-chart.yaml
+    with:
+      job-name: chart-helloworld
+      release-rules: ${{ needs.version-chart-helloworld.outputs.release-rules }}
+      release-branches: ${{ needs.version-chart-helloworld.outputs.release-branches }}
+      release-tag-format: ${{ needs.version-chart-helloworld.outputs.release-tag-format }}
+      chart-registry: ${{ vars.HARBOR_REGISTRY }}
+      chart-registry-user: ${{ vars.HARBOR_USER }}
+      chart-registry-project: ${{ needs.build-chart-helloworld.outputs.project }}
+      chart-registry-repo: ${{ needs.build-chart-helloworld.outputs.repo }}
+      chart-registry-digest: ${{ needs.build-chart-helloworld.outputs.digest }}
+      github-app-id: ${{ vars.APP_ID }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      slack-thread: ${{ needs.slack.outputs.thread }}
     secrets:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -171,6 +234,24 @@ jobs:
   # Post-Tasks
   ######################################################################################################################
 
+  bump-versions:
+    runs-on: [self-hosted, linux, x64]
+    needs:
+      - slack
+      - changes
+      - version-container-whalesay
+      - build-container-whalesay
+      - test-container-whalesay
+      - release-container-whalesay
+      - version-chart-helloworld
+      - build-chart-helloworld
+      - test-chart-helloworld
+      - release-chart-helloworld
+
+    steps:
+      - name: bump versions
+        run: |
+          echo "bump"
 
   slack-update:
     # Update the original Slack message with the final workflow status
@@ -181,8 +262,12 @@ jobs:
       - version-container-whalesay
       - build-container-whalesay
       - test-container-whalesay
+      - release-container-whalesay
+      - version-chart-helloworld
       - build-chart-helloworld
-
+      - test-chart-helloworld
+      - release-chart-helloworld
+      - bump-versions
     uses: ./.github/workflows/slack-release-thread.yaml
     if: always()
     with:

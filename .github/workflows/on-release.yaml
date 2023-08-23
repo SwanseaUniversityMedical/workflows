@@ -164,11 +164,11 @@ jobs:
     # Build the helloworld chart and push it as x.y.z-rc
     needs:
       - slack
-      - version-chart-helloworld
-    uses: ./.github/workflows/build-release-chart.yaml
+      #- version-chart-helloworld
+    uses: ./.github/workflows/on-release-chart.yaml
     with:
       job-name: chart-helloworld
-      release-version: ${{ fromJSON(needs.version-chart-helloworld.outputs.release).release-version }}
+      #release-version: ${{ fromJSON(needs.version-chart-helloworld.outputs.release).release-version }}
       chart-registry: ${{ vars.HARBOR_REGISTRY }}
       chart-registry-user: ${{ vars.HARBOR_USER }}
       chart-registry-project: ${{ vars.HARBOR_PROJECT }}

@@ -143,22 +143,22 @@ jobs:
   # Chart HelloWorld Tasks
   ######################################################################################################################
 
-  version-chart-helloworld:
-    # Determine if a release should happen and what its version would be
-    needs:
-      - slack
-      - changes
-    if: fromJSON(needs.changes.outputs.changes).chart-helloworld == 'true'
-    uses: ./.github/workflows/version.yaml
-    with:
-      job-name: chart-helloworld
-      release-tag-format: 'helloworld-${version}'
-      github-app-id: ${{ vars.APP_ID }}
-      slack-channel: ${{ vars.SLACK_CHANNEL }}
-      slack-thread: ${{ needs.slack.outputs.thread }}
-    secrets:
-      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
-      slack-token: ${{ secrets.SLACK_TOKEN }}
+#  version-chart-helloworld:
+#    # Determine if a release should happen and what its version would be
+#    needs:
+#      - slack
+#      - changes
+#    if: fromJSON(needs.changes.outputs.changes).chart-helloworld == 'true'
+#    uses: ./.github/workflows/version.yaml
+#    with:
+#      job-name: chart-helloworld
+#      release-tag-format: 'helloworld-${version}'
+#      github-app-id: ${{ vars.APP_ID }}
+#      slack-channel: ${{ vars.SLACK_CHANNEL }}
+#      slack-thread: ${{ needs.slack.outputs.thread }}
+#    secrets:
+#      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+#      slack-token: ${{ secrets.SLACK_TOKEN }}
 
   build-chart-helloworld:
     # Build the helloworld chart and push it as x.y.z-rc
@@ -246,7 +246,7 @@ jobs:
       - build-container-whalesay
       - test-container-whalesay
       #- release-container-whalesay
-      - version-chart-helloworld
+      #- version-chart-helloworld
       - build-chart-helloworld
       - test-chart-helloworld
       #- release-chart-helloworld
@@ -266,7 +266,7 @@ jobs:
       - build-container-whalesay
       - test-container-whalesay
       #- release-container-whalesay
-      - version-chart-helloworld
+      #- version-chart-helloworld
       - build-chart-helloworld
       - test-chart-helloworld
      # - release-chart-helloworld

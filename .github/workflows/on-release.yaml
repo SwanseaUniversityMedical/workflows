@@ -239,24 +239,6 @@ jobs:
   # Post-Tasks
   ######################################################################################################################
 
-  bump-versions:
-    runs-on: [self-hosted, linux, x64]
-    needs:
-      - slack
-      - changes
-      - version-container-whalesay
-      - build-container-whalesay
-      - test-container-whalesay
-      #- release-container-whalesay
-      #- version-chart-helloworld
-      - build-chart-helloworld
-      - test-chart-helloworld
-      #- release-chart-helloworld
-
-    steps:
-      - name: bump versions
-        run: |
-          echo "bump"
 
   slack-update:
     # Update the original Slack message with the final workflow status
@@ -270,9 +252,9 @@ jobs:
       #- release-container-whalesay
       #- version-chart-helloworld
       - build-chart-helloworld
-      - test-chart-helloworld
+      #- test-chart-helloworld
      # - release-chart-helloworld
-      - bump-versions
+
     uses: ./.github/workflows/slack-release-thread.yaml
     if: always()
     with:

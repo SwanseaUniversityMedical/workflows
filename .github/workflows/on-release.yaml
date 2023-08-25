@@ -111,7 +111,7 @@ jobs:
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
-      
+
   release-container-whalesay:
     # Release the whalesay container re-tagging it as :1.0.0
     needs:

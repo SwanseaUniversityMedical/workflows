@@ -83,7 +83,7 @@ jobs:
   # Chart HelloWorld Tasks
   ######################################################################################################################
 
-  build-chart-helloworld:
+  chart-helloworld:
     # Build the helloworld chart and push it as x.y.z-rc
     needs:
       - slack
@@ -118,8 +118,7 @@ jobs:
       - slack
       - changes
       - container-whalesay
-      - version-chart-helloworld
-      - build-chart-helloworld
+      - chart-helloworld
 
     uses: ./.github/workflows/slack-release-thread.yaml
     if: always()

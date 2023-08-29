@@ -31,6 +31,7 @@ jobs:
       filters: |
         container-whalesay:
           - './.github/workflows/on-pr-update.yaml'
+          - './.github/workflows/on-pr-update-container.yaml'
           - './.github/workflows/slack-pr-thread.yaml'
           - './.github/workflows/changes.yaml'
           - './.github/workflows/build-pr-container.yaml'
@@ -38,6 +39,7 @@ jobs:
           - './containers/whalesay/**'
         chart-helloworld:
           - './.github/workflows/on-pr-update.yaml'
+          - './.github/workflows/on-pr-update-chart.yaml'
           - './.github/workflows/slack-pr-thread.yaml'
           - './.github/workflows/changes.yaml'
           - './.github/workflows/build-pr-chart.yaml'

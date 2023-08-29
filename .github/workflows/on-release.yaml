@@ -30,6 +30,7 @@ jobs:
       filters: |
         container-whalesay:
           - './.github/workflows/on-release.yaml'
+          - './.github/workflows/on-release-container.yaml'
           - './.github/workflows/slack-release-thread.yaml'
           - './.github/workflows/changes.yaml'
           - './.github/workflows/version.yaml'
@@ -39,6 +40,7 @@ jobs:
           - './containers/whalesay/**'
         chart-helloworld:
           - './.github/workflows/on-release.yaml'
+          - './.github/workflows/on-release-chart.yaml'
           - './.github/workflows/slack-release-thread.yaml'
           - './.github/workflows/changes.yaml'
           - './.github/workflows/version.yaml'

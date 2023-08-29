@@ -37,6 +37,41 @@ on:
         required: true
         type: string
 
+      release-rules:
+        description: "JSON list of rule dicts for what commit types trigger releases."
+        default: |
+          [
+            {"type": "major", "release": "major"},
+            {"type": "minor", "release": "minor"},
+            {"type": "patch", "release": "patch"},
+            {"type": "no-release", "release": false},
+
+            {"type": "chore", "release": "patch"},
+            {"type": "refactor", "release": "patch"},
+            {"type": "style", "release": "patch"},
+
+            {"type": "docs", "release": false},
+            {"type": "test", "release": false},
+            {"type": "ci", "release": false},
+
+            {"type": "feat", "release": "minor"},
+
+            {"type": "revert", "release": "patch"},
+            {"type": "perf", "release": "patch"},
+            {"type": "fix", "release": "patch"},
+            {"type": "build", "release": "patch"},
+          ]
+        type: string
+
+      release-branches:
+        description: "JSON list of regex branch filters."
+        default: |
+          [
+            '+([0-9])?(.{+([0-9]),x}).x',
+            'main'
+          ]
+        type: string
+
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
@@ -105,6 +140,8 @@ jobs:
       job-name: ${{ inputs.job-name }}
 
       release-tag-format: '${{ inputs.chart-registry-repo }}-${version}'
+      release-rules: ${{ inputs.release-rules }}
+      release-branches: ${{ inputs.release-branches }}
 
       github-app-id: ${{ inputs.github-app-id }}
 

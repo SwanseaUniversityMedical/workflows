@@ -140,7 +140,7 @@ jobs:
             octokit.rest.repos.createRelease({
               owner: ${{ github.actor }},
               repo: ${{ github.event.repository.name }},
-              tag_name: ${{ inputs.release-tag-format }},
+              tag_name: ${{ inputs.release-tag-format }}${{ fromJSON(needs.version.outputs.release).release-version }},
               target_commitish: ${{ github.sha }},
               generate_release_notes: true
             });

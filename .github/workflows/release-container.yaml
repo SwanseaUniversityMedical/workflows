@@ -130,6 +130,11 @@ jobs:
           app_id: ${{ inputs.github-app-id }}
           private_key: ${{ secrets.github-app-private-key }}
 
+      - name: Set up mutex
+        uses: ben-z/gh-action-mutex@v1.0-alpha-7
+        with:
+          branch: release/mutex
+
       - name: release
         uses: actions/github-script@v6
         id: release

@@ -141,8 +141,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         with:
+          retries: 3
           script: |
-            octokit.rest.repos.createRelease({
+            github.rest.repos.createRelease({
               owner: "${{ github.actor }}",
               repo: "${{ github.event.repository.name }}",
               tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",

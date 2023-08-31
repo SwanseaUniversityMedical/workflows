@@ -140,6 +140,8 @@ jobs:
         id: release
         env:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          RELEASE_NOTES: |
+            ${{ fromJSON(inputs.release-info).release-notes }}
         with:
           retries: 3
           script: |
@@ -148,7 +150,7 @@ jobs:
               repo: "${{ github.event.repository.name }}",
               tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
               target_commitish: "${{ github.sha }}",
-              body: "${{ fromJSON(inputs.release-info).release-notes }}"
+              body: process.env.RELEASE_NOTES
             });
             
       - name: build chart uri

@@ -157,7 +157,7 @@ jobs:
 
       - name: create tag
         run: |
-          echo "RELEASE_TAG=${{ steps.release.outputs.release-version }}" >> $GITHUB_ENV 
+          echo "RELEASE_TAG=${{ fromJSON(inputs.release-info).release-version }}" >> $GITHUB_ENV 
 
       - name: install helm
         uses: azure/setup-helm@v3

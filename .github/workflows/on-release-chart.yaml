@@ -229,7 +229,6 @@ jobs:
       - build
       - test
     uses: ./.github/workflows/release-chart.yaml
-    concurrency: ${{ github.head_ref || github.run_id }}
     with:
       job-name: ${{ inputs.job-name }}
       release-rules: ${{ needs.version.outputs.release-rules }}

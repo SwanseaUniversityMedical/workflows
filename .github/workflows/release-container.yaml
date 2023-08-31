@@ -147,7 +147,8 @@ jobs:
               owner: "${{ github.repository_owner }}",
               repo: "${{ github.event.repository.name }}",
               tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
-              target_commitish: "${{ github.sha }}"
+              target_commitish: "${{ github.sha }}",
+              body: "${{ fromJSON(inputs.release-info).release-notes }}"
             });
             
       - name: build image uri

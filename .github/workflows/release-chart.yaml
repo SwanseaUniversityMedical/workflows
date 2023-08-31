@@ -148,7 +148,8 @@ jobs:
               repo: "${{ github.event.repository.name }}",
               tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
               target_commitish: "${{ github.sha }}",
-              generate_release_notes: true
+              generate_release_notes: true,
+              body: "${{ fromJSON(inputs.release-info).release-notes }}"
             });
             
       - name: build chart uri

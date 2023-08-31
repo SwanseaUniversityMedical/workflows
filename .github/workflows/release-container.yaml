@@ -150,11 +150,6 @@ jobs:
               target_commitish: "${{ github.sha }}",
               generate_release_notes: true
             });
-
-      - name: fail when no release occurred
-        if: steps.release.outputs.new-release-published != 'true'
-        run: |
-          exit 1
             
       - name: build image uri
         run: |

@@ -21,6 +21,11 @@ on:
         description: "Semantic-release Github release tag format."
         required: true
         type: string
+
+      release-info:
+        description: "JSON list of release info from dry run."
+        required: true
+        type: string
         
       container-registry:
         description: "URL of the container registry."
@@ -126,25 +131,19 @@ jobs:
           private_key: ${{ secrets.github-app-private-key }}
 
       - name: release
-        uses: docker://ghcr.io/codfish/semantic-release-action:v2
+        uses: actions/github-script@v6
         id: release
         env:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         with:
-          dry_run: false
-          branches: ${{ inputs.release-branches }}
-          tag_format: ${{ inputs.release-tag-format }}
-          plugins: |-
-            [
-              ['@semantic-release/commit-analyzer', {
-                "releaseRules": ${{ inputs.release-rules }},
-              }], 
-              '@semantic-release/release-notes-generator',
-              ['@semantic-release/github', {
-                "successComment": false,
-                "failTitle": false
-              }]
-            ]
+          script: |
+            octokit.rest.repos.createRelease({
+              owner: ${{ github.actor }},
+              repo: ${{ github.event.repository.name }},
+              tag_name: ${{ fromJSON(inputs.release-info).release-git-tag }},
+              target_commitish: ${{ github.sha }},
+              generate_release_notes: true
+            });
 
       - name: fail when no release occurred
         if: steps.release.outputs.new-release-published != 'true'

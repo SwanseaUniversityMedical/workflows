@@ -223,6 +223,7 @@ jobs:
       release-rules: ${{ needs.version.outputs.release-rules }}
       release-branches: ${{ needs.version.outputs.release-branches }}
       release-tag-format: ${{ needs.version.outputs.release-tag-format }}
+      release-info: ${{ needs.version.outputs.release }}
 
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}

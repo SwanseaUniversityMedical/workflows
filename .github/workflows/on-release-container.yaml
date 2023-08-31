@@ -140,7 +140,7 @@ jobs:
 
       job-name: ${{ inputs.job-name }}
 
-      release-tag-format: '${{ inputs.release-tag-format}}-${version}'
+      release-tag-format: '${{ inputs.release-tag-format}}'
       release-rules: ${{ inputs.release-rules }}
       release-branches: ${{ inputs.release-branches }}
 

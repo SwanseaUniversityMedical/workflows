@@ -144,7 +144,7 @@ jobs:
           retries: 3
           script: |
             github.rest.repos.createRelease({
-              owner: "${{ github.actor }}",
+              owner: "${{ github.repository_owner }}",
               repo: "${{ github.event.repository.name }}",
               tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
               target_commitish: "${{ github.sha }}",

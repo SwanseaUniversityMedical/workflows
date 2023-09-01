@@ -150,7 +150,8 @@ jobs:
               repo: "${{ github.event.repository.name }}",
               tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
               target_commitish: "${{ github.sha }}",
-              body: process.env.RELEASE_NOTES
+              body: process.env.RELEASE_NOTES,
+              name: "${{ fromJSON(inputs.release-info).git-tag }}"
             });
             
       - name: build chart uri

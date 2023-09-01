@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feat/utilize-concurrency-to-limit-release-steps-to-run-individually-with-a-concurrency-group
 
 jobs:
 
@@ -88,7 +87,6 @@ jobs:
         docker build -t $IMAGE -f containers/whalesay/Dockerfile containers/whalesay
       test-command: |
         echo '0'
-      release-branches: 'feat/utilize-concurrency-to-limit-release-steps-to-run-individually-with-a-concurrency-group'
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
@@ -145,7 +143,6 @@ jobs:
       chart: charts/helloworld
       test-command: |
         helm template $CHART --values charts/helloworld/values.yaml
-      release-branches: 'feat/utilize-concurrency-to-limit-release-steps-to-run-individually-with-a-concurrency-group'
     secrets:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

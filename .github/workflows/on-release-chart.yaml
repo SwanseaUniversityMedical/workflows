@@ -234,6 +234,7 @@ jobs:
       release-rules: ${{ needs.version.outputs.release-rules }}
       release-branches: ${{ needs.version.outputs.release-branches }}
       release-tag-format: ${{ needs.version.outputs.release-tag-format }}
+      release-info: ${{ needs.version.outputs.release }}
 
       chart-registry: ${{ inputs.chart-registry }}
       chart-registry-user: ${{ inputs.chart-registry-user }}

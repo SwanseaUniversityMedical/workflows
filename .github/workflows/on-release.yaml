@@ -86,7 +86,6 @@ jobs:
       slack-thread: ${{ needs.slack.outputs.thread }}
       build-command: |
         docker build -t $IMAGE -f containers/whalesay/Dockerfile containers/whalesay
-      test-command:
       release-branches: feat/skip-test-job-in-release-pipeline-if-the-test-command-is-null
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
@@ -112,8 +111,6 @@ jobs:
       slack-thread: ${{ needs.slack.outputs.thread }}
       build-command: |
         docker build -t $IMAGE -f containers/whalesay2/Dockerfile containers/whalesay2
-      test-command: |
-        echo '0'
       release-branches: feat/skip-test-job-in-release-pipeline-if-the-test-command-is-null
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}

@@ -196,6 +196,7 @@ jobs:
     # Test the chart
     needs: build
     uses: ./.github/workflows/test-chart.yaml
+    if: ${{ inputs.test-command != '' }}
     with:
 
       job-name: ${{ inputs.job-name }}

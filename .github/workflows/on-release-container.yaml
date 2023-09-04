@@ -217,6 +217,7 @@ jobs:
       - build
       - test
     uses: ./.github/workflows/release-container.yaml
+    if: ${{ always() && ((needs.test.result == 'skipped' || needs.test.result == 'success') && needs.build.result == 'success') }}
     with:
 
       job-name: ${{ inputs.job-name }}

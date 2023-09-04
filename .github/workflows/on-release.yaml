@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feat/skip-test-job-in-release-pipeline-if-the-test-command-is-null
 
 jobs:
 
@@ -81,12 +80,11 @@ jobs:
       container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-project: ${{ vars.HARBOR_PROJECT }}
       container-registry-repo: whalesay
-      release-tag-format: 'TEST-whalesay-${version}'
+      release-tag-format: 'whalesay-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
       build-command: |
         docker build -t $IMAGE -f containers/whalesay/Dockerfile containers/whalesay
-      release-branches: feat/skip-test-job-in-release-pipeline-if-the-test-command-is-null
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
@@ -106,12 +104,11 @@ jobs:
       container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-project: ${{ vars.HARBOR_PROJECT }}
       container-registry-repo: whalesay2
-      release-tag-format: 'TEST-whalesay2-${version}'
+      release-tag-format: 'whalesay2-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
       build-command: |
         docker build -t $IMAGE -f containers/whalesay2/Dockerfile containers/whalesay2
-      release-branches: feat/skip-test-job-in-release-pipeline-if-the-test-command-is-null
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
@@ -134,12 +131,11 @@ jobs:
       chart-registry-user: ${{ vars.HARBOR_USER }}
       chart-registry-project: ${{ vars.HARBOR_PROJECT }}
       chart-registry-repo: helloworld
-      release-tag-format: 'TEST-helloworld-${version}'
+      release-tag-format: 'helloworld-${version}'
       github-app-id: ${{ vars.APP_ID }}
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
       chart: charts/helloworld
-      release-branches: feat/skip-test-job-in-release-pipeline-if-the-test-command-is-null
     secrets:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

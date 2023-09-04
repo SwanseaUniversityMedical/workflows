@@ -14,7 +14,7 @@ on:
 
       test-command:
         description: "Command to test the chart named $CHART."
-        required: true
+        default: ''
         type: string
 
       chart-registry:

@@ -74,7 +74,8 @@ jobs:
 
       build-command: |
         docker build -t $IMAGE -f containers/whalesay/Dockerfile containers/whalesay
-      test-command:
+      test-command: |
+        docker run $IMAGE cowsay boo
 
     secrets:
 

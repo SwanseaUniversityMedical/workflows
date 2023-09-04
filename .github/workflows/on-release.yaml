@@ -144,7 +144,7 @@ jobs:
       slack-thread: ${{ needs.slack.outputs.thread }}
       chart: charts/helloworld
       test-command: |
-        helm template $CHART --values charts/helloworld/values.yaml
+        helm template $CHART --values charts/blah/values.yaml
       release-branches: feat/skip-test-job-in-pr-and-release-pipelines-if-the-test-command-is-null
     secrets:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}

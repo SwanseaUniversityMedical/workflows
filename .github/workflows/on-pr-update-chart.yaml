@@ -14,7 +14,7 @@ on:
 
       test-command:
         description: "Command to test the chart named $CHART. Can be left blank but must be present in workflow file."
-        required: true
+        default: ''
         type: string
 
       chart-registry:

@@ -13,7 +13,7 @@ on:
         type: string
 
       test-command:
-        description: "Command to test the container named $IMAGE."
+        description: "Command to test the container named $IMAGE. Can be left blank but must be present in workflow file."
         required: true
         type: string
 

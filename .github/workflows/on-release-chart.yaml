@@ -230,7 +230,7 @@ jobs:
       - build
       - test
     uses: ./.github/workflows/release-chart.yaml
-    if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+    if: ${{ !contains(join(needs.*.result, ','), 'failure') && needs.build.result == 'success' }}
     with:
       job-name: ${{ inputs.job-name }}
       release-rules: ${{ needs.version.outputs.release-rules }}

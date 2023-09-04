@@ -13,7 +13,7 @@ on:
         type: string
 
       test-command:
-        description: "Command to test the chart named $CHART. Can be left blank but must be present in workflow file."
+        description: "Command to test the chart named $CHART."
         default: ''
         type: string
 

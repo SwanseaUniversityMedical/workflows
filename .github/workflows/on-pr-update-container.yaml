@@ -128,7 +128,7 @@ jobs:
     # Test the container
     needs: build
     uses: ./.github/workflows/test-container.yaml
-    if: github.event.inputs.test-command != ''
+    if: ${{ inputs.test-command != '' }}
     with:
 
       job-name: ${{ inputs.job-name }}

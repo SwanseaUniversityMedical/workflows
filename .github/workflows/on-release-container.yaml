@@ -14,7 +14,7 @@ on:
 
       test-command:
         description: "Command to test the container named $IMAGE."
-        required: true
+        default: ''
         type: string
 
       container-registry:

@@ -14,7 +14,7 @@ on:
 
       test-command:
         description: "Command to test the container named $IMAGE."
-        required: true
+        default: ''
         type: string
 
       container-registry:
@@ -128,6 +128,7 @@ jobs:
     # Test the container
     needs: build
     uses: ./.github/workflows/test-container.yaml
+    if: ${{ inputs.test-command != '' }}
     with:
 
       job-name: ${{ inputs.job-name }}

@@ -107,7 +107,8 @@ jobs:
       slack-thread: ${{ needs.slack.outputs.thread }}
 
       chart: charts/helloworld
-      test-command:
+      test-command: |
+        helm template $CHART --values tests/charts/helloworld/values.yaml
 
     secrets:
 

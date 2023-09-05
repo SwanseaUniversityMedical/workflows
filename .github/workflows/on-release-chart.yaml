@@ -14,7 +14,7 @@ on:
 
       test-command:
         description: "Command to test the chart named $CHART."
-        required: true
+        default: ''
         type: string
 
       chart-registry:
@@ -196,6 +196,7 @@ jobs:
     # Test the chart
     needs: build
     uses: ./.github/workflows/test-chart.yaml
+    if: ${{ inputs.test-command != '' }}
     with:
 
       job-name: ${{ inputs.job-name }}
@@ -229,6 +230,7 @@ jobs:
       - build
       - test
     uses: ./.github/workflows/release-chart.yaml
+    if: ${{ always() && ((needs.test.result == 'skipped' || needs.test.result == 'success') && needs.build.result == 'success') }}
     with:
       job-name: ${{ inputs.job-name }}
       release-rules: ${{ needs.version.outputs.release-rules }}

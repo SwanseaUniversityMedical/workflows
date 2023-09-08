@@ -78,13 +78,14 @@ jobs:
         uses: archive/github-actions-slack@v2.7.0
         if: ${{ inputs.slack-thread == null }}
         id: slack-create-message
+        continue-on-error: true
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
           slack-blocks: ${{ env.SLACK_BLOCKS }}
 
       - name: output the slack thread id
-        if: ${{ inputs.slack-thread == null }}
+        if: ${{ inputs.slack-thread == null && steps.slack-create-message.outputs.slack-result != null }}
         run: |
           echo "SLACK_THREAD=${{ fromJson(steps.slack-create-message.outputs.slack-result).response.message.ts }}" >> $GITHUB_ENV
 
@@ -92,6 +93,7 @@ jobs:
         uses: archive/github-actions-slack@v2.7.0
         if: ${{ inputs.slack-thread != null }}
         id: slack-update-message
+        continue-on-error: true
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}

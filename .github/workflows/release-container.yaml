@@ -113,6 +113,7 @@ jobs:
       - name: update slack thread
         uses: archive/github-actions-slack@v2.7.0
         id: slack
+        continue-on-error: true
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
@@ -184,6 +185,7 @@ jobs:
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
         if: success()
+        continue-on-error: true
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
@@ -202,6 +204,7 @@ jobs:
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
         if: failure()
+        continue-on-error: true
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}

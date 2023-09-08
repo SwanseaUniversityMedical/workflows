@@ -136,25 +136,6 @@ jobs:
 #        with:
 #          branch: release/mutex
 
-      - name: release
-        uses: actions/github-script@v6
-        id: release
-        env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
-          RELEASE_NOTES: |
-            ${{ fromJSON(inputs.release-info).release-notes }}
-        with:
-          retries: 3
-          script: |
-            github.rest.repos.createRelease({
-              owner: "${{ github.repository_owner }}",
-              repo: "${{ github.event.repository.name }}",
-              tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
-              target_commitish: "${{ github.sha }}",
-              body: process.env.RELEASE_NOTES,
-              name: "${{ fromJSON(inputs.release-info).git-tag }}"
-            });
-            
       - name: build image uri
         run: |
           echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
@@ -181,6 +162,26 @@ jobs:
       - name: push container
         run: |
           docker push ${{ env.RELEASE_TAG }}
+
+      - name: release
+        uses: actions/github-script@v6
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          RELEASE_NOTES: |
+            ${{ fromJSON(inputs.release-info).release-notes }}
+        with:
+          retries: 3
+          script: |
+            github.rest.repos.createRelease({
+              owner: "${{ github.repository_owner }}",
+              repo: "${{ github.event.repository.name }}",
+              tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
+              target_commitish: "${{ github.sha }}",
+              body: process.env.RELEASE_NOTES,
+              name: "${{ fromJSON(inputs.release-info).git-tag }}"
+            });
+            
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0

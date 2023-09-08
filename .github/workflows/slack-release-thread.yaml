@@ -34,6 +34,7 @@ jobs:
   slack-release-thread:
     runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
+    continue-on-error: true
 
     outputs:
       thread: ${{ env.SLACK_THREAD }}

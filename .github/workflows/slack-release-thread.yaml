@@ -34,7 +34,6 @@ jobs:
   slack-release-thread:
     runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
-    continue-on-error: true
 
     outputs:
       thread: ${{ env.SLACK_THREAD }}
@@ -79,6 +78,7 @@ jobs:
         uses: archive/github-actions-slack@v2.7.0
         if: ${{ inputs.slack-thread == null }}
         id: slack-create-message
+        continue-on-error: true
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
@@ -93,6 +93,7 @@ jobs:
         uses: archive/github-actions-slack@v2.7.0
         if: ${{ inputs.slack-thread != null }}
         id: slack-update-message
+        continue-on-error: true
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}

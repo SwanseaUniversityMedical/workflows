@@ -77,14 +77,14 @@ jobs:
 #        ]
 
     steps:
-      - name: escape title
-        uses: actions/github-script@v6
-        id: escape-title
-        with:
-          script:
-            let title = ${{ github.event.pull_request.title }}
-            let output = title.replace('"', '')
-            return output
+#      - name: escape title
+#        uses: actions/github-script@v6
+#        id: escape-title
+#        with:
+#          script:
+#            let title = ${{ github.event.pull_request.title }}
+#            let output = title.replace('"', '')
+#            return output
 
       - name: create slack thread
         uses: archive/github-actions-slack@v2.7.0

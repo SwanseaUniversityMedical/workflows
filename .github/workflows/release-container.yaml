@@ -152,7 +152,7 @@ jobs:
 
       - name: create tag
         run: |
-          echo "RELEASE_TAG=${{ env.IMAGE }}:${{ fromJSON(inputs.release-info).release-version }}" >> $GITHUB_ENV 
+          echo "RELEASE_TAG=${{ inputs.container-tag-prefix }}${{ env.IMAGE }}:${{ fromJSON(inputs.release-info).release-version }}${{ inputs.container-tag-suffix }}" >> $GITHUB_ENV 
 
       - name: login to container registry
         uses: docker/login-action@v2

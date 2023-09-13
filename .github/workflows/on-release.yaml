@@ -144,7 +144,7 @@ jobs:
       slack-thread: ${{ needs.slack.outputs.thread }}
       chart: charts/helloworld
       release-branches: feat/tag-prefixes-and-suffixes-as-inputs
-      chart-tag-suffix: 'testsuffix'
+      chart-tag-suffix: '-testsuffix'
     secrets:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

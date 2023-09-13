@@ -82,7 +82,7 @@ jobs:
         id: escape-title
         with:
           script:
-            let title = "${{ github.event.pull_request.title }}"
+            let title = ${{ github.event.pull_request.title }}
             let output = title.replace('"', '')
             return output
 

@@ -37,6 +37,16 @@ on:
         required: true
         type: string
 
+      container-tag-prefix:
+        description: "Prefix to use when tagging container"
+        default: ''
+        type: string
+
+      container-tag-suffix:
+        description: "Suffix to use when tagging container"
+        default: ''
+        type: string
+
       release-rules:
         description: "JSON list of rule dicts for what commit types trigger releases."
         default: |
@@ -232,6 +242,9 @@ jobs:
       container-registry-digest: ${{ needs.build.outputs.digest }}
       container-registry-project: ${{ inputs.container-registry-project }}
       container-registry-repo: ${{ inputs.container-registry-repo }}
+      container-tag-prefix: ${{ inputs.container-tag-prefix }}
+      container-tag-suffix: ${{ inputs.container-tag-suffix }}
+
 
       github-app-id: ${{ inputs.github-app-id }}
       slack-channel: ${{ inputs.slack-channel }}

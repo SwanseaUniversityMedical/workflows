@@ -131,7 +131,13 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
-          slack-blocks: ${{ env.SLACK_BLOCKS }}
+          slack-text: |
+            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
+            Branch:   ${{ github.head_ref }}
+            Ref:      ${{ github.ref }}
+            Sha:      ${{ github.event.pull_request.head.sha }}
+            Workflow: ${{ github.workflow }}
+            Run:      ${{ github.run_id }}
 
       - name: output the slack thread id
         if: ${{ inputs.slack-thread == null && steps.slack-create-message.outputs.slack-result != null }}

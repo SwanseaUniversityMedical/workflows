@@ -82,8 +82,8 @@ jobs:
         id: escape-title
         with:
           script:
-            let output = escape(${{ github.event.pull_request.title }}))
-            return output
+            let output = escape("${{ github.event.pull_request.title }}");
+            return output;
 
       - name: create slack thread
         uses: archive/github-actions-slack@v2.7.0

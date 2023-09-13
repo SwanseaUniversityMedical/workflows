@@ -138,7 +138,7 @@ jobs:
 
       - name: create tags
         run: |
-          echo "RC_TAG=${{ inputs.release-version }}${{ inputs.chart-tag-suffix }}-rc" >> $GITHUB_ENV 
+          echo "RC_TAG=${{ inputs.release-version }}-rc${{ inputs.chart-tag-suffix }}" >> $GITHUB_ENV 
 
       - name: clone repo
         uses: actions/checkout@v3

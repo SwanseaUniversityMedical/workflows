@@ -52,6 +52,16 @@ on:
         required: true
         type: string
 
+      container-tag-prefix:
+        description: "Prefix to use when tagging container"
+        required: true
+        type: string
+
+      container-tag-suffix:
+        description: "Suffix to use when tagging container"
+        required: true
+        type: string
+
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true

@@ -37,6 +37,16 @@ on:
         required: true
         type: string
 
+      container-tag-prefix:
+        description: "Prefix to use when tagging container"
+        required: true
+        type: string
+
+      container-tag-suffix:
+        description: "Suffix to use when tagging container"
+        required: true
+        type: string
+
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
@@ -120,7 +130,7 @@ jobs:
 
       - name: create tags
         run: |
-          echo "RC_TAG=${{ env.IMAGE }}:rc-${{ inputs.release-version }}" >> $GITHUB_ENV 
+          echo "RC_TAG=${{ env.IMAGE }}:rc-${{ inputs.container-tag-prefix }}${{ inputs.release-version }}${{ inputs.container-tag-suffix }}" >> $GITHUB_ENV 
 
       - name: clone repo
         uses: actions/checkout@v3

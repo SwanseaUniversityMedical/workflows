@@ -82,8 +82,7 @@ jobs:
         id: escape-title
         with:
           script:
-            let title = ${{ github.event.pull_request.title }}
-            let output = title.replace('"', '')
+            let output = encodeURIComponent(${{ github.event.pull_request.title }})
             return output
 
       - name: create slack thread

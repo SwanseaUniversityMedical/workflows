@@ -65,7 +65,7 @@ jobs:
         <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
         <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
         ```
-        PR:       ${{ github.event.pull_request.number }} - ${{ escape-title.output }}\n
+        PR:       ${{ github.event.pull_request.number }} - ${{ steps.escape-title.output.result }}\n
         Branch:   ${{ github.head_ref }}\n
         Ref:      ${{ github.ref }}\n
         Sha:      ${{ github.event.pull_request.head.sha }}\n
@@ -81,7 +81,6 @@ jobs:
         uses: actions/github-script@v6
         id: escape-title
         with:
-          result-encoding: string
           script:
             let title = ${{ github.event.pull_request.title }}
             let output = title.replace('"', '')

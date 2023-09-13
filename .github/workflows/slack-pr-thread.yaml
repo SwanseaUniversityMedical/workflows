@@ -132,12 +132,16 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
           slack-text: |
-            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
-            Branch:   ${{ github.head_ref }}
-            Ref:      ${{ github.ref }}
-            Sha:      ${{ github.event.pull_request.head.sha }}
-            Workflow: ${{ github.workflow }}
+            <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
+            ```
+            PR:       ${{ github.event.pull_request.number }} - ${{ steps.escape-title.output.result }}\n
+            Branch:   ${{ github.head_ref }}\n
+            Ref:      ${{ github.ref }}\n
+            Sha:      ${{ github.event.pull_request.head.sha }}\n
+            Workflow: ${{ github.workflow }}\n
             Run:      ${{ github.run_id }}
+            ```\n
 
       - name: output the slack thread id
         if: ${{ inputs.slack-thread == null && steps.slack-create-message.outputs.slack-result != null }}

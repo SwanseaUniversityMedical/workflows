@@ -52,6 +52,11 @@ on:
         required: true
         type: string
 
+      chart-tag-suffix:
+        description: "Suffix to use when tagging chart"
+        required: true
+        type: string
+
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
@@ -161,7 +166,7 @@ jobs:
 
       - name: create tag
         run: |
-          echo "RELEASE_TAG=${{ fromJSON(inputs.release-info).release-version }}" >> $GITHUB_ENV 
+          echo "RELEASE_TAG=${{ fromJSON(inputs.release-info).release-version }}${{ inputs.chart-tag-suffix }}" >> $GITHUB_ENV 
 
       - name: install helm
         uses: azure/setup-helm@v3

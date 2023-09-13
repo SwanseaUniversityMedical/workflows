@@ -37,6 +37,11 @@ on:
         required: true
         type: string
 
+      chart-tag-suffix:
+        description: "Suffix to use when tagging chart"
+        required: true
+        type: string
+
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
@@ -133,7 +138,7 @@ jobs:
 
       - name: create tags
         run: |
-          echo "RC_TAG=${{ inputs.release-version }}-rc" >> $GITHUB_ENV 
+          echo "RC_TAG=${{ inputs.release-version }}-rc${{ inputs.chart-tag-suffix }}" >> $GITHUB_ENV 
 
       - name: clone repo
         uses: actions/checkout@v3

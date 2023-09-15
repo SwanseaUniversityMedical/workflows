@@ -38,44 +38,6 @@ jobs:
     outputs:
       thread: ${{ env.SLACK_THREAD }}
 
-#    env:
-#      SLACK_BLOCKS: >-
-#        [
-#          {
-#            "type": "header",
-#            "text": {
-#              "type": "plain_text",
-#              "text": "${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update",
-#              "emoji": true
-#            }
-#          },
-#          {
-#            "type": "header",
-#            "text": {
-#              "type": "plain_text",
-#              "text": "${{ github.repository }}",
-#              "emoji": true
-#            }
-#          },
-#          {
-#            "type": "section",
-#            "text": {
-#              "type": "mrkdwn",
-#              "text": "
-#        <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
-#        <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
-#        ```
-#        PR:       ${{ github.event.pull_request.number }} - ${{ steps.escape-title.output.result }}\n
-#        Branch:   ${{ github.head_ref }}\n
-#        Ref:      ${{ github.ref }}\n
-#        Sha:      ${{ github.event.pull_request.head.sha }}\n
-#        Workflow: ${{ github.workflow }}\n
-#        Run:      ${{ github.run_id }}
-#        ```\n"
-#            }
-#          }
-#        ]
-
     steps:
 #      - name: escape title
 #        uses: actions/github-script@v6
@@ -91,43 +53,6 @@ jobs:
         if: ${{ inputs.slack-thread == null }}
         id: slack-create-message
         continue-on-error: true
-        env:
-          SLACK_BLOCKS: >-
-            [
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "${{ github.repository }}",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "
-            <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
-            ```
-            PR:       ${{ github.event.pull_request.number }} - ${{ steps.escape-title.output.result }}\n
-            Branch:   ${{ github.head_ref }}\n
-            Ref:      ${{ github.ref }}\n
-            Sha:      ${{ github.event.pull_request.head.sha }}\n
-            Workflow: ${{ github.workflow }}\n
-            Run:      ${{ github.run_id }}
-            ```\n"
-                }
-              }
-            ]
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
@@ -155,43 +80,6 @@ jobs:
         if: ${{ inputs.slack-thread != null }}
         id: slack-update-message
         continue-on-error: true
-        env:
-          SLACK_BLOCKS: >-
-            [
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "${{ inputs.status }} PR-${{ github.event.pull_request.number }} Update",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "${{ github.repository }}",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "
-            <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
-            ```
-            PR:       ${{ github.event.pull_request.number }} - ${{ steps.escape-title.output.result }}\n
-            Branch:   ${{ github.head_ref }}\n
-            Ref:      ${{ github.ref }}\n
-            Sha:      ${{ github.event.pull_request.head.sha }}\n
-            Workflow: ${{ github.workflow }}\n
-            Run:      ${{ github.run_id }}
-            ```\n"
-                }
-              }
-            ]
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}

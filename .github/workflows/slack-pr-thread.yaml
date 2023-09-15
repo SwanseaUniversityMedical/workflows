@@ -133,7 +133,7 @@ jobs:
           slack-channel: ${{ inputs.slack-channel }}
           slack-text: |
             ${{ inputs.status }} *PR-${{ github.event.pull_request.number }} Update*\n\n
-            ${{ github.repository }}\n\n
+            *${{ github.repository }}*\n\n
             <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
             <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
             ```

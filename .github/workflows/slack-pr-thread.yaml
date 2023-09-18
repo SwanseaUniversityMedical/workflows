@@ -68,7 +68,7 @@ jobs:
             Sha:      ${{ github.event.pull_request.head.sha }}\n
             Workflow: ${{ github.workflow }}\n
             Run:      ${{ github.run_id }}
-            ```\n
+            ```
 
       - name: output the slack thread id
         if: ${{ inputs.slack-thread == null && steps.slack-create-message.outputs.slack-result != null }}

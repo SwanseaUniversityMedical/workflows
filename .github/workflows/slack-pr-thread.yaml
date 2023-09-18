@@ -65,7 +65,7 @@ jobs:
             PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}\n
             Branch:   ${{ github.head_ref }}\n
             Ref:      ${{ github.ref }}\n
-            Sha:      ${{ github.event.pull_request.head.sha }}\n
+            Sha:      ${{ github.event.pull_request.head.sha }}
             Workflow: ${{ github.workflow }}\n
             Run:      ${{ github.run_id }}
             ```

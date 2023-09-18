@@ -60,7 +60,7 @@ jobs:
             ${{ inputs.status }} *PR-${{ github.event.pull_request.number }} Update*\n\n
             *${{ github.repository }}*\n
             <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n
             ```
             PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
             Branch:   ${{ github.head_ref }}
@@ -89,7 +89,7 @@ jobs:
             ${{ inputs.status }} *PR-${{ github.event.pull_request.number }} Update*\n\n
             *${{ github.repository }}*\n
             <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n
             ```
             PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
             Branch:   ${{ github.head_ref }}

@@ -62,11 +62,11 @@ jobs:
             <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
             <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
             ```
-            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}\n
-            Branch:   ${{ github.head_ref }}\n
-            Ref:      ${{ github.ref }}\n
+            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
+            Branch:   ${{ github.head_ref }}
+            Ref:      ${{ github.ref }}
             Sha:      ${{ github.event.pull_request.head.sha }}
-            Workflow: ${{ github.workflow }}\n
+            Workflow: ${{ github.workflow }}
             Run:      ${{ github.run_id }}
             ```
 
@@ -91,13 +91,13 @@ jobs:
             <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
             <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
             ```
-            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}\n
-            Branch:   ${{ github.head_ref }}\n
-            Ref:      ${{ github.ref }}\n
-            Sha:      ${{ github.event.pull_request.head.sha }}\n
-            Workflow: ${{ github.workflow }}\n
+            PR:       ${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
+            Branch:   ${{ github.head_ref }}
+            Ref:      ${{ github.ref }}
+            Sha:      ${{ github.event.pull_request.head.sha }}
+            Workflow: ${{ github.workflow }}
             Run:      ${{ github.run_id }}
-            ```\n
+            ```
 
       - name: output the slack thread id
         if: ${{ inputs.slack-thread != null }}

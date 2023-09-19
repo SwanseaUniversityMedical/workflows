@@ -189,13 +189,21 @@ jobs:
               body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR chart assets!\n\nhelm repo add --pass-credentials --username \'<user>\' --password \'<token>\' <repo> https://${{ env.CHART_REPO }}\nhelm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}\nhelm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}\n```\n\n:robot: :wheel_of_dharma: :package: :passenger_ship:\n'
             })
 
+      - name: notice test
+        run: |
+          echo "::notice title=Notice::This is a test!"
+
+      - name: warning test
+        run: |
+          echo "::warning title=Warning::This is a test!"
+
+      - name: error test
+        run: |
+            echo "::error title=Error::This is a test!"
+
       - name: annotate the ci run with chart tags
-        run: >-
-            echo "::notice:: 
-              helm repo add --pass-credentials --username \'<user>\' --password \'<token>\' <repo> https://${{ env.CHART_REPO }}\n
-              helm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}\n
-              helm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}
-            "
+        run: |
+          echo "::notice title=Notice::helm repo add --pass-credentials --username \'<user>\' --password \'<token>\' <repo> https://${{ env.CHART_REPO }}\nhelm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}\nhelm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0

@@ -12,6 +12,12 @@ on:
         required: true
         type: string
 
+      build-context:
+        description: "The build context"
+        required: false
+        default: '.'
+        type: string
+
       test-command:
         description: "Command to test the container named $IMAGE."
         default: ''
@@ -108,6 +114,7 @@ jobs:
 
       job-name: ${{ inputs.job-name }}
 
+      build-context: ${{ inputs.build-context }}
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-project: ${{ inputs.container-registry-project }}

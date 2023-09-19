@@ -7,6 +7,11 @@ on:
         required: true
         type: string
 
+      build-context:
+        description: "The build context"
+        required: true
+        type: string
+
       command:
         description: "Command to build the container named $IMAGE."
         required: true
@@ -176,7 +181,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           file: ${{ inputs.dockerfile-path }}
-          context: .
+          context: ${{ inputs.build-context }}
           push: true
           tags: ${{ env.PR_TAG }}, ${{ env.PR_COMMIT_TAG }}
 

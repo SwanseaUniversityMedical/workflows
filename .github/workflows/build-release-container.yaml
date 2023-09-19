@@ -162,6 +162,12 @@ jobs:
         run: |
           echo "DIGEST=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.RC_TAG }}`" >> $GITHUB_ENV
 
+      - name: annotate the ci run with container tags
+        run: >-
+          echo "::notice title=${{ github.job }} / ${{ inputs.job-name }}::%0A
+          docker pull ${{ env.RC_TAG }}%0A
+          docker pull ${{ env.DIGEST }}"
+
       - name: annotate the ci run on failure
         if: failure()
         run: >-

@@ -190,7 +190,8 @@ jobs:
       - name: annotate the ci run with container tags
         run: >-
           echo "::notice title=${{ github.job }} / ${{ inputs.job-name }}::%0A
-          Released version ${{ fromJSON(inputs.release-info).release-version }}%0A
+          Pushed release container version ${{ fromJSON(inputs.release-info).release-version }}!%0A
+           --- %0A
           docker pull ${{ env.RELEASE_TAG }}%0A
           docker pull ${{ inputs.container-registry-digest }}"
 

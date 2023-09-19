@@ -67,6 +67,11 @@ on:
         required: true
         type: string
 
+      github-comment:
+        description: "Boolean flag to write a Github PR comment."
+        default: false
+        type: string
+
     secrets:
 
       slack-token:
@@ -109,6 +114,7 @@ jobs:
       container-registry-repo: ${{ inputs.container-registry-repo }}
 
       github-app-id: ${{ inputs.github-app-id }}
+      github-comment: ${{ inputs.github-comment }}
 
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}

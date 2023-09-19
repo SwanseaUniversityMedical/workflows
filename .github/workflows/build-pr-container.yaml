@@ -62,6 +62,11 @@ on:
         required: true
         type: string
 
+      github-comment:
+        description: "Boolean flag to write a Github PR comment."
+        default: false
+        type: string
+
     secrets:
 
       slack-token:
@@ -176,6 +181,7 @@ jobs:
           private_key: ${{ secrets.github-app-private-key }}
 
       - name: comment the image tags to the pr
+        if: inputs.github-comment == 'true'
         uses: actions/github-script@v6
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
@@ -186,6 +192,15 @@ jobs:
               repo: context.repo.repo,
               body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR container assets!\n\ndocker pull ${{ env.PR_TAG }}\ndocker pull ${{ env.PR_COMMIT_TAG }}\ndocker pull ${{ env.DIGEST }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
             })
+
+      - name: annotate the ci run with container tags
+        run: >-
+          echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+          Pushed PR container assets!%0A
+          - %0A
+          docker pull ${{ env.PR_TAG }}%0A
+          docker pull ${{ env.PR_COMMIT_TAG }}%0A
+          docker pull ${{ env.DIGEST }}"
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0

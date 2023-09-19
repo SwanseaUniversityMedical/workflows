@@ -136,11 +136,6 @@ jobs:
           app_id: ${{ inputs.github-app-id }}
           private_key: ${{ secrets.github-app-private-key }}
 
-#      - name: Set up mutex
-#        uses: ben-z/gh-action-mutex@v1.0-alpha-7
-#        with:
-#          branch: release/mutex
-
       - name: release
         uses: actions/github-script@v6
         id: release
@@ -200,6 +195,14 @@ jobs:
         run: |
           helm cm-push ${{ env.CHART }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }} remote
 
+      - name: annotate the ci run with chart tags
+        run: >-
+          echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+          Pushed release chart version ${{ fromJSON(inputs.release-info).release-version }}!%0A
+          - %0A
+          helm repo add --pass-credentials --username <user> --password <token> <repo> https://${{ env.CHART_REPO }}%0A
+          helm pull --version ${{ env.RELEASE_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
+
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
         if: success()
@@ -214,7 +217,7 @@ jobs:
             
             ```
             Status: Released new version!
-            Version: ${{ steps.release.outputs.release-version }}
+            Version: ${{ fromJSON(inputs.release-info).release-version }}
             
             helm repo add --pass-credentials --username '<user>' --password '<token>' <repo> https://${{ env.CHART_REPO }}
             helm pull --version ${{ env.RELEASE_TAG }} <repo>/${{ inputs.chart-registry-repo }}

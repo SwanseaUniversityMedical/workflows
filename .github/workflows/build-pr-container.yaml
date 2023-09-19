@@ -184,6 +184,7 @@ jobs:
           context: ${{ inputs.build-context }}
           push: true
           tags: ${{ env.PR_TAG }}, ${{ env.PR_COMMIT_TAG }}
+          github-token: ${{ steps.generate-token.outputs.token }}
 
       - name: container digest
         id: digest

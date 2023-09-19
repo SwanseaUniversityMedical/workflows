@@ -193,6 +193,13 @@ jobs:
               body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR container assets!\n\ndocker pull ${{ env.PR_TAG }}\ndocker pull ${{ env.PR_COMMIT_TAG }}\ndocker pull ${{ env.DIGEST }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
             })
 
+      - name: annotate the ci run with container tags
+        run: >-
+          echo "::notice title=${{ github.job }} / ${{ inputs.job-name }}::%0A
+          docker pull ${{ env.PR_TAG }}%0A
+          docker pull ${{ env.PR_COMMIT_TAG }}%0A
+          docker pull ${{ env.DIGEST }}"
+
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
         continue-on-error: true

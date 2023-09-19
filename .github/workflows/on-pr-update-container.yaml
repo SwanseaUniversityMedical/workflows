@@ -37,6 +37,11 @@ on:
         required: true
         type: string
 
+      dockerfile-path:
+        description: "The path to the dockerfile"
+        required: true
+        type: string
+
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
@@ -107,6 +112,7 @@ jobs:
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-project: ${{ inputs.container-registry-project }}
       container-registry-repo: ${{ inputs.container-registry-repo }}
+      dockerfile-path: ${{ inputs.dockerfile-path }}
 
       github-app-id: ${{ inputs.github-app-id }}
 

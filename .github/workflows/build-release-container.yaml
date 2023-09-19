@@ -162,6 +162,12 @@ jobs:
         run: |
           echo "DIGEST=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.RC_TAG }}`" >> $GITHUB_ENV
 
+      - name: annotate the ci run on failure
+        if: failure()
+        run: >-
+          echo "::error title=${{ github.job }} / ${{ inputs.job-name }}::%0A
+          An unexpected error occurred. Check the job logs!"
+
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
         continue-on-error: true

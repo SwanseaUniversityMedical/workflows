@@ -198,12 +198,6 @@ jobs:
           helm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}%0A
           helm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
 
-      - name: annotate the ci run on failure
-        if: failure()
-        run: >-
-          echo "::error title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-          An unexpected error occurred. Check the job logs!"
-
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
         continue-on-error: true

@@ -195,12 +195,6 @@ jobs:
           docker pull ${{ env.RELEASE_TAG }}%0A
           docker pull ${{ inputs.container-registry-digest }}"
 
-      - name: annotate the ci run on failure
-        if: failure()
-        run: >-
-          echo "::error title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-          An unexpected error occurred. Check the job logs!"
-
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
         if: success()

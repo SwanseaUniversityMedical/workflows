@@ -94,12 +94,6 @@ jobs:
           echo "::notice title=Job: ${{ github.job }}::%0A
           Changes: ${{ steps.changes.outputs.changes }}"
 
-      - name: annotate the ci run on failure
-        if: failure()
-        run: >-
-          echo "::error title=Job: ${{ github.job }}::%0A
-          An unexpected error occurred. Check the job logs!"
-
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
         if: success()

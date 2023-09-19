@@ -203,12 +203,6 @@ jobs:
           helm repo add --pass-credentials --username <user> --password <token> <repo> https://${{ env.CHART_REPO }}%0A
           helm pull --version ${{ env.RELEASE_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
 
-      - name: annotate the ci run on failure
-        if: failure()
-        run: >-
-          echo "::error title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-          An unexpected error occurred. Check the job logs!"
-
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
         if: success()

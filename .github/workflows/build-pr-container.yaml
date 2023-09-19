@@ -62,6 +62,11 @@ on:
         required: true
         type: string
 
+      github-comment:
+        description: "Boolean flag to write a Github PR comment."
+        default: false
+        type: string
+
     secrets:
 
       slack-token:
@@ -176,6 +181,7 @@ jobs:
           private_key: ${{ secrets.github-app-private-key }}
 
       - name: comment the image tags to the pr
+        if: inputs.github-comment == 'true'
         uses: actions/github-script@v6
         with:
           github-token: ${{ steps.generate-token.outputs.token }}

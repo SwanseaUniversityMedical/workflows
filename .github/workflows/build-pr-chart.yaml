@@ -62,6 +62,11 @@ on:
         required: true
         type: string
 
+      github-comment:
+        description: "Boolean flag to write a Github PR comment."
+        default: false
+        type: string
+
     secrets:
 
       slack-token:
@@ -172,6 +177,7 @@ jobs:
           helm cm-push ${{ inputs.chart }} --version $PR_COMMIT_TAG --app-version $PR_COMMIT_TAG remote
 
       - name: comment the chart tags to the pr
+        if: inputs.github-comment == 'true'
         uses: actions/github-script@v6
         with:
           github-token: ${{ steps.generate-token.outputs.token }}

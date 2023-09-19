@@ -32,6 +32,11 @@ on:
         required: true
         type: string
 
+      dockerfile-path:
+        description: "The path to the dockerfile"
+        required: true
+        type: string
+
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
@@ -166,6 +171,14 @@ jobs:
         run: |
           docker push ${{ env.PR_TAG }}
           docker push ${{ env.PR_COMMIT_TAG }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ inputs.dockerfile-path }}
+          context: .
+          push: true
+          tags: ${{ env.PR_TAG }}, ${{ env.PR_COMMIT_TAG }}
 
       - name: container digest
         id: digest

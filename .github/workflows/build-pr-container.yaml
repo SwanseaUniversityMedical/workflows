@@ -177,15 +177,6 @@ jobs:
           docker push ${{ env.PR_TAG }}
           docker push ${{ env.PR_COMMIT_TAG }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          file: ${{ inputs.dockerfile-path }}
-          context: ${{ inputs.build-context }}
-          push: true
-          tags: ${{ env.PR_TAG }}, ${{ env.PR_COMMIT_TAG }}
-          github-token: ${{ steps.generate-token.outputs.token }}
-
       - name: container digest
         id: digest
         run: |
@@ -197,6 +188,15 @@ jobs:
         with:
           app_id: ${{ inputs.github-app-id }}
           private_key: ${{ secrets.github-app-private-key }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ inputs.dockerfile-path }}
+          context: ${{ inputs.build-context }}
+          push: true
+          tags: ${{ env.PR_TAG }}, ${{ env.PR_COMMIT_TAG }}
+          github-token: ${{ steps.generate-token.outputs.token }}
 
       - name: comment the image tags to the pr
         uses: actions/github-script@v6

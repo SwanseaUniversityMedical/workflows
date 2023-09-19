@@ -199,7 +199,7 @@ jobs:
 
       - name: error test
         run: |
-            echo "::error title=Error::This is a test!"
+          echo "::error title=Error::This is a test!"
 
       - name: annotate the ci run with chart tags
         run: |

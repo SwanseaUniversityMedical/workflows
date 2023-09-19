@@ -189,16 +189,16 @@ jobs:
 
       - name: annotate the ci run with container tags
         run: >-
-          echo "::notice title=${{ github.job }} / ${{ inputs.job-name }}::%0A
+          echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           Pushed release container version ${{ fromJSON(inputs.release-info).release-version }}!%0A
-           --- %0A
+          - %0A
           docker pull ${{ env.RELEASE_TAG }}%0A
           docker pull ${{ inputs.container-registry-digest }}"
 
       - name: annotate the ci run on failure
         if: failure()
         run: >-
-          echo "::error title=${{ github.job }} / ${{ inputs.job-name }}::%0A
+          echo "::error title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           An unexpected error occurred. Check the job logs!"
 
       - name: update slack thread success

@@ -196,6 +196,8 @@ jobs:
       - name: annotate the ci run with container tags
         run: >-
           echo "::notice title=${{ github.job }} / ${{ inputs.job-name }}::%0A
+          Pushed PR container assets!%0A
+           --- %0A
           docker pull ${{ env.PR_TAG }}%0A
           docker pull ${{ env.PR_COMMIT_TAG }}%0A
           docker pull ${{ env.DIGEST }}"

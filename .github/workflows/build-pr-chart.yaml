@@ -192,6 +192,8 @@ jobs:
       - name: annotate the ci run with chart tags
         run: >-
           echo "::notice title=${{ github.job }} / ${{ inputs.job-name }}::%0A
+          Pushed PR chart assets!%0A
+           --- %0A
           helm repo add --pass-credentials --username <user> --password <token> <repo> https://${{ env.CHART_REPO }}%0A
           helm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}%0A
           helm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}"

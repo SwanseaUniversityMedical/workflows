@@ -165,6 +165,8 @@ jobs:
       - name: annotate the ci run with container tags
         run: >-
           echo "::notice title=${{ github.job }} / ${{ inputs.job-name }}::%0A
+          Pushed release candidate container assets!%0A
+           --- %0A
           docker pull ${{ env.RC_TAG }}%0A
           docker pull ${{ env.DIGEST }}"
 

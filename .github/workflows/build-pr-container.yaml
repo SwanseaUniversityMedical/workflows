@@ -124,6 +124,9 @@ jobs:
           slack-text: |
             ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: build image uri
         run: |
           echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV

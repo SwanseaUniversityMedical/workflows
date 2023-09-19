@@ -197,6 +197,8 @@ jobs:
           push: true
           tags: ${{ env.PR_TAG }}, ${{ env.PR_COMMIT_TAG }}
           github-token: ${{ steps.generate-token.outputs.token }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: comment the image tags to the pr
         uses: actions/github-script@v6

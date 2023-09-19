@@ -69,6 +69,8 @@ jobs:
       container-registry-repo: whalesay
 
       github-app-id: ${{ vars.APP_ID }}
+      github-comment: true
+
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
 
@@ -103,6 +105,8 @@ jobs:
       chart-registry-repo: helloworld
 
       github-app-id: ${{ vars.APP_ID }}
+      github-comment: true
+
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
 

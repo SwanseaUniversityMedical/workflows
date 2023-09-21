@@ -141,11 +141,6 @@ jobs:
           app_id: ${{ inputs.github-app-id }}
           private_key: ${{ secrets.github-app-private-key }}
 
-#      - name: Set up mutex
-#        uses: ben-z/gh-action-mutex@v1.0-alpha-7
-#        with:
-#          branch: release/mutex
-
       - name: build image uri
         run: |
           echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
@@ -191,7 +186,14 @@ jobs:
               body: process.env.RELEASE_NOTES,
               name: "${{ fromJSON(inputs.release-info).git-tag }}"
             });
-            
+
+      - name: annotate the ci run with container tags
+        run: >-
+          echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+          Pushed release container version ${{ fromJSON(inputs.release-info).release-version }}!%0A
+          - %0A
+          docker pull ${{ env.RELEASE_TAG }}%0A
+          docker pull ${{ inputs.container-registry-digest }}"
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
@@ -207,9 +209,10 @@ jobs:
             
             ```
             Status: Released new version!
-            Version: ${{ steps.release.outputs.release-version }}
+            Version: ${{ fromJSON(inputs.release-info).release-version }}
             
             docker pull ${{ env.RELEASE_TAG }}
+            docker pull ${{ inputs.container-registry-digest }}
             ```
 
       - name: update slack thread failure

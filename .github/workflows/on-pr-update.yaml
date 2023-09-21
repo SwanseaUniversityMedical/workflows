@@ -108,6 +108,8 @@ jobs:
       container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-project: ${{ vars.HARBOR_PROJECT }}
       container-registry-repo: whalesay2
+      dockerfile-path: 'containers/whalesay2/Dockerfile'
+      build-context: 'containers/whalesay2'
 
       github-app-id: ${{ vars.APP_ID }}
 

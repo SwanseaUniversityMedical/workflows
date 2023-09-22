@@ -11,36 +11,6 @@ on:
         description: "JSON list of release info from dry run."
         required: true
         type: string
-        
-      chart-registry:
-        description: "URL of the chart registry."
-        required: true
-        type: string
-
-      chart-registry-user:
-        description: "Username for the chart registry."
-        required: true
-        type: string
-
-      chart-registry-project:
-        description: "Project within chart registry."
-        required: true
-        type: string
-
-      chart-registry-repo:
-        description: "Repo within chart registry project."
-        required: true
-        type: string
-
-      chart-registry-digest:
-        description: "URI of the chart."
-        required: true
-        type: string
-
-      chart-tag-suffix:
-        description: "Suffix to use when tagging chart"
-        required: true
-        type: string
 
       slack-channel:
         description: "ID of the Slack channel to post updates to."
@@ -77,10 +47,6 @@ on:
       slack-token:
         description: "Authentication token for Slack."
         required: true
-        
-      chart-registry-token:
-        description: "Authentication token for the chart registry."
-        required: true
 
       github-app-private-key:
         description: "App private key for Github."
@@ -90,10 +56,10 @@ on:
 
       release:
         description: "JSON encoded dictionary of release parameters."
-        value: ${{ jobs.release-chart.outputs.release }}
+        value: ${{ jobs.release-repo.outputs.release }}
 
 jobs:
-  release-chart:
+  release-repo:
     runs-on: 
       labels: [self-hosted, linux, x64]
       group: heavy
@@ -138,54 +104,11 @@ jobs:
               body: process.env.RELEASE_NOTES,
               name: "${{ fromJSON(inputs.release-info).git-tag }}"
             });
-            
-      - name: build chart uri
-        run: |
-          echo "CHART_REPO=${{ inputs.chart-registry }}/chartrepo/${{ inputs.chart-registry-project }}" >> $GITHUB_ENV
 
-      - name: create tag
-        run: |
-          echo "RELEASE_TAG=${{ fromJSON(inputs.release-info).release-version }}${{ inputs.chart-tag-suffix }}" >> $GITHUB_ENV 
-
-      - name: install helm
-        uses: azure/setup-helm@v3
-        with:
-          version: 'v3.9.0'
-          token: ${{ steps.generate-token.outputs.token }}
-
-      - name: setup chart-museum push plugin
-        # TODO Can be changed to modern OCI style chart push after we upgrade harbor to latest
-        run: |
-          helm plugin install https://github.com/chartmuseum/helm-push
-
-      - name: login to chart registry
-        run: |
-          set -x
-          helm repo add --pass-credentials --username '${{ inputs.chart-registry-user }}' --password '${{ secrets.chart-registry-token }}' remote https://${{ env.CHART_REPO }}
-
-      - name: update charts list
-        run: |
-          helm repo update
-
-      - name: pull chart
-        run: |
-          helm pull remote/${{ inputs.chart-registry-repo }} --version ${{ inputs.chart-registry-digest }}
-
-      - name: build chart install name
-        run: |
-          echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
-
-      - name: push chart
-        run: |
-          helm cm-push ${{ env.CHART }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }} remote
-
-      - name: annotate the ci run with chart tags
+      - name: annotate the ci run with container tags
         run: >-
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-          Pushed release chart version ${{ fromJSON(inputs.release-info).release-version }}!%0A
-          - %0A
-          helm repo add --pass-credentials --username <user> --password <token> <repo> https://${{ env.CHART_REPO }}%0A
-          helm pull --version ${{ env.RELEASE_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
+          Created new release version ${{ fromJSON(inputs.release-info).release-version }}!"
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
@@ -202,9 +125,6 @@ jobs:
             ```
             Status: Released new version!
             Version: ${{ fromJSON(inputs.release-info).release-version }}
-            
-            helm repo add --pass-credentials --username '<user>' --password '<token>' <repo> https://${{ env.CHART_REPO }}
-            helm pull --version ${{ env.RELEASE_TAG }} <repo>/${{ inputs.chart-registry-repo }}
             ```
 
       - name: update slack thread failure

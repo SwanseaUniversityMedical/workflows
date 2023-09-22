@@ -56,10 +56,10 @@ on:
 
       release:
         description: "JSON encoded dictionary of release parameters."
-        value: ${{ jobs.release.outputs.release }}
+        value: ${{ jobs.release-repo.outputs.release }}
 
 jobs:
-  release:
+  release-repo:
     runs-on: 
       labels: [self-hosted, linux, x64]
       group: heavy

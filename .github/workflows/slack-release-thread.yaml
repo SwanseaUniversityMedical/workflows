@@ -32,7 +32,8 @@ on:
 jobs:
 
   slack-release-thread:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: 
+      group: light
     timeout-minutes: 5
 
     outputs:

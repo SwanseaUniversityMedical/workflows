@@ -184,7 +184,7 @@ jobs:
     with:
       job-name: workflows
       github-app-id: ${{ vars.APP_ID }}
-      release-tag-format: '${version}'
+      release-tag-format: 'v${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
     secrets:

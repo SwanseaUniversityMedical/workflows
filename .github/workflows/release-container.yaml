@@ -95,7 +95,7 @@ on:
 
       release:
         description: "JSON encoded dictionary of release parameters."
-        value: ${{ jobs.release.outputs.release }}
+        value: ${{ jobs.release-container.outputs.release }}
 
 jobs:
   release-container:

@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - feat/add-workflows-release
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -184,9 +184,7 @@ jobs:
     with:
       job-name: workflows
       github-app-id: ${{ vars.APP_ID }}
-      release-branches: |
-        ['feat/add-workflows-release']
-      release-tag-format: 'test-${version}'
+      release-tag-format: '${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
     secrets:

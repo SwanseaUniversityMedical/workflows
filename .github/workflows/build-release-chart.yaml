@@ -114,7 +114,9 @@ on:
 
 jobs:
   build-release-chart:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: 
+      labels: [self-hosted, linux, x64]
+      group: heavy
 
     outputs:
       digest: ${{ env.RC_TAG }}

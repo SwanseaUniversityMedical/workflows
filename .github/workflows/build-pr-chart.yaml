@@ -109,7 +109,9 @@ on:
 
 jobs:
   build-pr-chart:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: 
+      labels: [self-hosted, linux, x64]
+      group: heavy
 
     outputs:
       digest: ${{ env.PR_COMMIT_TAG }}

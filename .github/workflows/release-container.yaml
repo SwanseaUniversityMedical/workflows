@@ -7,21 +7,6 @@ on:
         required: true
         type: string
 
-      release-rules:
-        description: "JSON list of rule dicts for what commit types trigger releases."
-        required: true
-        type: string
-
-      release-branches:
-        description: "JSON list of regex branch filters."
-        required: true
-        type: string
-
-      release-tag-format:
-        description: "Semantic-release Github release tag format."
-        required: true
-        type: string
-
       release-info:
         description: "JSON list of release info from dry run."
         required: true

@@ -32,7 +32,9 @@ on:
 jobs:
 
   slack-pr-thread:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: 
+      labels: [self-hosted, linux, x64]
+      group: light
     timeout-minutes: 5
 
     outputs:

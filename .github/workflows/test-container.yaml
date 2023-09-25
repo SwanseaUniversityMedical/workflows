@@ -64,7 +64,9 @@ on:
 
 jobs:
   test-container:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: 
+      labels: [self-hosted, linux, x64]
+      group: heavy
 
     steps:
       - name: update slack thread

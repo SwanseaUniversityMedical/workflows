@@ -7,21 +7,6 @@ on:
         required: true
         type: string
 
-      release-rules:
-        description: "JSON list of rule dicts for what commit types trigger releases."
-        required: true
-        type: string
-
-      release-branches:
-        description: "JSON list of regex branch filters."
-        required: true
-        type: string
-
-      release-tag-format:
-        description: "Semantic-release Github release tag format."
-        required: true
-        type: string
-
       release-info:
         description: "JSON list of release info from dry run."
         required: true
@@ -105,11 +90,13 @@ on:
 
       release:
         description: "JSON encoded dictionary of release parameters."
-        value: ${{ jobs.release.outputs.release }}
+        value: ${{ jobs.release-chart.outputs.release }}
 
 jobs:
   release-chart:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: 
+      labels: [self-hosted, linux, x64]
+      group: heavy
 
     outputs:
       release: ${{ toJSON(steps.release.outputs) }}
@@ -125,9 +112,6 @@ jobs:
           slack-optional-thread_ts: ${{ inputs.slack-thread }}
           slack-text: |
             ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
-
-      - name: clone repo
-        uses: actions/checkout@v3
 
       - name: generate token
         id: generate-token

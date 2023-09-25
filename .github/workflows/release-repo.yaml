@@ -2,8 +2,13 @@ on:
   workflow_call:
     inputs:
 
-      filters:
-        description: "YAML dictionary of lists of path filters."
+      job-name:
+        description: "Job name to display on Slack messages."
+        required: true
+        type: string
+
+      release-info:
+        description: "JSON list of release info from dry run."
         required: true
         type: string
 
@@ -49,18 +54,18 @@ on:
 
     outputs:
 
-      changes:
-        description: "JSON encoded dictionary of boolean change filters."
-        value: ${{ jobs.changes.outputs.changes }}
+      release:
+        description: "JSON encoded dictionary of release parameters."
+        value: ${{ jobs.release-repo.outputs.release }}
 
 jobs:
-  changes:
+  release-repo:
     runs-on: 
       labels: [self-hosted, linux, x64]
-      group: light
+      group: heavy
 
     outputs:
-      changes: ${{ toJSON(steps.changes.outputs) }}
+      release: ${{ toJSON(steps.release.outputs) }}
 
     steps:
       - name: update slack thread
@@ -72,10 +77,7 @@ jobs:
           slack-channel: ${{ inputs.slack-channel }}
           slack-optional-thread_ts: ${{ inputs.slack-thread }}
           slack-text: |
-            ${{ inputs.status-running }} job: ${{ github.job }}
-
-      - name: clone repo
-        uses: actions/checkout@v3
+            ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
 
       - name: generate token
         id: generate-token
@@ -84,17 +86,29 @@ jobs:
           app_id: ${{ inputs.github-app-id }}
           private_key: ${{ secrets.github-app-private-key }}
 
-      - name: detect changed files
-        uses: dorny/paths-filter@v2
-        id: changes
+      - name: release
+        uses: actions/github-script@v6
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          RELEASE_NOTES: |
+            ${{ fromJSON(inputs.release-info).release-notes }}
         with:
-          token: ${{ steps.generate-token.outputs.token }}
-          filters: ${{ inputs.filters }}
+          retries: 3
+          script: |
+            github.rest.repos.createRelease({
+              owner: "${{ github.repository_owner }}",
+              repo: "${{ github.event.repository.name }}",
+              tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
+              target_commitish: "${{ github.sha }}",
+              body: process.env.RELEASE_NOTES,
+              name: "${{ fromJSON(inputs.release-info).git-tag }}"
+            });
 
-      - name: annotate the ci run with changes
+      - name: annotate the ci run with container tags
         run: >-
-          echo "::notice title=Job: ${{ github.job }}::%0A
-          Changes: ${{ steps.changes.outputs.changes }}"
+          echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+          Created new release version ${{ fromJSON(inputs.release-info).release-version }}!"
 
       - name: update slack thread success
         uses: archive/github-actions-slack@v2.7.0
@@ -106,10 +120,11 @@ jobs:
           slack-function: update-message
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
-            ${{ inputs.status-success }} job: ${{ github.job }}
+            ${{ inputs.status-success }}  job: ${{ github.job }} / ${{ inputs.job-name }}
             
             ```
-            ${{ steps.changes.outputs.changes }}
+            Status: Released new version!
+            Version: ${{ fromJSON(inputs.release-info).release-version }}
             ```
 
       - name: update slack thread failure
@@ -122,4 +137,4 @@ jobs:
           slack-function: update-message
           slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
           slack-update-message-text: |
-            ${{ inputs.status-failure }} job: ${{ github.job }}
+            ${{ inputs.status-failure }}  job: ${{ github.job }} / ${{ inputs.job-name }}

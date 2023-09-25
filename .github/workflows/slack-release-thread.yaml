@@ -40,41 +40,6 @@ jobs:
     outputs:
       thread: ${{ env.SLACK_THREAD }}
 
-    env:
-      SLACK_BLOCKS: >-
-        [
-          {
-            "type": "header",
-            "text": {
-              "type": "plain_text",
-              "text": "${{ inputs.status }} Release ${{ github.ref }}",
-              "emoji": true
-            }
-          },
-          {
-            "type": "header",
-            "text": {
-              "type": "plain_text",
-              "text": "${{ github.repository }}",
-              "emoji": true
-            }
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "
-        <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
-        ```
-        Ref:      ${{ github.ref }}\n
-        Sha:      ${{ github.sha }}\n
-        Workflow: ${{ github.workflow }}\n
-        Run:      ${{ github.run_id }}
-        ```\n"
-            }
-          }
-        ]
-
     steps:
       - name: create slack thread
         uses: archive/github-actions-slack@v2.7.0

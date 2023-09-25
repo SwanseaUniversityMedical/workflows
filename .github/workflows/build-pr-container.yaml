@@ -211,6 +211,7 @@ jobs:
           github-token: ${{ steps.generate-token.outputs.token }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
 
       - name: comment the image tags to the pr
         if: inputs.github-comment == 'true'

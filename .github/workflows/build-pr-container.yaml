@@ -124,9 +124,9 @@ jobs:
     
 
     runs-on: 
-      labels: [self-hosted, linux, x64]
-      #labels: ubuntu-latest
-      group: heavy
+      #labels: [self-hosted, linux, x64]
+      labels: ubuntu-latest
+      #group: heavy
 
 
     outputs:

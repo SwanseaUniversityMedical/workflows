@@ -40,41 +40,6 @@ jobs:
     outputs:
       thread: ${{ env.SLACK_THREAD }}
 
-    env:
-      SLACK_BLOCKS: >-
-        [
-          {
-            "type": "header",
-            "text": {
-              "type": "plain_text",
-              "text": "${{ inputs.status }} Release ${{ github.ref }}",
-              "emoji": true
-            }
-          },
-          {
-            "type": "header",
-            "text": {
-              "type": "plain_text",
-              "text": "${{ github.repository }}",
-              "emoji": true
-            }
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "
-        <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
-        ```
-        Ref:      ${{ github.ref }}\n
-        Sha:      ${{ github.sha }}\n
-        Workflow: ${{ github.workflow }}\n
-        Run:      ${{ github.run_id }}
-        ```\n"
-            }
-          }
-        ]
-
     steps:
       - name: create slack thread
         uses: archive/github-actions-slack@v2.7.0
@@ -84,7 +49,16 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
-          slack-blocks: ${{ env.SLACK_BLOCKS }}
+          slack-text: |
+            ${{ inputs.status }} *Release ${{ github.ref }}*\n\n
+            *${{ github.repository }}*\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
+            ```
+            Ref:      ${{ github.ref }}\n
+            Sha:      ${{ github.sha }}\n
+            Workflow: ${{ github.workflow }}\n
+            Run:      ${{ github.run_id }}
+            ```\n"
 
       - name: output the slack thread id
         if: ${{ inputs.slack-thread == null && steps.slack-create-message.outputs.slack-result != null }}
@@ -101,7 +75,16 @@ jobs:
           slack-channel: ${{ inputs.slack-channel }}
           slack-function: update-message
           slack-update-message-ts: ${{ inputs.slack-thread }}
-          slack-update-message-blocks: ${{ env.SLACK_BLOCKS }}
+          slack-update-message-text: |
+            ${{ inputs.status }} *Release ${{ github.ref }}*\n\n
+            *${{ github.repository }}*\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: Logs>\n\n
+            ```
+            Ref:      ${{ github.ref }}\n
+            Sha:      ${{ github.sha }}\n
+            Workflow: ${{ github.workflow }}\n
+            Run:      ${{ github.run_id }}
+            ```\n"
 
       - name: output the slack thread id
         if: ${{ inputs.slack-thread != null }}

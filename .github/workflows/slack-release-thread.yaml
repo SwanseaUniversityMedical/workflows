@@ -58,7 +58,7 @@ jobs:
             Sha:      ${{ github.sha }}\n
             Workflow: ${{ github.workflow }}\n
             Run:      ${{ github.run_id }}
-            ```\n"
+            ```\n
 
       - name: output the slack thread id
         if: ${{ inputs.slack-thread == null && steps.slack-create-message.outputs.slack-result != null }}
@@ -84,7 +84,7 @@ jobs:
             Sha:      ${{ github.sha }}\n
             Workflow: ${{ github.workflow }}\n
             Run:      ${{ github.run_id }}
-            ```\n"
+            ```\n
 
       - name: output the slack thread id
         if: ${{ inputs.slack-thread != null }}

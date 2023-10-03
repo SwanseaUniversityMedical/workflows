@@ -135,7 +135,7 @@ jobs:
         uses: azure/setup-helm@v3
         with:
           version: 'v3.9.0'
-          token: ${{ steps.generate-token.outputs.token }}
+          token: ${{ github.token }}
 
       - name: setup chart-museum push plugin
         # TODO Can be changed to modern OCI style chart push after we upgrade harbor to latest

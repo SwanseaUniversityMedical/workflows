@@ -72,11 +72,6 @@ on:
         default: ':no_entry:'
         type: string
 
-      github-app-id:
-        description: "App ID for Github."
-        required: true
-        type: string
-
     secrets:
 
       slack-token:
@@ -85,10 +80,6 @@ on:
         
       container-registry-token:
         description: "Authentication token for the container registry."
-        required: true
-
-      github-app-private-key:
-        description: "App private key for Github."
         required: true
 
     outputs:
@@ -117,13 +108,6 @@ jobs:
           slack-optional-thread_ts: ${{ inputs.slack-thread }}
           slack-text: |
             ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
-
-      - name: generate token
-        id: generate-token
-        uses: tibdex/github-app-token@v1.8.0
-        with:
-          app_id: ${{ inputs.github-app-id }}
-          private_key: ${{ secrets.github-app-private-key }}
 
       - name: build image uri
         run: |
@@ -156,11 +140,11 @@ jobs:
         uses: actions/github-script@v6
         id: release
         env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
           RELEASE_NOTES: |
             ${{ fromJSON(inputs.release-info).release-notes }}
         with:
           retries: 3
+          github-token: ${{ github.token }}
           script: |
             github.rest.repos.createRelease({
               owner: "${{ github.repository_owner }}",

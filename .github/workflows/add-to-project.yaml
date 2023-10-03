@@ -1,0 +1,39 @@
+on:
+  workflow_call:
+    inputs:
+
+      github-app-id:
+        description: "App ID for Github."
+        required: true
+        type: string
+
+      github-project-url:
+        description: "Project url"
+        required: true
+        type: string
+
+    secrets:
+
+      github-app-private-key:
+        description: "App private key for Github."
+        required: true
+
+jobs:
+  project:
+    runs-on:
+      labels: [self-hosted, linux, x64]
+      group: light
+
+    steps:
+    - name: generate token
+      id: generate-token
+      uses: tibdex/github-app-token@v2.1.0
+      with:
+        app_id: ${{ inputs.github-app-id }}
+        private_key: ${{ secrets.github-app-private-key }}
+
+    - name: add issue or pr to project
+      uses: actions/add-to-project@v0.5.0
+      with:
+        project-url: ${{ inputs.github-project-url }}
+        github-token: ${{ steps.generate-token.outputs.token }}

@@ -112,11 +112,6 @@ on:
         default: ':no_entry:'
         type: string
 
-      github-app-id:
-        description: "App ID for Github."
-        required: true
-        type: string
-
     secrets:
 
       slack-token:
@@ -125,10 +120,6 @@ on:
 
       container-registry-token:
         description: "Authentication token for the container registry."
-        required: true
-
-      github-app-private-key:
-        description: "App private key for Github."
         required: true
 
     outputs:
@@ -154,14 +145,10 @@ jobs:
       release-rules: ${{ inputs.release-rules }}
       release-branches: ${{ inputs.release-branches }}
 
-      github-app-id: ${{ inputs.github-app-id }}
-
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
 
     secrets:
-
-      github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
 
   build:
@@ -182,7 +169,6 @@ jobs:
       container-tag-prefix: ${{ inputs.container-tag-prefix }}
       container-tag-suffix: ${{ inputs.container-tag-suffix }}
 
-
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
       status-running: ${{ inputs.status-running }}
@@ -192,7 +178,6 @@ jobs:
       command: ${{ inputs.build-command }}
 
     secrets:
-
       container-registry-token: ${{ secrets.container-registry-token }}
       slack-token: ${{ secrets.slack-token }}
 
@@ -218,7 +203,6 @@ jobs:
       command: ${{ inputs.test-command }}
 
     secrets:
-
       container-registry-token: ${{ secrets.container-registry-token }}
       slack-token: ${{ secrets.slack-token }}
 
@@ -244,12 +228,9 @@ jobs:
       container-tag-prefix: ${{ inputs.container-tag-prefix }}
       container-tag-suffix: ${{ inputs.container-tag-suffix }}
 
-      github-app-id: ${{ inputs.github-app-id }}
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
 
     secrets:
-
-      github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
       container-registry-token: ${{ secrets.container-registry-token }}

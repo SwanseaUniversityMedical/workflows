@@ -62,11 +62,6 @@ on:
         default: ':no_entry:'
         type: string
 
-      github-app-id:
-        description: "App ID for Github."
-        required: true
-        type: string
-
       github-comment:
         description: "Boolean flag to write a Github PR comment."
         default: false
@@ -80,10 +75,6 @@ on:
 
       container-registry-token:
         description: "Authentication token for the container registry."
-        required: true
-
-      github-app-private-key:
-        description: "App private key for Github."
         required: true
 
     outputs:
@@ -113,7 +104,6 @@ jobs:
       container-registry-project: ${{ inputs.container-registry-project }}
       container-registry-repo: ${{ inputs.container-registry-repo }}
 
-      github-app-id: ${{ inputs.github-app-id }}
       github-comment: ${{ inputs.github-comment }}
 
       slack-channel: ${{ inputs.slack-channel }}
@@ -127,7 +117,6 @@ jobs:
     secrets:
 
       container-registry-token: ${{ secrets.container-registry-token }}
-      github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
 
   test:

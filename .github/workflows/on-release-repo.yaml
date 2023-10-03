@@ -72,19 +72,10 @@ on:
         default: ':no_entry:'
         type: string
 
-      github-app-id:
-        description: "App ID for Github."
-        required: true
-        type: string
-
     secrets:
 
       slack-token:
         description: "Authentication token for Slack."
-        required: true
-
-      github-app-private-key:
-        description: "App private key for Github."
         required: true
 
 
@@ -100,14 +91,10 @@ jobs:
       release-rules: ${{ inputs.release-rules }}
       release-branches: ${{ inputs.release-branches }}
 
-      github-app-id: ${{ inputs.github-app-id }}
-
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
 
     secrets:
-
-      github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
 
   release-repo:
@@ -116,14 +103,11 @@ jobs:
     with:
 
       job-name: ${{ inputs.job-name }}
-
+      
       release-info: ${{ needs.version.outputs.release }}
-
-      github-app-id: ${{ inputs.github-app-id }}
+      
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
 
     secrets:
-
-      github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}

@@ -7,6 +7,8 @@ on:
       - synchronize
 
 permissions:
+  # Permission needed for the changes.yaml workflow to detect changes across the full PR branch
+  # pull-request: write if you enable PR thread comments
   pull-requests: read
 
 concurrency:

@@ -7,7 +7,6 @@ on:
       - synchronize
 
 permissions:
-  contents: write
   pull-requests: read
 
 concurrency:

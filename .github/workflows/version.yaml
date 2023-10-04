@@ -72,19 +72,10 @@ on:
         default: ':no_entry:'
         type: string
 
-      github-app-id:
-        description: "App ID for Github."
-        required: true
-        type: string
-
     secrets:
 
       slack-token:
         description: "Authentication token for Slack."
-        required: true
-
-      github-app-private-key:
-        description: "App private key for Github."
         required: true
 
     outputs:
@@ -129,18 +120,11 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v3
 
-      - name: generate token
-        id: generate-token
-        uses: tibdex/github-app-token@v1.8.0
-        with:
-          app_id: ${{ inputs.github-app-id }}
-          private_key: ${{ secrets.github-app-private-key }}
-
       - name: determine release
         uses: docker://ghcr.io/codfish/semantic-release-action:v2
         id: release
         env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           dry_run: true
           branches: ${{ inputs.release-branches }}

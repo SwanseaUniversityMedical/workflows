@@ -74,7 +74,7 @@ jobs:
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
-        #if: failure()
+        if: failure()
         continue-on-error: true
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}

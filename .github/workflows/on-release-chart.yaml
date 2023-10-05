@@ -107,11 +107,6 @@ on:
         default: ':no_entry:'
         type: string
 
-      github-app-id:
-        description: "App ID for Github."
-        required: true
-        type: string
-
     secrets:
 
       slack-token:
@@ -120,10 +115,6 @@ on:
 
       chart-registry-token:
         description: "Authentication token for the chart registry."
-        required: true
-
-      github-app-private-key:
-        description: "App private key for Github."
         required: true
 
     outputs:
@@ -153,14 +144,10 @@ jobs:
       release-rules: ${{ inputs.release-rules }}
       release-branches: ${{ inputs.release-branches }}
 
-      github-app-id: ${{ inputs.github-app-id }}
-
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
 
     secrets:
-
-      github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
 
 
@@ -182,8 +169,6 @@ jobs:
       chart-registry-repo: ${{ inputs.chart-registry-repo }}
       chart-tag-suffix: ${{ inputs.chart-tag-suffix }}
 
-      github-app-id: ${{ inputs.github-app-id }}
-
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
       status-running: ${{ inputs.status-running }}
@@ -193,9 +178,7 @@ jobs:
       chart: ${{ inputs.chart }}
 
     secrets:
-
       chart-registry-token: ${{ secrets.chart-registry-token }}
-      github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
 
   test:
@@ -213,8 +196,6 @@ jobs:
       chart-registry-repo: ${{ inputs.chart-registry-repo }}
       chart-registry-digest: ${{ needs.build.outputs.digest }}
 
-      github-app-id: ${{ inputs.github-app-id }}
-
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
       status-running: ${{ inputs.status-running }}
@@ -224,9 +205,7 @@ jobs:
       command: ${{ inputs.test-command }}
 
     secrets:
-
       chart-registry-token: ${{ secrets.chart-registry-token }}
-      github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}
 
   release:
@@ -249,11 +228,9 @@ jobs:
       chart-registry-digest: ${{ needs.build.outputs.digest }}
       chart-tag-suffix: ${{ inputs.chart-tag-suffix }}
 
-      github-app-id: ${{ inputs.github-app-id }}
       slack-channel: ${{ inputs.slack-channel }}
       slack-thread: ${{ inputs.slack-thread }}
 
     secrets:
       chart-registry-token: ${{ secrets.chart-registry-token }}
-      github-app-private-key: ${{ secrets.github-app-private-key }}
       slack-token: ${{ secrets.slack-token }}

@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+permissions:
+  # Permission needed to author a Github release
+  contents: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -12,7 +16,7 @@ concurrency:
 jobs:
 
   ######################################################################################################################
-  # Pre-Tasks
+  # Pre-Tasks  
   ######################################################################################################################
 
   slack:
@@ -30,7 +34,6 @@ jobs:
     with:
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
-      github-app-id: ${{ vars.APP_ID }}
       filters: |
         workflows:
           - './.github/workflows/**'
@@ -66,7 +69,6 @@ jobs:
           - './charts/helloworld/**'
     secrets:
       slack-token: ${{ secrets.SLACK_TOKEN }}
-      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
   ######################################################################################################################
   # Container Whalesay Tasks
@@ -82,7 +84,6 @@ jobs:
     with:
       job-name: container-whalesay
       container-registry: ${{ vars.HARBOR_REGISTRY }}
-      github-app-id: ${{ vars.APP_ID }}
       container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-project: ${{ vars.HARBOR_PROJECT }}
       container-registry-repo: whalesay
@@ -94,7 +95,6 @@ jobs:
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
-      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
   container-whalesay2:
     # Build the whalesay2 container and push it as :rc-1.0.0
@@ -106,7 +106,6 @@ jobs:
     with:
       job-name: container-whalesay2
       container-registry: ${{ vars.HARBOR_REGISTRY }}
-      github-app-id: ${{ vars.APP_ID }}
       container-registry-user: ${{ vars.HARBOR_USER }}
       container-registry-project: ${{ vars.HARBOR_PROJECT }}
       container-registry-repo: whalesay2
@@ -118,7 +117,6 @@ jobs:
     secrets:
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
-      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
   ######################################################################################################################
   # Chart HelloWorld Tasks
@@ -138,13 +136,11 @@ jobs:
       chart-registry-project: ${{ vars.HARBOR_PROJECT }}
       chart-registry-repo: helloworld
       release-tag-format: 'helloworld-${version}'
-      github-app-id: ${{ vars.APP_ID }}
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
       chart: charts/helloworld
     secrets:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
-      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
 
   ######################################################################################################################
@@ -183,10 +179,8 @@ jobs:
     uses: ./.github/workflows/on-release-repo.yaml
     with:
       job-name: workflows
-      github-app-id: ${{ vars.APP_ID }}
       release-tag-format: 'v${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       slack-thread: ${{ needs.slack.outputs.thread }}
     secrets:
       slack-token: ${{ secrets.SLACK_TOKEN }}
-      github-app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

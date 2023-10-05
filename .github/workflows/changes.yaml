@@ -32,19 +32,10 @@ on:
         default: ':no_entry:'
         type: string
 
-      github-app-id:
-        description: "App ID for Github."
-        required: true
-        type: string
-
     secrets:
 
       slack-token:
         description: "Authentication token for Slack."
-        required: true
-
-      github-app-private-key:
-        description: "App private key for Github."
         required: true
 
     outputs:
@@ -77,18 +68,11 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v3
 
-      - name: generate token
-        id: generate-token
-        uses: tibdex/github-app-token@v1.8.0
-        with:
-          app_id: ${{ inputs.github-app-id }}
-          private_key: ${{ secrets.github-app-private-key }}
-
       - name: detect changed files
         uses: dorny/paths-filter@v2
         id: changes
         with:
-          token: ${{ steps.generate-token.outputs.token }}
+          token: ${{ github.token }}
           filters: ${{ inputs.filters }}
 
       - name: annotate the ci run with changes

@@ -62,11 +62,6 @@ on:
         default: ':no_entry:'
         type: string
 
-      github-app-id:
-        description: "App ID for Github."
-        required: true
-        type: string
-
     secrets:
 
       slack-token:
@@ -75,10 +70,6 @@ on:
 
       chart-registry-token:
         description: "Authentication token for the chart registry."
-        required: true
-
-      github-app-private-key:
-        description: "App private key for Github."
         required: true
 
 jobs:
@@ -106,18 +97,11 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v3
 
-      - name: generate token
-        id: generate-token
-        uses: tibdex/github-app-token@v1.8.0
-        with:
-          app_id: ${{ inputs.github-app-id }}
-          private_key: ${{ secrets.github-app-private-key }}
-
       - name: install helm
         uses: azure/setup-helm@v3
         with:
           version: 'v3.9.0'
-          token: ${{ steps.generate-token.outputs.token }}
+          token: ${{ github.token }}
 
       - name: login to chart registry
         run: |

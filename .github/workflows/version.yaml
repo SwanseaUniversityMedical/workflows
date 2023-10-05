@@ -52,21 +52,6 @@ on:
         required: true
         type: string
 
-      slack-thread:
-        description: "Slack thread to reply to."
-        required: true
-        type: string
-
-      status-running:
-        description: "Running status for the message header."
-        default: ':hammer_and_wrench:'
-        type: string
-
-      status-success:
-        description: "Success status for the message header."
-        default: ':white_check_mark:'
-        type: string
-
       status-failure:
         description: "Failure status for the message header."
         default: ':no_entry:'
@@ -106,17 +91,6 @@ jobs:
       release: ${{ toJSON(steps.release.outputs) }}
 
     steps:
-      - name: update slack thread
-        uses: archive/github-actions-slack@v2.7.0
-        id: slack
-        continue-on-error: true
-        with:
-          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
-          slack-channel: ${{ inputs.slack-channel }}
-          slack-optional-thread_ts: ${{ inputs.slack-thread }}
-          slack-text: |
-            ${{ inputs.status-running }} job: ${{ github.job }} / ${{ inputs.job-name }}
-
       - name: clone repo
         uses: actions/checkout@v3
 
@@ -147,23 +121,6 @@ jobs:
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           Next release will be version ${{ steps.release.outputs.release-version }}"
 
-      - name: update slack thread success
-        uses: archive/github-actions-slack@v2.7.0
-        if: success()
-        continue-on-error: true
-        with:
-          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
-          slack-channel: ${{ inputs.slack-channel }}
-          slack-function: update-message
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-message-text: |
-            ${{ inputs.status-success }} job: ${{ github.job }} / ${{ inputs.job-name }}
-            
-            ```
-            Status: ${{ steps.release.outputs.new-release-published == 'true' && 'Eligible for release!' || 'Not eligible for release.' }}
-            Version: ${{ steps.release.outputs.release-version }}
-            ```
-
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
         if: failure()
@@ -171,7 +128,14 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
-          slack-function: update-message
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-message-text: |
-            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}
+          slack-text: |
+            *${{ github.repository }}*\n
+            *Release ${{ github.ref }}*\n
+            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
+            ```
+            Ref:      ${{ github.ref }}\n
+            Sha:      ${{ github.sha }}\n
+            Workflow: ${{ github.workflow }}\n
+            Run:      ${{ github.run_id }}
+            ```

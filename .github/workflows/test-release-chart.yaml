@@ -7,11 +7,11 @@ on:
         required: true
         type: string
 
-      release-info:
-        description: "JSON list of release info from dry run."
+      command:
+        description: "Command to test the chart named $CHART."
         required: true
         type: string
-        
+
       chart-registry:
         description: "URL of the chart registry."
         required: true
@@ -33,12 +33,7 @@ on:
         type: string
 
       chart-registry-digest:
-        description: "URI of the chart."
-        required: true
-        type: string
-
-      chart-tag-suffix:
-        description: "Suffix to use when tagging chart"
+        description: "Version of the chart from within chart registry repo."
         required: true
         type: string
 
@@ -57,45 +52,30 @@ on:
       slack-token:
         description: "Authentication token for Slack."
         required: true
-        
+
       chart-registry-token:
         description: "Authentication token for the chart registry."
         required: true
 
-    outputs:
-
-      release:
-        description: "JSON encoded dictionary of release parameters."
-        value: ${{ jobs.release-chart.outputs.release }}
-
 jobs:
-  release-chart:
+  test-chart:
     runs-on: 
       labels: [self-hosted, linux, x64]
       group: heavy
-
-    outputs:
-      release: ${{ toJSON(steps.release.outputs) }}
 
     steps:
       - name: build chart uri
         run: |
           echo "CHART_REPO=${{ inputs.chart-registry }}/chartrepo/${{ inputs.chart-registry-project }}" >> $GITHUB_ENV
 
-      - name: create tag
-        run: |
-          echo "RELEASE_TAG=${{ fromJSON(inputs.release-info).release-version }}${{ inputs.chart-tag-suffix }}" >> $GITHUB_ENV 
+      - name: clone repo
+        uses: actions/checkout@v3
 
       - name: install helm
         uses: azure/setup-helm@v3
         with:
           version: 'v3.9.0'
           token: ${{ github.token }}
-
-      - name: setup chart-museum push plugin
-        # TODO Can be changed to modern OCI style chart push after we upgrade harbor to latest
-        run: |
-          helm plugin install https://github.com/chartmuseum/helm-push
 
       - name: login to chart registry
         run: |
@@ -114,36 +94,8 @@ jobs:
         run: |
           echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
 
-      - name: push chart
-        run: |
-          helm cm-push ${{ env.CHART }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }} remote
-
-      - name: release
-        uses: actions/github-script@v6
-        id: release
-        env:
-          RELEASE_NOTES: |
-            ${{ fromJSON(inputs.release-info).release-notes }}
-        with:
-          retries: 3
-          github-token: ${{ github.token }}
-          script: |
-            github.rest.repos.createRelease({
-              owner: "${{ github.repository_owner }}",
-              repo: "${{ github.event.repository.name }}",
-              tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
-              target_commitish: "${{ github.sha }}",
-              body: process.env.RELEASE_NOTES,
-              name: "${{ fromJSON(inputs.release-info).git-tag }}"
-            });
-
-      - name: annotate the ci run with chart tags
-        run: >-
-          echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-          Pushed release chart version ${{ fromJSON(inputs.release-info).release-version }}!%0A
-          - %0A
-          helm repo add --pass-credentials --username <user> --password <token> <repo> https://${{ env.CHART_REPO }}%0A
-          helm pull --version ${{ env.RELEASE_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
+      - name: test chart
+        run: ${{ inputs.command }}
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

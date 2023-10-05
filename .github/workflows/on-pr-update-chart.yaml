@@ -42,29 +42,9 @@ on:
         required: true
         type: string
 
-      slack-thread:
-        description: "Slack thread to reply to."
-        required: true
-        type: string
-
-      status-running:
-        description: "Running status for the message header."
-        default: ':hammer_and_wrench:'
-        type: string
-
-      status-success:
-        description: "Success status for the message header."
-        default: ':white_check_mark:'
-        type: string
-
       status-failure:
         description: "Failure status for the message header."
         default: ':no_entry:'
-        type: string
-
-      github-comment:
-        description: "Boolean flag to write a Github PR comment."
-        default: false
         type: string
 
     secrets:
@@ -96,53 +76,35 @@ jobs:
     # Build the chart and push it
     uses: ./.github/workflows/build-pr-chart.yaml
     with:
-
       job-name: ${{ inputs.job-name }}
-
       chart-registry: ${{ inputs.chart-registry }}
       chart-registry-user: ${{ inputs.chart-registry-user }}
       chart-registry-project: ${{ inputs.chart-registry-project }}
       chart-registry-repo: ${{ inputs.chart-registry-repo }}
-
-      github-comment: ${{ inputs.github-comment }}
-
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ inputs.slack-thread }}
-      status-running: ${{ inputs.status-running }}
-      status-success: ${{ inputs.status-success }}
       status-failure: ${{ inputs.status-failure }}
-
       chart: ${{ inputs.chart }}
 
     secrets:
-
       chart-registry-token: ${{ secrets.chart-registry-token }}
       slack-token: ${{ secrets.slack-token }}
 
   test:
     # Test the chart
     needs: build
-    uses: ./.github/workflows/test-chart.yaml
+    uses: ./.github/workflows/test-pr-chart.yaml
     if: ${{ inputs.test-command != '' }}
     with:
-
       job-name: ${{ inputs.job-name }}
-
       chart-registry: ${{ inputs.chart-registry }}
       chart-registry-user: ${{ inputs.chart-registry-user }}
       chart-registry-project: ${{ inputs.chart-registry-project }}
       chart-registry-repo: ${{ inputs.chart-registry-repo }}
       chart-registry-digest: ${{ needs.build.outputs.digest }}
-
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ inputs.slack-thread }}
-      status-running: ${{ inputs.status-running }}
-      status-success: ${{ inputs.status-success }}
       status-failure: ${{ inputs.status-failure }}
-
       command: ${{ inputs.test-command }}
 
     secrets:
-
       chart-registry-token: ${{ secrets.chart-registry-token }}
       slack-token: ${{ secrets.slack-token }}

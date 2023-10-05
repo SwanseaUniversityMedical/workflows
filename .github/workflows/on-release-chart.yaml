@@ -87,21 +87,6 @@ on:
         required: true
         type: string
 
-      slack-thread:
-        description: "Slack thread to reply to."
-        required: true
-        type: string
-
-      status-running:
-        description: "Running status for the message header."
-        default: ':hammer_and_wrench:'
-        type: string
-
-      status-success:
-        description: "Success status for the message header."
-        default: ':white_check_mark:'
-        type: string
-
       status-failure:
         description: "Failure status for the message header."
         default: ':no_entry:'
@@ -137,15 +122,11 @@ jobs:
     # Determine if a release should happen and what its version would be
     uses: ./.github/workflows/version.yaml
     with:
-
       job-name: ${{ inputs.job-name }}
-
       release-tag-format: ${{ inputs.release-tag-format}}
       release-rules: ${{ inputs.release-rules }}
       release-branches: ${{ inputs.release-branches }}
-
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ inputs.slack-thread }}
 
     secrets:
       slack-token: ${{ secrets.slack-token }}
@@ -153,28 +134,19 @@ jobs:
 
   build:
     # Build the chart and push it
-    needs:
-      - version
+    needs: version
     if: fromJSON(needs.version.outputs.release).new-release-published == 'true'
     uses: ./.github/workflows/build-release-chart.yaml
     with:
-
       job-name: ${{ inputs.job-name }}
-
       release-version: ${{ fromJSON(needs.version.outputs.release).release-version }}
-
       chart-registry: ${{ inputs.chart-registry }}
       chart-registry-user: ${{ inputs.chart-registry-user }}
       chart-registry-project: ${{ inputs.chart-registry-project }}
       chart-registry-repo: ${{ inputs.chart-registry-repo }}
       chart-tag-suffix: ${{ inputs.chart-tag-suffix }}
-
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ inputs.slack-thread }}
-      status-running: ${{ inputs.status-running }}
-      status-success: ${{ inputs.status-success }}
       status-failure: ${{ inputs.status-failure }}
-
       chart: ${{ inputs.chart }}
 
     secrets:
@@ -184,24 +156,17 @@ jobs:
   test:
     # Test the chart
     needs: build
-    uses: ./.github/workflows/test-chart.yaml
+    uses: ./.github/workflows/test-release-chart.yaml
     if: ${{ inputs.test-command != '' }}
     with:
-
       job-name: ${{ inputs.job-name }}
-
       chart-registry: ${{ inputs.chart-registry }}
       chart-registry-user: ${{ inputs.chart-registry-user }}
       chart-registry-project: ${{ inputs.chart-registry-project }}
       chart-registry-repo: ${{ inputs.chart-registry-repo }}
       chart-registry-digest: ${{ needs.build.outputs.digest }}
-
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ inputs.slack-thread }}
-      status-running: ${{ inputs.status-running }}
-      status-success: ${{ inputs.status-success }}
       status-failure: ${{ inputs.status-failure }}
-
       command: ${{ inputs.test-command }}
 
     secrets:
@@ -218,18 +183,15 @@ jobs:
     if: ${{ always() && ((needs.test.result == 'skipped' || needs.test.result == 'success') && needs.build.result == 'success') }}
     with:
       job-name: ${{ inputs.job-name }}
-      
       release-info: ${{ needs.version.outputs.release }}
-
       chart-registry: ${{ inputs.chart-registry }}
       chart-registry-user: ${{ inputs.chart-registry-user }}
       chart-registry-project: ${{ inputs.chart-registry-project }}
       chart-registry-repo: ${{ inputs.chart-registry-repo }}
       chart-registry-digest: ${{ needs.build.outputs.digest }}
       chart-tag-suffix: ${{ inputs.chart-tag-suffix }}
-
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ inputs.slack-thread }}
+      status-failure: ${{ inputs.status-failure }}
 
     secrets:
       chart-registry-token: ${{ secrets.chart-registry-token }}

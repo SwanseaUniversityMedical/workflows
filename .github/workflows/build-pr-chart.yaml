@@ -37,29 +37,9 @@ on:
         required: true
         type: string
 
-      slack-thread:
-        description: "Slack thread to reply to."
-        required: true
-        type: string
-
-      status-running:
-        description: "Running status for the message header."
-        default: ':hammer_and_wrench:'
-        type: string
-
-      status-success:
-        description: "Success status for the message header."
-        default: ':white_check_mark:'
-        type: string
-
       status-failure:
         description: "Failure status for the message header."
         default: ':no_entry:'
-        type: string
-
-      github-comment:
-        description: "Boolean flag to write a Github PR comment."
-        default: false
         type: string
 
     secrets:
@@ -110,17 +90,6 @@ jobs:
       pr-commit-tag: ${{ env.PR_COMMIT_TAG }}
 
     steps:
-      - name: update slack thread
-        uses: archive/github-actions-slack@v2.7.0
-        id: slack
-        continue-on-error: true
-        with:
-          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
-          slack-channel: ${{ inputs.slack-channel }}
-          slack-optional-thread_ts: ${{ inputs.slack-thread }}
-          slack-text: |
-            ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
-
       - name: build chart uri
         run: |
           echo "CHART_REPO=${{ inputs.chart-registry }}/chartrepo/${{ inputs.chart-registry-project }}" >> $GITHUB_ENV
@@ -162,19 +131,6 @@ jobs:
           helm cm-push ${{ inputs.chart }} --version $PR_TAG --app-version $PR_TAG remote
           helm cm-push ${{ inputs.chart }} --version $PR_COMMIT_TAG --app-version $PR_COMMIT_TAG remote
 
-      - name: comment the chart tags to the pr
-        if: inputs.github-comment == 'true'
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ github.token }}
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR chart assets!\n\nhelm repo add --pass-credentials --username \'<user>\' --password \'<token>\' <repo> https://${{ env.CHART_REPO }}\nhelm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}\nhelm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}\n```\n\n:robot: :wheel_of_dharma: :package: :passenger_ship:\n'
-            })
-
       - name: annotate the ci run with chart tags
         run: >-
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
@@ -184,25 +140,6 @@ jobs:
           helm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}%0A
           helm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
 
-      - name: update slack thread success
-        uses: archive/github-actions-slack@v2.7.0
-        continue-on-error: true
-        with:
-          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
-          slack-channel: ${{ inputs.slack-channel }}
-          slack-function: update-message
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-message-text: |
-            ${{ inputs.status-success }}  job: ${{ github.job }} / ${{ inputs.job-name }}
-
-            ```
-            Status: Pushed PR chart assets!
-            
-            helm repo add --pass-credentials --username '<user>' --password '<token>' <repo> https://${{ env.CHART_REPO }}
-            helm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}
-            helm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}
-            ```
-
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
         continue-on-error: true
@@ -210,7 +147,17 @@ jobs:
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
-          slack-function: update-message
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-message-text: |
-            ${{ inputs.status-failure }}  job: ${{ github.job }} / ${{ inputs.job-name }}
+          slack-text: |
+            *${{ github.repository }}*\n
+            *PR-${{ github.event.pull_request.number }} Update*\n
+            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}\n
+            <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
+            ```
+            PR:       ${{ github.event.pull_request.title }}
+            Branch:   ${{ github.head_ref }}
+            Ref:      ${{ github.ref }}
+            Sha:      ${{ github.event.pull_request.head.sha }}
+            Workflow: ${{ github.workflow }}
+            Run:      ${{ github.run_id }}
+            ```

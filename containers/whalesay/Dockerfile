@@ -1,1 +1,1 @@
-FROM docker/whalesay
+FROM docker/whalesay:latest

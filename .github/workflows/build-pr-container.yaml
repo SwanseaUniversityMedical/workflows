@@ -37,29 +37,9 @@ on:
         required: true
         type: string
 
-      slack-thread:
-        description: "Slack thread to reply to."
-        required: true
-        type: string
-
-      status-running:
-        description: "Running status for the message header."
-        default: ':hammer_and_wrench:'
-        type: string
-
-      status-success:
-        description: "Success status for the message header."
-        default: ':white_check_mark:'
-        type: string
-
       status-failure:
         description: "Failure status for the message header."
         default: ':no_entry:'
-        type: string
-
-      github-comment:
-        description: "Boolean flag to write a Github PR comment."
-        default: false
         type: string
 
     secrets:
@@ -110,17 +90,6 @@ jobs:
       pr-commit-tag: ${{ env.PR_COMMIT_TAG }}
 
     steps:
-      - name: update slack thread
-        uses: archive/github-actions-slack@v2.7.0
-        id: slack
-        continue-on-error: true
-        with:
-          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
-          slack-channel: ${{ inputs.slack-channel }}
-          slack-optional-thread_ts: ${{ inputs.slack-thread }}
-          slack-text: |
-            ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
-
       - name: build image uri
         run: |
           echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
@@ -166,19 +135,6 @@ jobs:
         run: |
           echo "DIGEST=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.PR_COMMIT_TAG }}`" >> $GITHUB_ENV
 
-      - name: comment the image tags to the pr
-        if: inputs.github-comment == 'true'
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ github.token }}
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'job: `${{ github.job }}` / `${{ inputs.job-name }}`\n\n```Status: Pushed PR container assets!\n\ndocker pull ${{ env.PR_TAG }}\ndocker pull ${{ env.PR_COMMIT_TAG }}\ndocker pull ${{ env.DIGEST }}\n```\n\n:robot: :whale2: :package: :passenger_ship:\n'
-            })
-
       - name: annotate the ci run with container tags
         run: >-
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
@@ -188,33 +144,24 @@ jobs:
           docker pull ${{ env.PR_COMMIT_TAG }}%0A
           docker pull ${{ env.DIGEST }}"
 
-      - name: update slack thread success
-        uses: archive/github-actions-slack@v2.7.0
-        continue-on-error: true
-        with:
-          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
-          slack-channel: ${{ inputs.slack-channel }}
-          slack-function: update-message
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-message-text: |
-            ${{ inputs.status-success }}  job: ${{ github.job }} / ${{ inputs.job-name }}
-
-            ```
-            Status: Pushed PR container assets!
-            
-            docker pull ${{ env.PR_TAG }}
-            docker pull ${{ env.PR_COMMIT_TAG }}
-            docker pull ${{ env.DIGEST }}
-            ```
-
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
-        if: failure()
         continue-on-error: true
+        #if: failure()
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
-          slack-function: update-message
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-message-text: |
-            ${{ inputs.status-failure }}  job: ${{ github.job }} / ${{ inputs.job-name }}
+          slack-text: |
+            *${{ github.repository }}*\n
+            *PR-${{ github.event.pull_request.number }} Update*\n
+            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}\n
+            <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
+            ```
+            PR:       ${{ github.event.pull_request.title }}
+            Branch:   ${{ github.head_ref }}
+            Ref:      ${{ github.ref }}
+            Sha:      ${{ github.event.pull_request.head.sha }}
+            Workflow: ${{ github.workflow }}
+            Run:      ${{ github.run_id }}
+            ```

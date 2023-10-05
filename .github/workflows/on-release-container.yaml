@@ -92,21 +92,6 @@ on:
         required: true
         type: string
 
-      slack-thread:
-        description: "Slack thread to reply to."
-        required: true
-        type: string
-
-      status-running:
-        description: "Running status for the message header."
-        default: ':hammer_and_wrench:'
-        type: string
-
-      status-success:
-        description: "Success status for the message header."
-        default: ':white_check_mark:'
-        type: string
-
       status-failure:
         description: "Failure status for the message header."
         default: ':no_entry:'
@@ -138,29 +123,22 @@ jobs:
     # Determine if a release should happen and what its version would be
     uses: ./.github/workflows/version.yaml
     with:
-
       job-name: ${{ inputs.job-name }}
-
       release-tag-format: ${{ inputs.release-tag-format}}
       release-rules: ${{ inputs.release-rules }}
       release-branches: ${{ inputs.release-branches }}
-
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ inputs.slack-thread }}
 
     secrets:
       slack-token: ${{ secrets.slack-token }}
 
   build:
     # Build the container and push it as :rc-1.0.0
-    needs:
-      - version
+    needs: version
     if: fromJSON(needs.version.outputs.release).new-release-published == 'true'
     uses: ./.github/workflows/build-release-container.yaml
     with:
-
       job-name: ${{ inputs.job-name }}
-
       release-version: ${{ fromJSON(needs.version.outputs.release).release-version }}
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
@@ -168,13 +146,8 @@ jobs:
       container-registry-repo: ${{ inputs.container-registry-repo }}
       container-tag-prefix: ${{ inputs.container-tag-prefix }}
       container-tag-suffix: ${{ inputs.container-tag-suffix }}
-
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ inputs.slack-thread }}
-      status-running: ${{ inputs.status-running }}
-      status-success: ${{ inputs.status-success }}
       status-failure: ${{ inputs.status-failure }}
-
       command: ${{ inputs.build-command }}
 
     secrets:
@@ -184,22 +157,15 @@ jobs:
   test:
     # Test the container
     needs: build
-    uses: ./.github/workflows/test-container.yaml
+    uses: ./.github/workflows/test-release-container.yaml
     if: ${{ inputs.test-command != '' }}
     with:
-
       job-name: ${{ inputs.job-name }}
-
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-digest: ${{ needs.build.outputs.digest }}
-
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ inputs.slack-thread }}
-      status-running: ${{ inputs.status-running }}
-      status-success: ${{ inputs.status-success }}
       status-failure: ${{ inputs.status-failure }}
-
       command: ${{ inputs.test-command }}
 
     secrets:
@@ -215,11 +181,8 @@ jobs:
     uses: ./.github/workflows/release-container.yaml
     if: ${{ always() && ((needs.test.result == 'skipped' || needs.test.result == 'success') && needs.build.result == 'success') }}
     with:
-
       job-name: ${{ inputs.job-name }}
-
       release-info: ${{ needs.version.outputs.release }}
-
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-digest: ${{ needs.build.outputs.digest }}
@@ -227,9 +190,8 @@ jobs:
       container-registry-repo: ${{ inputs.container-registry-repo }}
       container-tag-prefix: ${{ inputs.container-tag-prefix }}
       container-tag-suffix: ${{ inputs.container-tag-suffix }}
-
       slack-channel: ${{ inputs.slack-channel }}
-      slack-thread: ${{ inputs.slack-thread }}
+      status-failure: ${{ inputs.status-failure }}
 
     secrets:
       slack-token: ${{ secrets.slack-token }}

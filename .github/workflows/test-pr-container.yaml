@@ -32,21 +32,6 @@ on:
         required: true
         type: string
 
-      slack-thread:
-        description: "Slack thread to reply to."
-        required: true
-        type: string
-
-      status-running:
-        description: "Running status for the message header."
-        default: ':hammer_and_wrench:'
-        type: string
-
-      status-success:
-        description: "Success status for the message header."
-        default: ':white_check_mark:'
-        type: string
-
       status-failure:
         description: "Failure status for the message header."
         default: ':no_entry:'
@@ -69,17 +54,6 @@ jobs:
       group: heavy
 
     steps:
-      - name: update slack thread
-        uses: archive/github-actions-slack@v2.7.0
-        id: slack
-        continue-on-error: true
-        with:
-          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
-          slack-channel: ${{ inputs.slack-channel }}
-          slack-optional-thread_ts: ${{ inputs.slack-thread }}
-          slack-text: |
-            ${{ inputs.status-running }}  job: ${{ github.job }} / ${{ inputs.job-name }}
-
       - name: login to container registry
         uses: docker/login-action@v2
         with:
@@ -98,26 +72,24 @@ jobs:
       - name: test container
         run: ${{ inputs.command }}
 
-      - name: update slack thread success
-        uses: archive/github-actions-slack@v2.7.0
-        if: success()
-        continue-on-error: true
-        with:
-          slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
-          slack-channel: ${{ inputs.slack-channel }}
-          slack-function: update-message
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-message-text: |
-            ${{ inputs.status-success }}  job: ${{ github.job }} / ${{ inputs.job-name }}
-
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
-        if: failure()
+        #if: failure()
         continue-on-error: true
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
-          slack-function: update-message
-          slack-update-message-ts: ${{ fromJson(steps.slack.outputs.slack-result).response.message.ts }}
-          slack-update-message-text: |
-            ${{ inputs.status-failure }}  job: ${{ github.job }} / ${{ inputs.job-name }}
+          slack-text: |
+            *${{ github.repository }}*\n
+            *PR-${{ github.event.pull_request.number }} Update*\n
+            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}\n
+            <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
+            ```
+            PR:       ${{ github.event.pull_request.title }}
+            Branch:   ${{ github.head_ref }}
+            Ref:      ${{ github.ref }}
+            Sha:      ${{ github.event.pull_request.head.sha }}
+            Workflow: ${{ github.workflow }}
+            Run:      ${{ github.run_id }}
+            ```

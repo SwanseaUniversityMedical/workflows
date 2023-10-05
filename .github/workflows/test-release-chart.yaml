@@ -7,13 +7,8 @@ on:
         required: true
         type: string
 
-      release-version:
-        description: "Semver version of the release."
-        required: true
-        type: string
-
-      chart:
-        description: "Path to the helm chart."
+      command:
+        description: "Command to test the chart named $CHART."
         required: true
         type: string
 
@@ -37,8 +32,8 @@ on:
         required: true
         type: string
 
-      chart-tag-suffix:
-        description: "Suffix to use when tagging chart"
+      chart-registry-digest:
+        description: "Version of the chart from within chart registry repo."
         required: true
         type: string
 
@@ -62,50 +57,16 @@ on:
         description: "Authentication token for the chart registry."
         required: true
 
-    outputs:
-
-      registry:
-        description: "URL of the chart registry."
-        value: ${{ inputs.chart-registry }}
-
-      project:
-        description: "Project within chart registry."
-        value: ${{ inputs.chart-registry-project }}
-
-      repo:
-        description: "Repo within chart registry project."
-        value: ${{ inputs.chart-registry-repo }}
-
-      digest:
-        description: "Docker pull URI with digest."
-        value: ${{ jobs.build-release-chart.outputs.digest }}
-
-      pr-tag:
-        description: "Docker pull URI with pr tag."
-        value: ${{ jobs.build-release-chart.outputs.pr-tag }}
-
-      pr-commit-tag:
-        description: "Docker pull URI with pr and sha tag."
-        value: ${{ jobs.build-release-chart.outputs.pr-commit-tag }}
-
 jobs:
-  build-release-chart:
+  test-chart:
     runs-on: 
       labels: [self-hosted, linux, x64]
       group: heavy
-
-    outputs:
-      digest: ${{ env.RC_TAG }}
-      rc-tag: ${{ env.RC_TAG }}
 
     steps:
       - name: build chart uri
         run: |
           echo "CHART_REPO=${{ inputs.chart-registry }}/chartrepo/${{ inputs.chart-registry-project }}" >> $GITHUB_ENV
-
-      - name: create tags
-        run: |
-          echo "RC_TAG=${{ inputs.release-version }}-rc${{ inputs.chart-tag-suffix }}" >> $GITHUB_ENV 
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -116,36 +77,30 @@ jobs:
           version: 'v3.9.0'
           token: ${{ github.token }}
 
-      - name: update chart dependencies
-        run: |
-          helm dependency update ${{ inputs.chart }}
-
-      - name: setup chart-museum push plugin
-        # TODO Can be changed to modern OCI style chart push after we upgrade harbor to latest
-        run: |
-          helm plugin install https://github.com/chartmuseum/helm-push
-
       - name: login to chart registry
         run: |
           set -x
           helm repo add --pass-credentials --username '${{ inputs.chart-registry-user }}' --password '${{ secrets.chart-registry-token }}' remote https://${{ env.CHART_REPO }}
 
-      - name: push charts
+      - name: update charts list
         run: |
-          helm cm-push ${{ inputs.chart }} --version ${{ env.RC_TAG }} --app-version ${{ env.RC_TAG }} remote
+          helm repo update
 
-      - name: annotate the ci run with chart tags
-        run: >-
-          echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-          Pushed release candidate chart assets!%0A
-          - %0A
-          helm repo add --pass-credentials --username <user> --password <token> <repo> https://${{ env.CHART_REPO }}%0A
-          helm pull --version ${{ env.RC_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
+      - name: pull chart
+        run: |
+          helm pull remote/${{ inputs.chart-registry-repo }} --version ${{ inputs.chart-registry-digest }}
+
+      - name: build chart install name
+        run: |
+          echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
+
+      - name: test chart
+        run: ${{ inputs.command }}
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
-        continue-on-error: true
         #if: failure()
+        continue-on-error: true
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}

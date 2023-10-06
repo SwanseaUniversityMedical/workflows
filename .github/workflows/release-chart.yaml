@@ -111,7 +111,6 @@ jobs:
       - name: unpack chart
         run: |
           tar -zxvf --directory ./repackage/ ${{ inputs.chart-registry-repo }}-${{ inputs.chart-registry-digest }}.tgz
-          rm ${{ inputs.chart-registry-repo }}-${{ inputs.chart-registry-digest }}.tgz
 
       - name: repackage chart
         run: |

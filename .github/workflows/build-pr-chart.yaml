@@ -112,10 +112,6 @@ jobs:
           version: 'v3.9.0'
           token: ${{ github.token }}
 
-      - name: update chart dependencies
-        run: |
-          helm dependency update ${{ inputs.chart }}
-
       - name: login to chart registry
         run: |
           helm registry login \
@@ -123,10 +119,25 @@ jobs:
             --password '${{ secrets.chart-registry-token }}' \
             oci://${{ inputs.chart-registry }}
 
-      - name: push charts
+      - name: update chart dependencies
         run: |
-          helm push ${{ inputs.chart }} --version $PR_TAG --app-version $PR_TAG oci://${{ env.CHART_REPO }}
-          helm push ${{ inputs.chart }} --version $PR_COMMIT_TAG --app-version $PR_COMMIT_TAG oci://${{ env.CHART_REPO }}
+          helm dependency update ${{ inputs.chart }}
+
+      - name: package chart with pr tag
+        run: |
+          helm package ${{ inputs.chart }} --version ${{ env.PR_TAG }} --app-version ${{ env.PR_TAG }}
+
+      - name: push chart with pr tag
+        run: |
+          helm push ${{ inputs.chart-registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_REPO }}
+
+      - name: package chart with pr commit tag
+        run: |
+          helm package ${{ inputs.chart }} --version ${{ env.PR_COMMIT_TAG }} --app-version ${{ env.PR_COMMIT_TAG }}
+
+      - name: push chart with pr commit tag
+        run: |
+          helm push ${{ inputs.chart-registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
       - name: annotate the ci run with chart tags
         run: >-

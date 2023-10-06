@@ -127,9 +127,13 @@ jobs:
         run: |
           helm dependency update ${{ inputs.chart }}
 
-      - name: push charts
+      - name: package chart
         run: |
-          helm push ${{ inputs.chart }} --version ${{ env.RC_TAG }} --app-version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}
+          helm package ${{ inputs.chart }} --version ${{ env.RC_TAG }} --app-version ${{ env.RC_TAG }}
+
+      - name: push chart
+        run: |
+          helm push ${{ inputs.chart-registry-repo }}-${{ env.RC_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
       - name: annotate the ci run with chart tags
         run: >-
@@ -137,7 +141,7 @@ jobs:
           Pushed release candidate chart assets!%0A
           - %0A
           helm registry login --username <user> --password <token> oci://${{ inputs.chart-registry }}%0A
-          helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}"
+          helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

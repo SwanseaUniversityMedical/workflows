@@ -106,15 +106,20 @@ jobs:
 
       - name: pull chart
         run: |
-          helm pull --version ${{ inputs.chart-registry-digest }} oci://${{ env.CHART_REPO }}
+          helm pull --version ${{ inputs.chart-registry-digest }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}
 
-      - name: build chart install name
+      - name: unpack chart
         run: |
-          echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
+          tar -zxvf --directory ./repackage/ ${{ inputs.chart-registry-repo }}-${{ inputs.chart-registry-digest }}.tgz
+          rm ${{ inputs.chart-registry-repo }}-${{ inputs.chart-registry-digest }}.tgz
+
+      - name: repackage chart
+        run: |
+          helm package ./repackage/${{ inputs.chart-registry-repo }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }}
 
       - name: push chart
         run: |
-          helm push ${{ env.CHART }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }} oci://${{ env.CHART_REPO }}
+          helm push ${{ inputs.chart-registry-repo }}-${{ env.RELEASE_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
       - name: release
         uses: actions/github-script@v6
@@ -141,7 +146,7 @@ jobs:
           Pushed release chart version ${{ fromJSON(inputs.release-info).release-version }}!%0A
           - %0A
           helm registry login --username <user> --password <token> oci://${{ inputs.chart-registry }}%0A
-          helm pull --version ${{ env.RELEASE_TAG }} oci://${{ env.CHART_REPO }}"
+          helm pull --version ${{ env.RELEASE_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

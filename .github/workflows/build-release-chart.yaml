@@ -101,7 +101,7 @@ jobs:
     steps:
       - name: build chart uri
         run: |
-          echo "CHART_REPO=${{ inputs.chart-registry }}/chartrepo/${{ inputs.chart-registry-project }}" >> $GITHUB_ENV
+          echo "CHART_REPO=${{ inputs.chart-registry }}/${{ inputs.chart-registry-project }}/chart" >> $GITHUB_ENV
 
       - name: create tags
         run: |
@@ -116,31 +116,28 @@ jobs:
           version: 'v3.9.0'
           token: ${{ github.token }}
 
+      - name: login to chart registry
+        run: |
+          helm registry login \
+            --username '${{ inputs.chart-registry-user }}' \
+            --password '${{ secrets.chart-registry-token }}' \
+            oci://${{ inputs.chart-registry }}
+
       - name: update chart dependencies
         run: |
           helm dependency update ${{ inputs.chart }}
 
-      - name: setup chart-museum push plugin
-        # TODO Can be changed to modern OCI style chart push after we upgrade harbor to latest
-        run: |
-          helm plugin install https://github.com/chartmuseum/helm-push
-
-      - name: login to chart registry
-        run: |
-          set -x
-          helm repo add --pass-credentials --username '${{ inputs.chart-registry-user }}' --password '${{ secrets.chart-registry-token }}' remote https://${{ env.CHART_REPO }}
-
       - name: push charts
         run: |
-          helm cm-push ${{ inputs.chart }} --version ${{ env.RC_TAG }} --app-version ${{ env.RC_TAG }} remote
+          helm push ${{ inputs.chart }} --version ${{ env.RC_TAG }} --app-version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}
 
       - name: annotate the ci run with chart tags
         run: >-
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           Pushed release candidate chart assets!%0A
           - %0A
-          helm repo add --pass-credentials --username <user> --password <token> <repo> https://${{ env.CHART_REPO }}%0A
-          helm pull --version ${{ env.RC_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
+          helm registry login --username <user> --password <token> oci://${{ inputs.chart-registry }}%0A
+          helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

@@ -92,7 +92,7 @@ jobs:
     steps:
       - name: build chart uri
         run: |
-          echo "CHART_REPO=${{ inputs.chart-registry }}/chartrepo/${{ inputs.chart-registry-project }}" >> $GITHUB_ENV
+          echo "CHART_REPO=${{ inputs.chart-registry }}/${{ inputs.chart-registry-project }}/chart" >> $GITHUB_ENV
 
       - name: get short commit sha
         run: |
@@ -101,7 +101,7 @@ jobs:
       - name: create tags
         run: |
           echo "PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
-          echo "PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
+          echo "PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}_${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -116,29 +116,26 @@ jobs:
         run: |
           helm dependency update ${{ inputs.chart }}
 
-      - name: setup chart-museum push plugin
-        # TODO Can be changed to modern OCI style chart push after we upgrade harbor to latest
-        run: |
-          helm plugin install https://github.com/chartmuseum/helm-push
-
       - name: login to chart registry
         run: |
-          set -x
-          helm repo add --pass-credentials --username '${{ inputs.chart-registry-user }}' --password '${{ secrets.chart-registry-token }}' remote https://${{ env.CHART_REPO }}
+          helm registry login \
+            --username '${{ inputs.chart-registry-user }}' \
+            --password '${{ secrets.chart-registry-token }}' \
+            oci://${{ inputs.chart-registry }}
 
       - name: push charts
         run: |
-          helm cm-push ${{ inputs.chart }} --version $PR_TAG --app-version $PR_TAG remote
-          helm cm-push ${{ inputs.chart }} --version $PR_COMMIT_TAG --app-version $PR_COMMIT_TAG remote
+          helm push ${{ inputs.chart }} --version $PR_TAG --app-version $PR_TAG oci://${{ env.CHART_REPO }}
+          helm push ${{ inputs.chart }} --version $PR_COMMIT_TAG --app-version $PR_COMMIT_TAG oci://${{ env.CHART_REPO }}
 
       - name: annotate the ci run with chart tags
         run: >-
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           Pushed PR chart assets!%0A
           - %0A
-          helm repo add --pass-credentials --username <user> --password <token> <repo> https://${{ env.CHART_REPO }}%0A
-          helm pull --version ${{ env.PR_TAG }} <repo>/${{ inputs.chart-registry-repo }}%0A
-          helm pull --version ${{ env.PR_COMMIT_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
+          helm registry login --username <user> --password <token> oci://${{ inputs.chart-registry }}%0A
+          helm pull --version ${{ env.PR_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}%0A
+          helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

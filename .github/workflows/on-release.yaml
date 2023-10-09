@@ -6,7 +6,7 @@ on:
       - main
 
 permissions:
-  # Permission needed to author a Github release
+  # Permission needed to author a Github release 
   contents: write
 
 concurrency:

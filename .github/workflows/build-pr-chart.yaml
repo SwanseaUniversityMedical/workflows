@@ -169,7 +169,6 @@ jobs:
         run: |
           cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_TAG }}"
 
-
       - name: package chart with pr commit tag
         run: |
           helm package ${{ inputs.chart }} --version ${{ env.PR_COMMIT_TAG }} --app-version ${{ env.PR_COMMIT_TAG }}
@@ -184,14 +183,14 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
           COSIGN_PASSWORD: ${{ secrets.cosign-password }}
         run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_COMMIT_TAG }}"
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${PR_COMMIT_TAG//\+/_}"
 
       - name: cosign verify pr commit tag
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_COMMIT_TAG }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${PR_COMMIT_TAG//\+/_}"
 
       - name: annotate the ci run with chart tags
         run: >-

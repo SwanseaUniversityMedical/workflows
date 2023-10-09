@@ -80,7 +80,7 @@ jobs:
     steps:
       - name: build chart uri
         run: |
-          echo "CHART_REPO=${{ inputs.chart-registry }}/chartrepo/${{ inputs.chart-registry-project }}" >> $GITHUB_ENV
+          echo "CHART_REPO=${{ inputs.chart-registry }}/${{ inputs.chart-registry-project }}/chart" >> $GITHUB_ENV
 
       - name: create tag
         run: |
@@ -92,31 +92,29 @@ jobs:
           version: 'v3.9.0'
           token: ${{ github.token }}
 
-      - name: setup chart-museum push plugin
-        # TODO Can be changed to modern OCI style chart push after we upgrade harbor to latest
-        run: |
-          helm plugin install https://github.com/chartmuseum/helm-push
-
       - name: login to chart registry
         run: |
           set -x
-          helm repo add --pass-credentials --username '${{ inputs.chart-registry-user }}' --password '${{ secrets.chart-registry-token }}' remote https://${{ env.CHART_REPO }}
-
-      - name: update charts list
-        run: |
-          helm repo update
+          helm registry login \
+            --username '${{ inputs.chart-registry-user }}' \
+            --password '${{ secrets.chart-registry-token }}' \
+            ${{ inputs.chart-registry }}
 
       - name: pull chart
         run: |
-          helm pull remote/${{ inputs.chart-registry-repo }} --version ${{ inputs.chart-registry-digest }}
+          helm pull --version ${{ inputs.chart-registry-digest }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}
 
-      - name: build chart install name
+      - name: unpack chart
         run: |
-          echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
+          tar -zxvf --directory ./repackage/ ${{ inputs.chart-registry-repo }}-${{ inputs.chart-registry-digest }}.tgz
+
+      - name: repackage chart
+        run: |
+          helm package ./repackage/${{ inputs.chart-registry-repo }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }}
 
       - name: push chart
         run: |
-          helm cm-push ${{ env.CHART }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }} remote
+          helm push ${{ inputs.chart-registry-repo }}-${{ env.RELEASE_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
       - name: release
         uses: actions/github-script@v6
@@ -142,8 +140,8 @@ jobs:
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           Pushed release chart version ${{ fromJSON(inputs.release-info).release-version }}!%0A
           - %0A
-          helm repo add --pass-credentials --username <user> --password <token> <repo> https://${{ env.CHART_REPO }}%0A
-          helm pull --version ${{ env.RELEASE_TAG }} <repo>/${{ inputs.chart-registry-repo }}"
+          helm registry login --username <user> --password <token> oci://${{ inputs.chart-registry }}%0A
+          helm pull --version ${{ env.RELEASE_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

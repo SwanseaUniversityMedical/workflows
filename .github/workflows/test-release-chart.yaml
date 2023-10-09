@@ -66,7 +66,7 @@ jobs:
     steps:
       - name: build chart uri
         run: |
-          echo "CHART_REPO=${{ inputs.chart-registry }}/chartrepo/${{ inputs.chart-registry-project }}" >> $GITHUB_ENV
+          echo "CHART_REPO=${{ inputs.chart-registry }}/${{ inputs.chart-registry-project }}/chart" >> $GITHUB_ENV
 
       - name: clone repo
         uses: actions/checkout@v3
@@ -79,16 +79,14 @@ jobs:
 
       - name: login to chart registry
         run: |
-          set -x
-          helm repo add --pass-credentials --username '${{ inputs.chart-registry-user }}' --password '${{ secrets.chart-registry-token }}' remote https://${{ env.CHART_REPO }}
-
-      - name: update charts list
-        run: |
-          helm repo update
+          helm registry login \
+            --username '${{ inputs.chart-registry-user }}' \
+            --password '${{ secrets.chart-registry-token }}' \
+            ${{ inputs.chart-registry }}
 
       - name: pull chart
         run: |
-          helm pull remote/${{ inputs.chart-registry-repo }} --version ${{ inputs.chart-registry-digest }}
+          helm pull --version ${{ inputs.chart-registry-digest }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}
 
       - name: build chart install name
         run: |

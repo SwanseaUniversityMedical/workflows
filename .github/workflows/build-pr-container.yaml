@@ -151,19 +151,6 @@ jobs:
         run: |
           echo "DIGEST=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.PR_COMMIT_TAG }}`" >> $GITHUB_ENV
 
-      - name: create env vars for cosign keys
-        run: |
-          {
-            echo 'COSIGN_PRIVATE_KEY<<EOF'
-            ${{ secrets.cosign-private-key }}" 
-            echo EOF
-          } >> $GITHUB_ENV
-          {
-            echo 'COSIGN_PASSWORD<<EOF'
-            ${{ secrets.cosign-password }}" 
-            echo EOF
-          } >> $GITHUB_ENV
-
       - name: cosign image
         if: (env.COSIGN_PRIVATE_KEY != '') && (env.COSIGN_PASSWORD != '') && (inputs.cosign-public-key != '')
         env:
@@ -173,8 +160,10 @@ jobs:
           cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.DIGEST }}"
 
       - name: cosign verify image
-        if: (secrets.cosign-private-key != '') && (secrets.cosign-password != '') && (inputs.cosign-public-key != '')
+        if: (env.COSIGN_PRIVATE_KEY != '') && (env.COSIGN_PASSWORD != '') && (inputs.cosign-public-key != '')
         env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+          COSIGN_PASSWORD: ${{ secrets.cosign-password }}
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         run: |
           cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.DIGEST }}"

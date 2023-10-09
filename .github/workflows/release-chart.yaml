@@ -100,10 +100,6 @@ jobs:
             --password '${{ secrets.chart-registry-token }}' \
             ${{ inputs.chart-registry }}
 
-      - name: update charts list
-        run: |
-          helm repo update
-
       - name: pull chart
         run: |
           helm pull --version ${{ inputs.chart-registry-digest }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}

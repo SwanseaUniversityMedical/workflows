@@ -42,6 +42,11 @@ on:
         default: ':no_entry:'
         type: string
 
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        required: false
+        type: string
+
     secrets:
 
       slack-token:
@@ -51,6 +56,14 @@ on:
       chart-registry-token:
         description: "Authentication token for the chart registry."
         required: true
+
+      cosign-private-key:
+        description: "Private key for cosigning images."
+        required: false
+
+      cosign-password:
+        description: "Private key password for cosigning images."
+        required: false
 
     outputs:
 
@@ -106,6 +119,9 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v3
 
+      - name: install cosign
+        uses: sigstore/cosign-installer@v3.1.2
+
       - name: install helm
         uses: azure/setup-helm@v3
         with:
@@ -131,6 +147,22 @@ jobs:
         run: |
           helm push ${{ inputs.chart-registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
+      - name: cosign pr tag
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+          COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_TAG }}"
+
+      - name: cosign verify pr tag
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        run: |
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_TAG }}"
+
+
       - name: package chart with pr commit tag
         run: |
           helm package ${{ inputs.chart }} --version ${{ env.PR_COMMIT_TAG }} --app-version ${{ env.PR_COMMIT_TAG }}
@@ -138,6 +170,21 @@ jobs:
       - name: push chart with pr commit tag
         run: |
           helm push ${{ inputs.chart-registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_REPO }}
+
+      - name: cosign pr commit tag
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+          COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_COMMIT_TAG }}"
+
+      - name: cosign verify pr commit tag
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        run: |
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_COMMIT_TAG }}"
 
       - name: annotate the ci run with chart tags
         run: >-

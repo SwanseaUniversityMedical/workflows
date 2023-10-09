@@ -45,6 +45,7 @@ on:
       cosign-public-key:
         description: "Public key for cosigning images."
         required: false
+        type: string
 
     secrets:
 

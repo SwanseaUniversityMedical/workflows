@@ -42,6 +42,11 @@ on:
         default: ':no_entry:'
         type: string
 
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        default: ''
+        type: string
+
     secrets:
 
       slack-token:
@@ -51,11 +56,6 @@ on:
       container-registry-token:
         description: "Authentication token for the container registry."
         required: true
-
-      cosign-public-key:
-        description: "Public key for cosigning images."
-        default: ''
-        type: string
 
       cosign-private-key:
         description: "Private key for cosigning images."
@@ -162,7 +162,7 @@ jobs:
 
       - name: cosign verify image
         env:
-          COSIGN_PUBLIC_KEY: ${{ secrets.cosign-public-key }}
+          COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         run: |
           cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.DIGEST }}"
 

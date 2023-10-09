@@ -94,7 +94,7 @@ jobs:
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-project: ${{ inputs.container-registry-project }}
       container-registry-repo: ${{ inputs.container-registry-repo }}
-      cosign-public-key: ${{ secrets.cosign-public-key }}
+      cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
       command: ${{ inputs.build-command }}

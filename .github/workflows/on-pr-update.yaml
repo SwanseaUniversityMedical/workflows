@@ -70,8 +70,8 @@ jobs:
         docker run $IMAGE cowsay boo
 
     secrets:
-      cosign-private-key: ${{ vars.COSIGN_PRIVATE_KEY }}
-      cosign-password: ${{ vars.COSIGN_PASSWORD }}
+      cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      cosign-password: ${{ secrets.COSIGN_PASSWORD }}
 
       container-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}

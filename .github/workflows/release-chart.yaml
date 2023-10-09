@@ -107,7 +107,7 @@ jobs:
       - name: unpack chart
         run: |
           mkdir -p ./repackage/
-          tar -zxvf --directory ./repackage/ ${{ inputs.chart-registry-repo }}-${{ inputs.chart-registry-digest }}.tgz
+          tar -zxvf -C ./repackage/ ${{ inputs.chart-registry-repo }}-${{ inputs.chart-registry-digest }}.tgz
 
       - name: repackage chart
         run: |

@@ -52,6 +52,21 @@ on:
         description: "Authentication token for the container registry."
         required: true
 
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        default: ''
+        type: string
+
+      cosign-private-key:
+        description: "Private key for cosigning images."
+        default: ''
+        type: string
+
+      cosign-password:
+        description: "Private key password for cosigning images."
+        default: ''
+        type: string
+
     outputs:
 
       registry:
@@ -103,6 +118,9 @@ jobs:
           echo "PR_TAG=${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
           echo "PR_COMMIT_TAG=${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
 
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.1.2
+
       - name: clone repo
         uses: actions/checkout@v3
 
@@ -134,6 +152,19 @@ jobs:
         id: digest
         run: |
           echo "DIGEST=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.PR_COMMIT_TAG }}`" >> $GITHUB_ENV
+
+      - name: cosign image
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+          COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.DIGEST }}"
+
+      - name: cosign verify image
+        env:
+          COSIGN_PUBLIC_KEY: ${{ secrets.cosign-public-key }}
+        run: |
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.DIGEST }}"
 
       - name: annotate the ci run with container tags
         run: >-

@@ -68,6 +68,9 @@ jobs:
         run: |
           echo "CHART_REPO=${{ inputs.chart-registry }}/${{ inputs.chart-registry-project }}/chart" >> $GITHUB_ENV
 
+      - name: clone repo
+        uses: actions/checkout@v3
+
       - name: install helm
         uses: azure/setup-helm@v3
         with:

@@ -121,7 +121,7 @@ jobs:
           helm registry login \
             --username '${{ inputs.chart-registry-user }}' \
             --password '${{ secrets.chart-registry-token }}' \
-            oci://${{ inputs.chart-registry }}
+            ${{ inputs.chart-registry }}
 
       - name: update chart dependencies
         run: |

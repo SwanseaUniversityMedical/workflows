@@ -44,8 +44,7 @@ on:
 
       cosign-public-key:
         description: "Public key for cosigning images."
-        default: ''
-        type: string
+        required: false
 
     secrets:
 
@@ -59,13 +58,11 @@ on:
 
       cosign-private-key:
         description: "Private key for cosigning images."
-        default: ''
-        type: string
+        required: false
 
       cosign-password:
         description: "Private key password for cosigning images."
-        default: ''
-        type: string
+        required: false
 
     outputs:
 

@@ -78,9 +78,8 @@ jobs:
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-          DIGEST: ${{ inputs.chart-registry-digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.chart-registry-digest }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.container-registry-digest }}"
 
       - name: pull container
         run: |

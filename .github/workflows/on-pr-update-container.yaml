@@ -115,6 +115,7 @@ jobs:
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-digest: ${{ needs.build.outputs.digest }}
+      cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
       command: ${{ inputs.test-command }}

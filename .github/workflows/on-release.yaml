@@ -128,7 +128,7 @@ jobs:
       - container-whalesay
       - container-whalesay2
       - chart-helloworld
-    if:  ${{ always() && (!contains(fromJSON(["failure", "cancelled"]), needs.*.result) && fromJSON(needs.changes.outputs.changes).workflows == 'true') }}
+    if:  ${{ always() && (!contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') && fromJSON(needs.changes.outputs.changes).workflows == 'true') }}
 
     uses: ./.github/workflows/on-release-repo.yaml
     with:

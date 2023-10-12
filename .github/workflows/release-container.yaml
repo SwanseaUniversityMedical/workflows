@@ -140,14 +140,14 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
           COSIGN_PASSWORD: ${{ secrets.cosign-password }}
         run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.DIGEST }}"
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.RELEASE_TAG }}"
 
       - name: cosign verify image
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.DIGEST }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.RELEASE_TAG }}"
 
       - name: release
         uses: actions/github-script@v6

@@ -37,6 +37,11 @@ on:
         default: ':no_entry:'
         type: string
 
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        required: false
+        type: string
+
     secrets:
 
       slack-token:
@@ -54,6 +59,10 @@ jobs:
       group: heavy
 
     steps:
+      - name: install cosign
+        if: inputs.cosign-public-key != ''
+        uses: sigstore/cosign-installer@v3.1.2
+
       - name: login to container registry
         uses: docker/login-action@v2
         with:
@@ -64,6 +73,13 @@ jobs:
       - name: build image uri
         run: |
           echo "IMAGE=${{ inputs.container-registry-digest }}" >> $GITHUB_ENV
+
+      - name: cosign verify container
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        run: |
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.container-registry-digest }}"
 
       - name: pull container
         run: |

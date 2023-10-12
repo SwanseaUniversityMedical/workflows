@@ -52,6 +52,11 @@ on:
         default: ':no_entry:'
         type: string
 
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        required: false
+        type: string
+
     secrets:
 
       slack-token:
@@ -61,6 +66,14 @@ on:
       chart-registry-token:
         description: "Authentication token for the chart registry."
         required: true
+
+      cosign-private-key:
+        description: "Private key for cosigning images."
+        required: false
+
+      cosign-password:
+        description: "Private key password for cosigning images."
+        required: false
 
     outputs:
 
@@ -86,11 +99,31 @@ jobs:
         run: |
           echo "RELEASE_TAG=${{ fromJSON(inputs.release-info).release-version }}${{ inputs.chart-tag-suffix }}" >> $GITHUB_ENV 
 
+      - name: install cosign
+        if: inputs.cosign-public-key != ''
+        uses: sigstore/cosign-installer@v3.1.2
+
+      - name: login to container registry for cosign
+        if: inputs.cosign-public-key != ''
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ inputs.chart-registry }}
+          username: ${{ inputs.chart-registry-user }}
+          password: ${{ secrets.chart-registry-token }}
+
       - name: install helm
         uses: azure/setup-helm@v3
         with:
           version: 'v3.9.0'
           token: ${{ github.token }}
+
+      - name: cosign verify chart
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          DIGEST: ${{ inputs.chart-registry-digest }}
+        run: |
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${DIGEST//\+/_}"
 
       - name: login to chart registry
         run: |
@@ -116,6 +149,21 @@ jobs:
       - name: push chart
         run: |
           helm push ${{ inputs.chart-registry-repo }}-${{ env.RELEASE_TAG }}.tgz oci://${{ env.CHART_REPO }}
+
+      - name: cosign tag
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+          COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.RELEASE_TAG }}"
+
+      - name: cosign verify tag
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        run: |
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.RELEASE_TAG }}"
 
       - name: release
         uses: actions/github-script@v6

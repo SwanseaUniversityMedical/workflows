@@ -92,6 +92,11 @@ on:
         default: ':no_entry:'
         type: string
 
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        required: false
+        type: string
+
     secrets:
 
       slack-token:
@@ -101,6 +106,14 @@ on:
       chart-registry-token:
         description: "Authentication token for the chart registry."
         required: true
+
+      cosign-private-key:
+        description: "Private key for cosigning charts."
+        required: false
+
+      cosign-password:
+        description: "Private key password for cosigning charts."
+        required: false
 
     outputs:
 
@@ -145,11 +158,14 @@ jobs:
       chart-registry-project: ${{ inputs.chart-registry-project }}
       chart-registry-repo: ${{ inputs.chart-registry-repo }}
       chart-tag-suffix: ${{ inputs.chart-tag-suffix }}
+      cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
       chart: ${{ inputs.chart }}
 
     secrets:
+      cosign-private-key: ${{ secrets.cosign-private-key }}
+      cosign-password: ${{ secrets.cosign-password }}
       chart-registry-token: ${{ secrets.chart-registry-token }}
       slack-token: ${{ secrets.slack-token }}
 
@@ -165,6 +181,7 @@ jobs:
       chart-registry-project: ${{ inputs.chart-registry-project }}
       chart-registry-repo: ${{ inputs.chart-registry-repo }}
       chart-registry-digest: ${{ needs.build.outputs.digest }}
+      cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
       command: ${{ inputs.test-command }}
@@ -190,9 +207,12 @@ jobs:
       chart-registry-repo: ${{ inputs.chart-registry-repo }}
       chart-registry-digest: ${{ needs.build.outputs.digest }}
       chart-tag-suffix: ${{ inputs.chart-tag-suffix }}
+      cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
 
     secrets:
+      cosign-private-key: ${{ secrets.cosign-private-key }}
+      cosign-password: ${{ secrets.cosign-password }}
       chart-registry-token: ${{ secrets.chart-registry-token }}
       slack-token: ${{ secrets.slack-token }}

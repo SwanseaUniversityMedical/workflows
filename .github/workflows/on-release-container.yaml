@@ -97,6 +97,11 @@ on:
         default: ':no_entry:'
         type: string
 
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        required: false
+        type: string
+
     secrets:
 
       slack-token:
@@ -106,6 +111,14 @@ on:
       container-registry-token:
         description: "Authentication token for the container registry."
         required: true
+
+      cosign-private-key:
+        description: "Private key for cosigning images."
+        required: false
+
+      cosign-password:
+        description: "Private key password for cosigning images."
+        required: false
 
     outputs:
 
@@ -146,11 +159,14 @@ jobs:
       container-registry-repo: ${{ inputs.container-registry-repo }}
       container-tag-prefix: ${{ inputs.container-tag-prefix }}
       container-tag-suffix: ${{ inputs.container-tag-suffix }}
+      cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
       command: ${{ inputs.build-command }}
 
     secrets:
+      cosign-private-key: ${{ secrets.cosign-private-key }}
+      cosign-password: ${{ secrets.cosign-password }}
       container-registry-token: ${{ secrets.container-registry-token }}
       slack-token: ${{ secrets.slack-token }}
 
@@ -164,6 +180,7 @@ jobs:
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
       container-registry-digest: ${{ needs.build.outputs.digest }}
+      cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
       command: ${{ inputs.test-command }}
@@ -190,9 +207,12 @@ jobs:
       container-registry-repo: ${{ inputs.container-registry-repo }}
       container-tag-prefix: ${{ inputs.container-tag-prefix }}
       container-tag-suffix: ${{ inputs.container-tag-suffix }}
+      cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
 
     secrets:
+      cosign-private-key: ${{ secrets.cosign-private-key }}
+      cosign-password: ${{ secrets.cosign-password }}
       slack-token: ${{ secrets.slack-token }}
       container-registry-token: ${{ secrets.container-registry-token }}

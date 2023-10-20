@@ -57,6 +57,11 @@ on:
         default: ':no_entry:'
         type: string
 
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        required: false
+        type: string
+
     secrets:
 
       slack-token:
@@ -66,6 +71,14 @@ on:
       container-registry-token:
         description: "Authentication token for the container registry."
         required: true
+
+      cosign-private-key:
+        description: "Private key for cosigning images."
+        required: false
+
+      cosign-password:
+        description: "Private key password for cosigning images."
+        required: false
 
     outputs:
 
@@ -91,12 +104,23 @@ jobs:
         run: |
           echo "RELEASE_TAG=${{ env.IMAGE }}:${{ inputs.container-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.container-tag-suffix }}" >> $GITHUB_ENV 
 
+      - name: install cosign
+        if: inputs.cosign-public-key != ''
+        uses: sigstore/cosign-installer@v3.1.2
+
       - name: login to container registry
         uses: docker/login-action@v2
         with:
           registry: ${{ inputs.container-registry }}
           username: ${{ inputs.container-registry-user }}
           password: ${{ secrets.container-registry-token }}
+
+      - name: cosign verify container
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        run: |
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.container-registry-digest }}"
 
       - name: pull container
         run: |
@@ -109,6 +133,21 @@ jobs:
       - name: push container
         run: |
           docker push ${{ env.RELEASE_TAG }}
+
+      - name: cosign image
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+          COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.RELEASE_TAG }}"
+
+      - name: cosign verify image
+        if: inputs.cosign-public-key != ''
+        env:
+          COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        run: |
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.RELEASE_TAG }}"
 
       - name: release
         uses: actions/github-script@v6

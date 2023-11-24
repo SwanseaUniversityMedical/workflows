@@ -40,13 +40,24 @@ jobs:
           username: ${{ vars.HARBOR_USER }}
           password: ${{ secrets.HARBOR_TOKEN }}
 
+      - name: container metadata
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            ${{ vars.HARBOR_REGISTRY }}/${{ vars.HARBOR_PROJECT }}/whalesay
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+
       - name: build and push
         uses: docker/build-push-action@v5
         with:
           file: containers/whalesay/Dockerfile
           context: '.'
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           push: true
-          tags: ${{ vars.HARBOR_REGISTRY }}/${{ vars.HARBOR_PROJECT }}/whalesay:buildx
           github-token: ${{ github.token }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

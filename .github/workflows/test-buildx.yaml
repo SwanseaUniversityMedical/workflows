@@ -47,11 +47,11 @@ jobs:
           images: |
             ${{ vars.HARBOR_REGISTRY }}/${{ vars.HARBOR_PROJECT }}/whalesay
           tags: |
-            type=ref,event=branch
             type=ref,event=pr
 
       - name: build and push
         uses: docker/build-push-action@v5
+        id: build-and-push
         with:
           file: containers/whalesay/Dockerfile
           context: '.'
@@ -63,3 +63,19 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
 
+      - name: cosign image with key
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+
+      - name: cosign image with github token
+        run: |
+          cosign sign --yes "${TAGS}@${DIGEST}"
+        env:
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}

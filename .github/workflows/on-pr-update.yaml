@@ -2,6 +2,9 @@ name: PR Update
 
 on:
   pull_request:
+    # Disable on this PR branch
+    branches:
+      - main
     types:
       - opened
       - synchronize

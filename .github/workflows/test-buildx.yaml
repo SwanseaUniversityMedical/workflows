@@ -21,7 +21,7 @@ jobs:
   container-whalesay:
     runs-on: #ubuntu-latest
       labels: [self-hosted, linux, x64]
-      group: buildx
+      group: heavy
 
     steps:
       - name: clone repo

@@ -45,7 +45,7 @@ jobs:
         id: meta
         with:
           images: |
-            ${{ vars.DOCKER_REGISTRY }}/whalesay
+            ${{ vars.DOCKER_REGISTRY }}/josswhittlerfi/whalesay
           tags: |
             type=ref,event=pr
 

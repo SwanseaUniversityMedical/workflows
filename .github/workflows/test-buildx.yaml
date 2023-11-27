@@ -45,7 +45,7 @@ jobs:
         id: meta
         with:
           images: |
-            ${{ vars.DOCKER_REGISTRY }}/${{ vars.DOCKER_PROJECT }}/whalesay
+            ${{ vars.DOCKER_REGISTRY }}/${{ vars.HARBOR_PROJECT }}/whalesay
           tags: |
             type=ref,event=pr
 

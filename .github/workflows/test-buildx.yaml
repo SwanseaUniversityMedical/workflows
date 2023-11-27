@@ -32,6 +32,14 @@ jobs:
 
       - name: install buildx
         uses: docker/setup-buildx-action@v3
+        env:
+          PROXY: http://192.168.10.15:8080
+          NO_PROXY: "svc.cluster.local,svc,default,cluster.local,localhost,actions-runner-controller,actions-runner-controller.svc,actions-runner-controller.svc.cluster,actions-runner-controller.svc.cluster.local,192.168.7.56"
+        with:
+          driver-opts: |
+            env.http_proxy=${{ env.PROXY }}
+            env.https_proxy=${{ env.PROXY }}
+            "env.no_proxy='${{ env.NO_PROXY}}'"
 
       - name: login to container registry
         uses: docker/login-action@v2

@@ -40,6 +40,12 @@ jobs:
           echo $HTTPS_PROXY
           echo $NO_PROXY
 
+      - name: dump proxy
+        run: |
+          echo ${{ env.HTTP_PROXY }}
+          echo ${{ env.HTTPS_PROXY }}
+          echo ${{ env.NO_PROXY }}
+
       - name: install buildx
         uses: docker/setup-buildx-action@v3
         with:

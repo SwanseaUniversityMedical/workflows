@@ -32,9 +32,9 @@ jobs:
 
       - name: forward proxy settings
         run: |
-          echo "HTTP_PROXY=\"$HTTP_PROXY\"" >> $GITHUB_ENV
-          echo "HTTPS_PROXY=\"$HTTPS_PROXY\"" >> $GITHUB_ENV
-          echo "NO_PROXY=\"$NO_PROXY\"" >> $GITHUB_ENV
+          echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV
+          echo "HTTPS_PROXY=$HTTPS_PROXY" >> $GITHUB_ENV
+          echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
 
       - name: install buildx
         uses: docker/setup-buildx-action@v3

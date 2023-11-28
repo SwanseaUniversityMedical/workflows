@@ -70,8 +70,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           push: true
           github-token: ${{ github.token }}
-#          cache-from: type=gha
-#          cache-to: type=gha,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           provenance: true
 
       - name: cosign image with key

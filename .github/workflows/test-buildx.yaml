@@ -34,17 +34,19 @@ jobs:
         run: |
           env
 
+      - name: dump proxy
+        run: |
+          echo $HTTP_PROXY
+          echo $HTTPS_PROXY
+          echo $NO_PROXY
+
       - name: install buildx
         uses: docker/setup-buildx-action@v3
-        env:
-          TEST_HTTP_PROXY: $HTTP_PROXY
-          TEST_HTTPS_PROXY: $HTTPS_PROXY
-          TEST_NO_PROXY: $NO_PROXY
         with:
           driver-opts: |
-            env.http_proxy=${{ env.HTTP_PROXY }}
-            env.https_proxy=${{ env.HTTPS_PROXY }}
-            "env.no_proxy='${{ env.NO_PROXY }}'"
+            env.http_proxy=${{ env.http_proxy }}
+            env.https_proxy=${{ env.https_proxy }}
+            "env.no_proxy='${{ env.no_proxy }}'"
 
       - name: login to container registry
         uses: docker/login-action@v2

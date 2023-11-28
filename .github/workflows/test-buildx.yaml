@@ -72,7 +72,7 @@ jobs:
           github-token: ${{ github.token }}
 #          cache-from: type=gha
 #          cache-to: type=gha,mode=max
-          provenance: false
+          provenance: true
 
       - name: cosign image with key
         run: |

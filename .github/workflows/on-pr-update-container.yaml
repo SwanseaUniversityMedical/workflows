@@ -7,9 +7,14 @@ on:
         required: true
         type: string
 
-      build-command:
-        description: "Command to build the container named $IMAGE."
+      build-file:
+        description: "Path to the container file."
         required: true
+        type: string
+
+      build-context:
+        description: "Path to the build root dir."
+        default: '.'
         type: string
 
       test-command:
@@ -24,11 +29,6 @@ on:
 
       container-registry-user:
         description: "Username for the container registry."
-        required: true
-        type: string
-
-      container-registry-project:
-        description: "Project within container registry."
         required: true
         type: string
 
@@ -92,12 +92,12 @@ jobs:
       job-name: ${{ inputs.job-name }}
       container-registry: ${{ inputs.container-registry }}
       container-registry-user: ${{ inputs.container-registry-user }}
-      container-registry-project: ${{ inputs.container-registry-project }}
       container-registry-repo: ${{ inputs.container-registry-repo }}
       cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
-      command: ${{ inputs.build-command }}
+      build-file: ${{ inputs.build-file }}
+      build-context: ${{ inputs.build-context }}
 
     secrets:
       cosign-private-key: ${{ secrets.cosign-private-key }}

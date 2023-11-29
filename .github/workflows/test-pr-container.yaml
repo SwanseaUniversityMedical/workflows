@@ -86,7 +86,6 @@ jobs:
 
       - name: test
         uses: ${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}@${{ inputs.container-registry-digest }}
-        args: hello world
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

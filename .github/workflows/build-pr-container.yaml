@@ -82,8 +82,8 @@ jobs:
       group: heavy
 
     outputs:
-      meta: ${{ steps.meta.outputs }}
-      build: ${{ steps.build.outputs }}
+      meta: ${{ toJSON(steps.meta.outputs) }}
+      build: ${{ toJSON(steps.build.outputs) }}
 
     steps:
       - name: clone repo

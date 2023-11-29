@@ -67,29 +67,13 @@ on:
 
     outputs:
 
-      registry:
-        description: "URL of the container registry."
-        value: ${{ inputs.container-registry }}
+      meta:
+        description: "Container metadata."
+        value: ${{ jobs.build-pr-container.outputs.meta }}
 
-      project:
-        description: "Project within container registry."
-        value: ${{ inputs.container-registry-project }}
-
-      repo:
-        description: "Repo within container registry project."
-        value: ${{ inputs.container-registry-repo }}
-
-      digest:
-        description: "Docker pull URI with digest."
-        value: ${{ jobs.build-pr-container.outputs.digest }}
-
-      pr-tag:
-        description: "Docker pull URI with pr tag."
-        value: ${{ jobs.build-pr-container.outputs.pr-tag }}
-
-      pr-commit-tag:
-        description: "Docker pull URI with pr and sha tag."
-        value: ${{ jobs.build-pr-container.outputs.pr-commit-tag }}
+      build:
+        description: "Build output."
+        value: ${{ jobs.build-pr-container.outputs.build }}
 
 jobs:
   build-pr-container:
@@ -98,15 +82,10 @@ jobs:
       group: heavy
 
     outputs:
-      digest: ${{ env.DIGEST }}
-      pr-tag: ${{ env.PR_TAG }}
-      pr-commit-tag: ${{ env.PR_COMMIT_TAG }}
+      meta: ${{ steps.meta.outputs }}
+      build: ${{ steps.build.outputs }}
 
     steps:
-      - name: get short commit sha
-        run: |
-          echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
-
       - name: clone repo
         uses: actions/checkout@v3
 
@@ -146,7 +125,7 @@ jobs:
 
       - name: build and push
         uses: docker/build-push-action@v5
-        id: build-and-push
+        id: build
         with:
           file: ${{ inputs.build-file }}
           context: ${{ inputs.build-context }}
@@ -166,14 +145,14 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
           COSIGN_PASSWORD: ${{ secrets.cosign-password }}
           TAGS: ${{ steps.meta.outputs.tags }}
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          DIGEST: ${{ steps.build.outputs.digest }}
 
       - name: cosign verify image
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
           TAGS: ${{ steps.meta.outputs.tags }}
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
@@ -183,7 +162,7 @@ jobs:
           Pushed PR container assets!%0A
           - %0A
           docker pull ${{ steps.meta.outputs.tags }}%0A
-          ${{ steps.build-and-push.outputs.digest }}"
+          ${{ steps.build.outputs.digest }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

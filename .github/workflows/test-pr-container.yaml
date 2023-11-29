@@ -7,9 +7,14 @@ on:
         required: true
         type: string
 
-      command:
-        description: "Command to test the container named $IMAGE."
-        required: true
+      test-flags:
+        description: "Arguments passed to docker run."
+        default: ''
+        type: string
+
+      test-args:
+        description: "Arguments passed to the container."
+        default: ''
         type: string
 
       container-registry:
@@ -85,7 +90,11 @@ jobs:
           cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
       - name: test
-        uses: ${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}@${{ inputs.container-registry-digest }}
+        run: |
+          docker run \
+            ${{ inputs.test-flags }} \
+            ${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}@${{ inputs.container-registry-digest }} \
+            ${{ inputs.test-args }}
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

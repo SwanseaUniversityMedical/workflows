@@ -17,8 +17,13 @@ on:
         default: '.'
         type: string
 
-      test-command:
-        description: "Command to test the container named $IMAGE."
+      test-flags:
+        description: "Arguments passed to docker run."
+        default: ''
+        type: string
+
+      test-args:
+        description: "Arguments passed to the container."
         default: ''
         type: string
 
@@ -70,20 +75,6 @@ on:
         description: "Private key password for cosigning images."
         required: false
 
-    outputs:
-
-      digest:
-        description: "Docker pull URI with digest."
-        value: ${{ jobs.build.outputs.digest }}
-
-      pr-tag:
-        description: "Docker pull URI with pr tag."
-        value: ${{ jobs.build.outputs.pr-tag }}
-
-      pr-commit-tag:
-        description: "Docker pull URI with pr and sha tag."
-        value: ${{ jobs.build.outputs.pr-commit-tag }}
-
 jobs:
   build:
     # Build the container and push it as :pr-42 and :pr-42-fe45b3h
@@ -106,7 +97,6 @@ jobs:
       slack-token: ${{ secrets.slack-token }}
 
   test:
-    # Test the container
     needs: build
     uses: ./.github/workflows/test-pr-container.yaml
     if: ${{ inputs.test-command != '' }}
@@ -119,7 +109,8 @@ jobs:
       cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
-      command: ${{ inputs.test-command }}
+      test-flags: ${{ inputs.test-flags }}
+      test-args: ${{ inputs.test-args }}
 
     secrets:
       container-registry-token: ${{ secrets.container-registry-token }}

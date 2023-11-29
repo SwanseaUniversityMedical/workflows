@@ -64,10 +64,6 @@ jobs:
       group: heavy
 
     steps:
-      - name: build image uri
-        run: |
-          echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}@${{ inputs.container-registry-digest }}" >> $GITHUB_ENV
-
       - name: install cosign
         if: inputs.cosign-public-key != ''
         uses: sigstore/cosign-installer@v3.1.2
@@ -83,14 +79,14 @@ jobs:
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAG: ${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}
+          DIGEST: ${{ inputs.container-registry-digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.container-registry-digest }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
-      - name: pull container
-        run: |
-          docker pull ${{ inputs.container-registry-digest }}
-
-      - name: test container
+      - name: test
+        env:
+          IMAGE: ${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}@${{ inputs.container-registry-digest }}
         run: ${{ inputs.command }}
 
       - name: update slack thread failure

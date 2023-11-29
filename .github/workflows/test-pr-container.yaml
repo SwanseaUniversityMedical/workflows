@@ -85,9 +85,8 @@ jobs:
           cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
       - name: test
-        env:
-          IMAGE: ${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}@${{ inputs.container-registry-digest }}
-        run: ${{ inputs.command }}
+        uses: ${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}@${{ inputs.container-registry-digest }}
+        args: hello world
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

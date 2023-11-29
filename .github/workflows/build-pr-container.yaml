@@ -172,8 +172,10 @@ jobs:
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.DIGEST }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
       - name: annotate the ci run with container tags
         run: >-

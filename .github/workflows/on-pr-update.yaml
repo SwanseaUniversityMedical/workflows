@@ -26,20 +26,18 @@ jobs:
       filters: |
         container-whalesay:
           - './.github/workflows/on-pr-update.yaml'
-          - './.github/workflows/on-pr-update-container.yaml'
           - './.github/workflows/slack-pr-thread.yaml'
           - './.github/workflows/changes-pr.yaml'
+          - './.github/workflows/build-and-test-pr-container.yaml'
           - './.github/workflows/build-pr-container.yaml'
           - './.github/workflows/test-pr-container.yaml'
           - './containers/whalesay/**'
         container-whalesay2:
           - './.github/workflows/on-pr-update.yaml'
-          - './.github/workflows/on-pr-update-container.yaml'
           - './.github/workflows/slack-pr-thread.yaml'
           - './.github/workflows/changes-pr.yaml'
           - './.github/workflows/build-pr-container.yaml'
-          - './.github/workflows/test-pr-container.yaml'
-          - './containers/whalesay/**'
+          - './containers/whalesay2/**'
         chart-helloworld:
           - './.github/workflows/on-pr-update.yaml'
           - './.github/workflows/on-pr-update-chart.yaml'

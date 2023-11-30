@@ -99,7 +99,6 @@ jobs:
   test:
     needs: build
     uses: ./.github/workflows/test-pr-container.yaml
-    if: ${{ inputs.test-command != '' }}
     with:
       job-name: ${{ inputs.job-name }}
       container-registry: ${{ inputs.container-registry }}

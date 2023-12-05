@@ -114,8 +114,10 @@ jobs:
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAG: ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          DIGEST: ${{ inputs.registry-digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.registry-digest }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
       - name: pull container
         run: |
@@ -129,20 +131,24 @@ jobs:
         run: |
           docker push ${{ env.RELEASE_TAG }}
 
-      - name: cosign image
+      - name: cosign image with key
         if: inputs.cosign-public-key != ''
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
           COSIGN_PASSWORD: ${{ secrets.cosign-password }}
-        run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.RELEASE_TAG }}"
+          TAGS: ${RELEASE_TAG}
+          DIGEST: ${{ steps.build.outputs.digest }}
 
-      - name: cosign verify image
+      - name: cosign verify container
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAG: ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          DIGEST: ${{ inputs.registry-digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.RELEASE_TAG }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
       - name: release
         uses: actions/github-script@v6

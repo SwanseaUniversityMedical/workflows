@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - "major(container): test buildx on github runner"
+      - feat/buildx
 
 permissions:
   # Permission needed to author a Github release 

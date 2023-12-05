@@ -73,6 +73,7 @@ jobs:
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       build-file: containers/whalesay/Dockerfile
       build-context: containers/whalesay
+      release-branches: feat/buildx
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -95,6 +96,7 @@ jobs:
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       build-file: containers/whalesay2/Dockerfile
       build-context: containers/whalesay2
+      release-branches: feat/buildx
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}

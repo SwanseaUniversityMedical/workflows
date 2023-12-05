@@ -7,9 +7,14 @@ on:
         required: true
         type: string
 
-      command:
-        description: "Command to build the container named $IMAGE."
+      build-file:
+        description: "Path to the container file."
         required: true
+        type: string
+
+      build-context:
+        description: "Path to the build root dir."
+        default: '.'
         type: string
 
       release-version:
@@ -24,11 +29,6 @@ on:
 
       registry-user:
         description: "Username for the container registry."
-        required: true
-        type: string
-
-      registry-project:
-        description: "Project within container registry."
         required: true
         type: string
 
@@ -113,20 +113,26 @@ jobs:
       rc-tag: ${{ env.RC_TAG }}
 
     steps:
-      - name: build image uri
-        run: |
-          echo "IMAGE=${{ inputs.registry }}/${{ inputs.registry-project }}/${{ inputs.registry-repo }}" >> $GITHUB_ENV
-
-      - name: create tags
-        run: |
-          echo "RC_TAG=${{ env.IMAGE }}:rc-${{ inputs.registry-tag-prefix }}${{ inputs.release-version }}${{ inputs.registry-tag-suffix }}" >> $GITHUB_ENV 
-
       - name: clone repo
         uses: actions/checkout@v3
 
       - name: install cosign
         if: inputs.cosign-public-key != ''
         uses: sigstore/cosign-installer@v3.1.2
+
+      - name: forward proxy settings
+        run: |
+          echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV
+          echo "HTTPS_PROXY=$HTTPS_PROXY" >> $GITHUB_ENV
+          echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
+
+      - name: install buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            env.http_proxy=${{ env.HTTP_PROXY }}
+            env.https_proxy=${{ env.HTTPS_PROXY }}
+            "env.no_proxy='${{ env.NO_PROXY }}'"
 
       - name: login to container registry
         uses: docker/login-action@v2
@@ -135,21 +141,28 @@ jobs:
           username: ${{ inputs.registry-user }}
           password: ${{ secrets.registry-token }}
 
-      - name: build container
-        run: ${{ inputs.command }}
+      - name: container metadata
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          tags: |
+            type=semver,pattern={{raw}},value=${{ inputs.release-version }}
 
-      - name: tag container
-        run: |
-          docker tag ${{ env.IMAGE }} ${{ env.RC_TAG }}
-
-      - name: push container
-        run: |
-          docker push ${{ env.RC_TAG }}
-
-      - name: container digest
-        id: digest
-        run: |
-          echo "DIGEST=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.RC_TAG }}`" >> $GITHUB_ENV
+      - name: build and push
+        uses: docker/build-push-action@v5
+        id: build
+        with:
+          file: ${{ inputs.build-file }}
+          context: ${{ inputs.build-context }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
+          github-token: ${{ github.token }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
 
       - name: cosign image
         if: inputs.cosign-public-key != ''

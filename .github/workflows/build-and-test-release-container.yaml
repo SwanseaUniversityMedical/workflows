@@ -182,30 +182,30 @@ jobs:
       registry-token: ${{ secrets.registry-token }}
       slack-token: ${{ secrets.slack-token }}
 
-  release-container:
-    # Release the container re-tagging it as :1.0.0
-    needs:
-      - version
-      - build
-      - test
-    uses: ./.github/workflows/release-container.yaml
-    if: ${{ always() && ((needs.test.result == 'skipped' || needs.test.result == 'success') && needs.build.result == 'success') }}
-    with:
-      job-name: ${{ inputs.job-name }}
-      release-info: ${{ needs.version.outputs.release }}
-      registry: ${{ inputs.registry }}
-      registry-user: ${{ inputs.registry-user }}
-      registry-digest: ${{ needs.build.outputs.digest }}
-      registry-project: ${{ inputs.registry-project }}
-      registry-repo: ${{ inputs.registry-repo }}
-      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
-      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
-      cosign-public-key: ${{ inputs.cosign-public-key }}
-      slack-channel: ${{ inputs.slack-channel }}
-      status-failure: ${{ inputs.status-failure }}
-
-    secrets:
-      cosign-private-key: ${{ secrets.cosign-private-key }}
-      cosign-password: ${{ secrets.cosign-password }}
-      slack-token: ${{ secrets.slack-token }}
-      registry-token: ${{ secrets.registry-token }}
+#  release-container:
+#    # Release the container re-tagging it as :1.0.0
+#    needs:
+#      - version
+#      - build
+#      - test
+#    uses: ./.github/workflows/release-container.yaml
+#    if: ${{ always() && ((needs.test.result == 'skipped' || needs.test.result == 'success') && needs.build.result == 'success') }}
+#    with:
+#      job-name: ${{ inputs.job-name }}
+#      release-info: ${{ needs.version.outputs.release }}
+#      registry: ${{ inputs.registry }}
+#      registry-user: ${{ inputs.registry-user }}
+#      registry-digest: ${{ needs.build.outputs.digest }}
+#      registry-project: ${{ inputs.registry-project }}
+#      registry-repo: ${{ inputs.registry-repo }}
+#      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
+#      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
+#      cosign-public-key: ${{ inputs.cosign-public-key }}
+#      slack-channel: ${{ inputs.slack-channel }}
+#      status-failure: ${{ inputs.status-failure }}
+#
+#    secrets:
+#      cosign-private-key: ${{ secrets.cosign-private-key }}
+#      cosign-password: ${{ secrets.cosign-password }}
+#      slack-token: ${{ secrets.slack-token }}
+#      registry-token: ${{ secrets.registry-token }}

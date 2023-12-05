@@ -17,17 +17,17 @@ on:
         default: '.'
         type: string
 
-      container-registry:
+      registry:
         description: "URL of the container registry."
         required: true
         type: string
 
-      container-registry-user:
+      registry-user:
         description: "Username for the container registry."
         required: true
         type: string
 
-      container-registry-repo:
+      registry-repo:
         description: "Repo within container registry project."
         required: true
         type: string
@@ -35,11 +35,6 @@ on:
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
-        type: string
-
-      status-failure:
-        description: "Failure status for the message header."
-        default: ':no_entry:'
         type: string
 
       cosign-public-key:
@@ -53,7 +48,7 @@ on:
         description: "Authentication token for Slack."
         required: true
 
-      container-registry-token:
+      registry-token:
         description: "Authentication token for the container registry."
         required: true
 
@@ -110,16 +105,16 @@ jobs:
       - name: login to container registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ inputs.container-registry }}
-          username: ${{ inputs.container-registry-user }}
-          password: ${{ secrets.container-registry-token }}
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry-user }}
+          password: ${{ secrets.registry-token }}
 
       - name: container metadata
         uses: docker/metadata-action@v5
         id: meta
         with:
           images: |
-            ${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}
           tags: |
             type=ref,event=pr
 
@@ -172,16 +167,6 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
           slack-text: |
-            *${{ github.repository }}*\n
-            *PR-${{ github.event.pull_request.number }} Update*\n
-            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}\n
+            :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
             <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
-            ```
-            PR:       ${{ github.event.pull_request.title }}
-            Branch:   ${{ github.head_ref }}
-            Ref:      ${{ github.ref }}
-            Sha:      ${{ github.event.pull_request.head.sha }}
-            Workflow: ${{ github.workflow }}
-            Run:      ${{ github.run_id }}
-            ```
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>

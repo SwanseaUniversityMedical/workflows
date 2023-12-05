@@ -27,17 +27,17 @@ on:
         default: ''
         type: string
 
-      container-registry:
+      registry:
         description: "URL of the container registry."
         required: true
         type: string
 
-      container-registry-user:
+      registry-user:
         description: "Username for the container registry."
         required: true
         type: string
 
-      container-registry-repo:
+      registry-repo:
         description: "Repo within container registry project."
         required: true
         type: string
@@ -45,11 +45,6 @@ on:
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
-        type: string
-
-      status-failure:
-        description: "Failure status for the message header."
-        default: ':no_entry:'
         type: string
 
       cosign-public-key:
@@ -63,7 +58,7 @@ on:
         description: "Authentication token for Slack."
         required: true
 
-      container-registry-token:
+      registry-token:
         description: "Authentication token for the container registry."
         required: true
 
@@ -81,19 +76,18 @@ jobs:
     uses: ./.github/workflows/build-pr-container.yaml
     with:
       job-name: ${{ inputs.job-name }}
-      container-registry: ${{ inputs.container-registry }}
-      container-registry-user: ${{ inputs.container-registry-user }}
-      container-registry-repo: ${{ inputs.container-registry-repo }}
+      registry: ${{ inputs.registry }}
+      registry-user: ${{ inputs.registry-user }}
+      registry-repo: ${{ inputs.registry-repo }}
       cosign-public-key: ${{ inputs.cosign-public-key }}
-      slack-channel: ${{ inputs.slack-channel }}
-      status-failure: ${{ inputs.status-failure }}
       build-file: ${{ inputs.build-file }}
       build-context: ${{ inputs.build-context }}
+      slack-channel: ${{ inputs.slack-channel }}
 
     secrets:
       cosign-private-key: ${{ secrets.cosign-private-key }}
       cosign-password: ${{ secrets.cosign-password }}
-      container-registry-token: ${{ secrets.container-registry-token }}
+      registry-token: ${{ secrets.registry-token }}
       slack-token: ${{ secrets.slack-token }}
 
   test:
@@ -101,16 +95,15 @@ jobs:
     uses: ./.github/workflows/test-pr-container.yaml
     with:
       job-name: ${{ inputs.job-name }}
-      container-registry: ${{ inputs.container-registry }}
-      container-registry-user: ${{ inputs.container-registry-user }}
-      container-registry-repo: ${{ inputs.container-registry-repo }}
-      container-registry-digest: ${{ fromJSON(needs.build.outputs.build).digest }}
+      registry: ${{ inputs.registry }}
+      registry-user: ${{ inputs.registry-user }}
+      registry-repo: ${{ inputs.registry-repo }}
+      registry-digest: ${{ fromJSON(needs.build.outputs.build).digest }}
       cosign-public-key: ${{ inputs.cosign-public-key }}
-      slack-channel: ${{ inputs.slack-channel }}
-      status-failure: ${{ inputs.status-failure }}
       test-flags: ${{ inputs.test-flags }}
       test-args: ${{ inputs.test-args }}
+      slack-channel: ${{ inputs.slack-channel }}
 
     secrets:
-      container-registry-token: ${{ secrets.container-registry-token }}
+      registry-token: ${{ secrets.registry-token }}
       slack-token: ${{ secrets.slack-token }}

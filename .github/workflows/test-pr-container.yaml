@@ -17,22 +17,22 @@ on:
         default: ''
         type: string
 
-      container-registry:
+      registry:
         description: "URL of the container registry."
         required: true
         type: string
 
-      container-registry-user:
+      registry-user:
         description: "Username for the container registry."
         required: true
         type: string
 
-      container-registry-repo:
+      registry-repo:
         description: "Repo within container registry project."
         required: true
         type: string
 
-      container-registry-digest:
+      registry-digest:
         description: "URI of the container."
         required: true
         type: string
@@ -40,11 +40,6 @@ on:
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
-        type: string
-
-      status-failure:
-        description: "Failure status for the message header."
-        default: ':no_entry:'
         type: string
 
       cosign-public-key:
@@ -58,7 +53,7 @@ on:
         description: "Authentication token for Slack."
         required: true
 
-      container-registry-token:
+      registry-token:
         description: "Authentication token for the container registry."
         required: true
 
@@ -76,16 +71,16 @@ jobs:
       - name: login to container registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ inputs.container-registry }}
-          username: ${{ inputs.container-registry-user }}
-          password: ${{ secrets.container-registry-token }}
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry-user }}
+          password: ${{ secrets.registry-token }}
 
       - name: cosign verify container
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-          TAG: ${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}
-          DIGEST: ${{ inputs.container-registry-digest }}
+          TAG: ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          DIGEST: ${{ inputs.registry-digest }}
         run: |
           cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
@@ -93,27 +88,17 @@ jobs:
         run: |
           docker run \
             ${{ inputs.test-flags }} \
-            ${{ inputs.container-registry }}/${{ inputs.container-registry-repo }}@${{ inputs.container-registry-digest }} \
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }} \
             ${{ inputs.test-args }}
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
-        if: failure()
         continue-on-error: true
+        if: failure()
         with:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
           slack-text: |
-            *${{ github.repository }}*\n
-            *PR-${{ github.event.pull_request.number }} Update*\n
-            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}\n
+            :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
             <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
-            ```
-            PR:       ${{ github.event.pull_request.title }}
-            Branch:   ${{ github.head_ref }}
-            Ref:      ${{ github.ref }}
-            Sha:      ${{ github.event.pull_request.head.sha }}
-            Workflow: ${{ github.workflow }}
-            Run:      ${{ github.run_id }}
-            ```
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>

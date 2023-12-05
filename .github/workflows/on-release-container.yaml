@@ -7,52 +7,42 @@ on:
         required: true
         type: string
 
-      build-file:
-        description: "Path to the container file."
+      build-command:
+        description: "Command to build the container named $IMAGE."
         required: true
         type: string
 
-      build-context:
-        description: "Path to the build root dir."
-        default: '.'
-        type: string
-
-      test-flags:
-        description: "Arguments passed to docker run."
+      test-command:
+        description: "Command to test the container named $IMAGE."
         default: ''
         type: string
 
-      test-args:
-        description: "Arguments passed to the container."
-        default: ''
-        type: string
-
-      registry:
+      container-registry:
         description: "URL of the container registry."
         required: true
         type: string
 
-      registry-user:
+      container-registry-user:
         description: "Username for the container registry."
         required: true
         type: string
 
-      registry-project:
+      container-registry-project:
         description: "Project within container registry."
         required: true
         type: string
 
-      registry-repo:
+      container-registry-repo:
         description: "Repo within container registry project."
         required: true
         type: string
 
-      registry-tag-prefix:
+      container-tag-prefix:
         description: "Prefix to use when tagging container"
         default: ''
         type: string
 
-      registry-tag-suffix:
+      container-tag-suffix:
         description: "Suffix to use when tagging container"
         default: ''
         type: string
@@ -102,6 +92,11 @@ on:
         required: true
         type: string
 
+      status-failure:
+        description: "Failure status for the message header."
+        default: ':no_entry:'
+        type: string
+
       cosign-public-key:
         description: "Public key for cosigning images."
         required: false
@@ -113,7 +108,7 @@ on:
         description: "Authentication token for Slack."
         required: true
 
-      registry-token:
+      container-registry-token:
         description: "Authentication token for the container registry."
         required: true
 
@@ -124,6 +119,17 @@ on:
       cosign-password:
         description: "Private key password for cosigning images."
         required: false
+
+    outputs:
+
+      digest:
+        description: "Docker pull URI with digest."
+        value: ${{ jobs.build.outputs.digest }}
+
+      rc-tag:
+        description: "Docker pull URI with rc tag."
+        value: ${{ jobs.build.outputs.rc-tag }}
+
 
 jobs:
   version:
@@ -147,39 +153,40 @@ jobs:
     with:
       job-name: ${{ inputs.job-name }}
       release-version: ${{ fromJSON(needs.version.outputs.release).release-version }}
-      registry: ${{ inputs.registry }}
-      registry-user: ${{ inputs.registry-user }}
-      registry-repo: ${{ inputs.registry-repo }}
-      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
-      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
+      container-registry: ${{ inputs.container-registry }}
+      container-registry-user: ${{ inputs.container-registry-user }}
+      container-registry-project: ${{ inputs.container-registry-project }}
+      container-registry-repo: ${{ inputs.container-registry-repo }}
+      container-tag-prefix: ${{ inputs.container-tag-prefix }}
+      container-tag-suffix: ${{ inputs.container-tag-suffix }}
       cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
-      build-file: ${{ inputs.build-file }}
-      build-context: ${{ inputs.build-context }}
+      status-failure: ${{ inputs.status-failure }}
+      command: ${{ inputs.build-command }}
 
     secrets:
       cosign-private-key: ${{ secrets.cosign-private-key }}
       cosign-password: ${{ secrets.cosign-password }}
-      registry-token: ${{ secrets.registry-token }}
+      container-registry-token: ${{ secrets.container-registry-token }}
       slack-token: ${{ secrets.slack-token }}
 
   test:
     # Test the container
     needs: build
     uses: ./.github/workflows/test-release-container.yaml
+    if: ${{ inputs.test-command != '' }}
     with:
       job-name: ${{ inputs.job-name }}
-      registry: ${{ inputs.registry }}
-      registry-user: ${{ inputs.registry-user }}
-      registry-repo: ${{ inputs.registry-repo }}
-      registry-digest: ${{ fromJSON(needs.build.outputs.build).digest }}
+      container-registry: ${{ inputs.container-registry }}
+      container-registry-user: ${{ inputs.container-registry-user }}
+      container-registry-digest: ${{ needs.build.outputs.digest }}
       cosign-public-key: ${{ inputs.cosign-public-key }}
-      test-flags: ${{ inputs.test-flags }}
-      test-args: ${{ inputs.test-args }}
       slack-channel: ${{ inputs.slack-channel }}
+      status-failure: ${{ inputs.status-failure }}
+      command: ${{ inputs.test-command }}
 
     secrets:
-      registry-token: ${{ secrets.registry-token }}
+      container-registry-token: ${{ secrets.container-registry-token }}
       slack-token: ${{ secrets.slack-token }}
 
   release-container:
@@ -193,13 +200,13 @@ jobs:
     with:
       job-name: ${{ inputs.job-name }}
       release-info: ${{ needs.version.outputs.release }}
-      registry: ${{ inputs.registry }}
-      registry-user: ${{ inputs.registry-user }}
-      registry-digest: ${{ needs.build.outputs.digest }}
-      registry-project: ${{ inputs.registry-project }}
-      registry-repo: ${{ inputs.registry-repo }}
-      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
-      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
+      container-registry: ${{ inputs.container-registry }}
+      container-registry-user: ${{ inputs.container-registry-user }}
+      container-registry-digest: ${{ needs.build.outputs.digest }}
+      container-registry-project: ${{ inputs.container-registry-project }}
+      container-registry-repo: ${{ inputs.container-registry-repo }}
+      container-tag-prefix: ${{ inputs.container-tag-prefix }}
+      container-tag-suffix: ${{ inputs.container-tag-suffix }}
       cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       status-failure: ${{ inputs.status-failure }}
@@ -208,4 +215,4 @@ jobs:
       cosign-private-key: ${{ secrets.cosign-private-key }}
       cosign-password: ${{ secrets.cosign-password }}
       slack-token: ${{ secrets.slack-token }}
-      registry-token: ${{ secrets.registry-token }}
+      container-registry-token: ${{ secrets.container-registry-token }}

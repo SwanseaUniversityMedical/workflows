@@ -12,37 +12,37 @@ on:
         required: true
         type: string
         
-      registry:
+      container-registry:
         description: "URL of the container registry."
         required: true
         type: string
 
-      registry-user:
+      container-registry-user:
         description: "Username for the container registry."
         required: true
         type: string
 
-      registry-project:
+      container-registry-project:
         description: "Project within container registry."
         required: true
         type: string
 
-      registry-repo:
+      container-registry-repo:
         description: "Repo within container registry project."
         required: true
         type: string
 
-      registry-digest:
+      container-registry-digest:
         description: "URI of the container."
         required: true
         type: string
 
-      registry-tag-prefix:
+      container-tag-prefix:
         description: "Prefix to use when tagging container"
         required: true
         type: string
 
-      registry-tag-suffix:
+      container-tag-suffix:
         description: "Suffix to use when tagging container"
         required: true
         type: string
@@ -68,7 +68,7 @@ on:
         description: "Authentication token for Slack."
         required: true
         
-      registry-token:
+      container-registry-token:
         description: "Authentication token for the container registry."
         required: true
 
@@ -98,11 +98,11 @@ jobs:
     steps:
       - name: build image uri
         run: |
-          echo "IMAGE=${{ inputs.registry }}/${{ inputs.registry-project }}/${{ inputs.registry-repo }}" >> $GITHUB_ENV
+          echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
 
       - name: create tag
         run: |
-          echo "RELEASE_TAG=${{ env.IMAGE }}:${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.registry-tag-suffix }}" >> $GITHUB_ENV 
+          echo "RELEASE_TAG=${{ env.IMAGE }}:${{ inputs.container-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.container-tag-suffix }}" >> $GITHUB_ENV 
 
       - name: install cosign
         if: inputs.cosign-public-key != ''
@@ -111,24 +111,24 @@ jobs:
       - name: login to container registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ inputs.registry }}
-          username: ${{ inputs.registry-user }}
-          password: ${{ secrets.registry-token }}
+          registry: ${{ inputs.container-registry }}
+          username: ${{ inputs.container-registry-user }}
+          password: ${{ secrets.container-registry-token }}
 
       - name: cosign verify container
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.registry-digest }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.container-registry-digest }}"
 
       - name: pull container
         run: |
-          docker pull ${{ inputs.registry-digest }}
+          docker pull ${{ inputs.container-registry-digest }}
 
       - name: tag container
         run: |
-          docker tag ${{ inputs.registry-digest }} ${{ env.RELEASE_TAG }}
+          docker tag ${{ inputs.container-registry-digest }} ${{ env.RELEASE_TAG }}
 
       - name: push container
         run: |
@@ -174,7 +174,7 @@ jobs:
           Pushed release container version ${{ fromJSON(inputs.release-info).release-version }}!%0A
           - %0A
           docker pull ${{ env.RELEASE_TAG }}%0A
-          docker pull ${{ inputs.registry-digest }}"
+          docker pull ${{ inputs.container-registry-digest }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
@@ -184,5 +184,13 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
           slack-text: |
-            :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>
+            *${{ github.repository }}*\n
+            *Release ${{ github.ref }}*\n
+            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
+            ```
+            Ref:      ${{ github.ref }}\n
+            Sha:      ${{ github.sha }}\n
+            Workflow: ${{ github.workflow }}\n
+            Run:      ${{ github.run_id }}
+            ```

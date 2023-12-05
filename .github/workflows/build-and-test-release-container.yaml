@@ -191,7 +191,6 @@ jobs:
 #      registry: ${{ inputs.registry }}
 #      registry-user: ${{ inputs.registry-user }}
 #      registry-digest: ${{ needs.build.outputs.digest }}
-#      registry-project: ${{ inputs.registry-project }}
 #      registry-repo: ${{ inputs.registry-repo }}
 #      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
 #      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}

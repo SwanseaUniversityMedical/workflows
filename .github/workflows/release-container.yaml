@@ -121,7 +121,7 @@ jobs:
 
       - name: pull container
         run: |
-          docker pull ${{ inputs.registry-digest }}
+          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }}
 
       - name: tag container
         run: |

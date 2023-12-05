@@ -93,7 +93,7 @@ jobs:
     steps:
       - name: build image uri
         run: |
-          echo "IMAGE=${{ inputs.registry }}/${{ inputs.registry-project }}/${{ inputs.registry-repo }}" >> $GITHUB_ENV
+          echo "IMAGE=${{ inputs.registry }}${{ inputs.registry-project }}/${{ inputs.registry-repo }}" >> $GITHUB_ENV
 
       - name: create tag
         run: |

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "major(container): test buildx on github runner"
 
 permissions:
   # Permission needed to author a Github release 
@@ -60,13 +61,13 @@ jobs:
     # Build the whalesay container and push it as :rc-1.0.0
     needs: changes
     if: fromJSON(needs.changes.outputs.changes).container-whalesay == 'true'
-    uses: ./.github/workflows/on-release-container.yaml
+    uses: ./.github/workflows/build-and-test-release-container.yaml
     with:
       job-name: container-whalesay
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
-      registry-project: ${{ vars.HARBOR_PROJECT }}
       registry-repo: whalesay
+      registry-tag-suffix: "TEST"
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       release-tag-format: 'whalesay-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
@@ -82,13 +83,13 @@ jobs:
     # Build the whalesay2 container and push it as :rc-1.0.0
     needs: changes
     if: fromJSON(needs.changes.outputs.changes).container-whalesay2 == 'true'
-    uses: ./.github/workflows/on-release-container.yaml
+    uses: ./.github/workflows/build-and-test-release-container.yaml
     with:
       job-name: container-whalesay2
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
-      registry-project: ${{ vars.HARBOR_PROJECT }}
       registry-repo: whalesay2
+      registry-tag-suffix: "TEST"
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       release-tag-format: 'whalesay2-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}

@@ -124,19 +124,19 @@ jobs:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
 
-  workflows:
-    # Release the workflows repo
-    needs:
-      - changes
-      - container-whalesay
-      - container-whalesay2
-      - chart-helloworld
-    if:  ${{ always() && (!contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') && fromJSON(needs.changes.outputs.changes).workflows == 'true') }}
-
-    uses: ./.github/workflows/on-release-repo.yaml
-    with:
-      job-name: workflows
-      release-tag-format: 'v${version}'
-      slack-channel: ${{ vars.SLACK_CHANNEL }}
-    secrets:
-      slack-token: ${{ secrets.SLACK_TOKEN }}
+#  workflows:
+#    # Release the workflows repo
+#    needs:
+#      - changes
+#      - container-whalesay
+#      - container-whalesay2
+#      - chart-helloworld
+#    if:  ${{ always() && (!contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') && fromJSON(needs.changes.outputs.changes).workflows == 'true') }}
+#
+#    uses: ./.github/workflows/on-release-repo.yaml
+#    with:
+#      job-name: workflows
+#      release-tag-format: 'v${version}'
+#      slack-channel: ${{ vars.SLACK_CHANNEL }}
+#    secrets:
+#      slack-token: ${{ secrets.SLACK_TOKEN }}

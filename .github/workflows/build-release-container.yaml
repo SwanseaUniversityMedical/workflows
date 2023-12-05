@@ -148,7 +148,7 @@ jobs:
           images: |
             ${{ inputs.registry }}/${{ inputs.registry-repo }}
           tags: |
-            type=semver,pattern={{raw}},value=${{ inputs.registry-tag-prefix }}${{ inputs.release-version }}${{ inputs.registry-tag-suffix }}
+            type=raw,value=${{ inputs.registry-tag-prefix }}${{ inputs.release-version }}${{ inputs.registry-tag-suffix }}
 
       - name: build and push
         uses: docker/build-push-action@v5

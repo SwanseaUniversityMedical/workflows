@@ -164,20 +164,24 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: true
 
-      - name: cosign image
+      - name: cosign image with key
         if: inputs.cosign-public-key != ''
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
           COSIGN_PASSWORD: ${{ secrets.cosign-password }}
-        run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.DIGEST }}"
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build.outputs.digest }}
 
       - name: cosign verify image
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.DIGEST }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
       - name: annotate the ci run with container tags
         run: >-

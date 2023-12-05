@@ -82,25 +82,13 @@ on:
 
     outputs:
 
-      registry:
-        description: "URL of the container registry."
-        value: ${{ inputs.registry }}
+      meta:
+        description: "Container metadata."
+        value: ${{ jobs.build-release-container.outputs.meta }}
 
-      project:
-        description: "Project within container registry."
-        value: ${{ inputs.registry-project }}
-
-      repo:
-        description: "Repo within container registry project."
-        value: ${{ inputs.registry-repo }}
-
-      digest:
-        description: "Docker pull URI with digest."
-        value: ${{ jobs.build-release-container.outputs.digest }}
-
-      rc-tag:
-        description: "Docker pull URI with rc tag."
-        value: ${{ jobs.build-release-container.outputs.rc-tag }}
+      build:
+        description: "Build output."
+        value: ${{ jobs.build-release-container.outputs.build }}
 
 jobs:
   build-release-container:
@@ -109,8 +97,8 @@ jobs:
       group: heavy
 
     outputs:
-      digest: ${{ env.DIGEST }}
-      rc-tag: ${{ env.RC_TAG }}
+      meta: ${{ toJSON(steps.meta.outputs) }}
+      build: ${{ toJSON(steps.build.outputs) }}
 
     steps:
       - name: clone repo

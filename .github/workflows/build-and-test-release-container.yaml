@@ -167,7 +167,7 @@ jobs:
       registry: ${{ inputs.registry }}
       registry-user: ${{ inputs.registry-user }}
       registry-repo: ${{ inputs.registry-repo }}
-      registry-digest: ${{ fromJSON(needs.build.outputs.build).digest }}
+      registry-digest: ${{ needs.build.outputs.digest }}
       cosign-public-key: ${{ inputs.cosign-public-key }}
       test-flags: ${{ inputs.test-flags }}
       test-args: ${{ inputs.test-args }}

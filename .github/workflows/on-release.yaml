@@ -71,8 +71,8 @@ jobs:
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       release-tag-format: 'whalesay-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
-      build-command: |
-        docker build -t $IMAGE -f containers/whalesay/Dockerfile containers/whalesay
+      build-file: containers/whalesay/Dockerfile
+      build-context: containers/whalesay
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -93,8 +93,8 @@ jobs:
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       release-tag-format: 'whalesay2-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
-      build-command: |
-        docker build -t $IMAGE -f containers/whalesay2/Dockerfile containers/whalesay2
+      build-file: containers/whalesay2/Dockerfile
+      build-context: containers/whalesay2
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}

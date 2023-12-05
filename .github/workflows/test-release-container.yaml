@@ -80,16 +80,14 @@ jobs:
           username: ${{ inputs.registry-user }}
           password: ${{ secrets.registry-token }}
 
-      - name: build image uri
-        run: |
-          echo "IMAGE=${{ inputs.registry-digest }}" >> $GITHUB_ENV
-
       - name: cosign verify container
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAG: ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          DIGEST: ${{ inputs.registry-digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.registry-digest }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
       - name: test
         run: |

@@ -144,7 +144,7 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
           COSIGN_PASSWORD: ${{ secrets.cosign-password }}
           TAGS: ${RELEASE_TAG}
-          DIGEST: ${{ steps.build.outputs.digest }}
+          DIGEST: ${{ inputs.registry-digest }}
 
       - name: cosign verify container
         if: inputs.cosign-public-key != ''

@@ -91,14 +91,6 @@ jobs:
       release: ${{ toJSON(steps.release.outputs) }}
 
     steps:
-      - name: build image uri
-        run: |
-          echo "IMAGE=${{ inputs.registry }}/${{ inputs.registry-repo }}" >> $GITHUB_ENV
-
-      - name: create tag
-        run: |
-          echo "RELEASE_TAG=${{ env.IMAGE }}:${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.registry-tag-suffix }}" >> $GITHUB_ENV 
-
       - name: install cosign
         if: inputs.cosign-public-key != ''
         uses: sigstore/cosign-installer@v3.1.2
@@ -140,10 +132,10 @@ jobs:
           images: |
             ${{ inputs.registry }}/${{ inputs.registry-repo }}
           tags: |
-            type=raw,value=${{ inputs.registry-tag-prefix }}${{ inputs.release-version }}${{ inputs.registry-tag-suffix }}
+            type=raw,value=${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.registry-tag-suffix }}
 
       - name: retag container
-        run: docker buildx imagetools create -t ${{ inputs.registry }}/${{ inputs.registry-repo }}:${{ steps.meta.outputs.tags }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }}
+        run: docker buildx imagetools create -t ${{ steps.meta.outputs.tags }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }}
 
       - name: cosign image with key
         if: inputs.cosign-public-key != ''

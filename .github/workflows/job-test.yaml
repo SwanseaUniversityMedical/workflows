@@ -183,4 +183,4 @@ jobs:
           password: ${{ secrets.HARBOR_TOKEN }}
 
       - name: retag container
-        run: docker buildx imagetools create -t whalesay-v1.0.0-test ${{ vars.HARBOR_REGISTRY }}/github-workflows/whalesay@${{ fromJSON(needs.build.outputs.build).digest }}
+        run: docker buildx imagetools create -t ${{ vars.HARBOR_REGISTRY }}/github-workflows/whalesay:v1.0.0-test ${{ vars.HARBOR_REGISTRY }}/github-workflows/whalesay@${{ fromJSON(needs.build.outputs.build).digest }}

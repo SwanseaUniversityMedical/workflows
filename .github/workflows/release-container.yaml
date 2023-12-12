@@ -133,8 +133,17 @@ jobs:
         run: |
           cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
+      - name: container metadata
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          tags: |
+            type=raw,value=${{ inputs.registry-tag-prefix }}${{ inputs.release-version }}${{ inputs.registry-tag-suffix }}
+
       - name: retag container
-        run: docker buildx imagetools create -t ${{ inputs.registry }}/${{ inputs.registry-repo }}:${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.registry-tag-suffix }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }}
+        run: docker buildx imagetools create -t ${{ inputs.registry }}/${{ inputs.registry-repo }}:${{ steps.meta.outputs.tags }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }}
 
       - name: cosign image with key
         if: inputs.cosign-public-key != ''
@@ -143,7 +152,7 @@ jobs:
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
           COSIGN_PASSWORD: ${{ secrets.cosign-password }}
-          TAGS: ${RELEASE_TAG}
+          TAGS: ${{ steps.meta.outputs.tags }}
           DIGEST: ${{ inputs.registry-digest }}
 
       - name: cosign verify container

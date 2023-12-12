@@ -126,7 +126,7 @@ jobs:
           cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
       - name: retag container
-        run: docker buildx imagetools create -t ${{ vars.HARBOR_REGISTRY }}${{ inputs.registry-project }}/${{ inputs.registry-repo }}:${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.registry-tag-suffix }} ${{ vars.HARBOR_REGISTRY }}/${{ inputs.registry-project }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }}
+        run: docker buildx imagetools create -t ${{ inputs.registry }}/${{ inputs.registry-repo }}:${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.registry-tag-suffix }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }}
 
       - name: cosign image with key
         if: inputs.cosign-public-key != ''

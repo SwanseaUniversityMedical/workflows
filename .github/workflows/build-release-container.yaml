@@ -176,8 +176,8 @@ jobs:
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           Pushed release candidate container assets!%0A
           - %0A
-          docker pull ${{ env.RC_TAG }}%0A
-          docker pull ${{ env.DIGEST }}"
+          docker pull ${{ steps.meta.outputs.tags }}%0A
+          docker pull ${{ steps.build.outputs.digest }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

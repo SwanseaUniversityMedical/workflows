@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feat/buildx
 
 permissions:
   # Permission needed to author a Github release 
@@ -67,13 +66,11 @@ jobs:
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
       registry-repo: github-workflows/whalesay
-      registry-tag-suffix: "-test"
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       release-tag-format: 'whalesay-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       build-file: containers/whalesay/Dockerfile
       build-context: containers/whalesay
-      release-branches: feat/buildx
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -89,14 +86,12 @@ jobs:
       job-name: container-whalesay2
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
-      registry-repo: github-workflows/whalesay
-      registry-tag-suffix: "-test"
+      registry-repo: github-workflows/whalesay2
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       release-tag-format: 'whalesay2-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       build-file: containers/whalesay2/Dockerfile
       build-context: containers/whalesay2
-      release-branches: feat/buildx
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -124,19 +119,19 @@ jobs:
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
 
-#  workflows:
-#    # Release the workflows repo
-#    needs:
-#      - changes
-#      - container-whalesay
-#      - container-whalesay2
-#      - chart-helloworld
-#    if:  ${{ always() && (!contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') && fromJSON(needs.changes.outputs.changes).workflows == 'true') }}
-#
-#    uses: ./.github/workflows/on-release-repo.yaml
-#    with:
-#      job-name: workflows
-#      release-tag-format: 'v${version}'
-#      slack-channel: ${{ vars.SLACK_CHANNEL }}
-#    secrets:
-#      slack-token: ${{ secrets.SLACK_TOKEN }}
+  workflows:
+    # Release the workflows repo
+    needs:
+      - changes
+      - container-whalesay
+      - container-whalesay2
+      - chart-helloworld
+    if:  ${{ always() && (!contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') && fromJSON(needs.changes.outputs.changes).workflows == 'true') }}
+
+    uses: ./.github/workflows/on-release-repo.yaml
+    with:
+      job-name: workflows
+      release-tag-format: 'v${version}'
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+    secrets:
+      slack-token: ${{ secrets.SLACK_TOKEN }}

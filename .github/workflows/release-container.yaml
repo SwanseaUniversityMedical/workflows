@@ -91,14 +91,6 @@ jobs:
       release: ${{ toJSON(steps.release.outputs) }}
 
     steps:
-      - name: build image uri
-        run: |
-          echo "IMAGE=${{ inputs.registry }}${{ inputs.registry-project }}/${{ inputs.registry-repo }}" >> $GITHUB_ENV
-
-      - name: create tag
-        run: |
-          echo "RELEASE_TAG=${{ env.IMAGE }}:${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.registry-tag-suffix }}" >> $GITHUB_ENV 
-
       - name: install cosign
         if: inputs.cosign-public-key != ''
         uses: sigstore/cosign-installer@v3.1.2
@@ -119,17 +111,8 @@ jobs:
         run: |
           cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
-      - name: pull container
-        run: |
-          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }}
-
-      - name: tag container
-        run: |
-          docker tag ${{ inputs.registry-digest }} ${{ env.RELEASE_TAG }}
-
-      - name: push container
-        run: |
-          docker push ${{ env.RELEASE_TAG }}
+      - name: retag container
+        run: docker buildx imagetools create -t ${{ vars.HARBOR_REGISTRY }}${{ inputs.registry-project }}/${{ inputs.registry-repo }}:${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.registry-tag-suffix }} ${{ vars.HARBOR_REGISTRY }}/${{ inputs.registry-project }}/${{ inputs.registry-repo }}@${{ fromJSON(needs.build.outputs.build).digest }}
 
       - name: cosign image with key
         if: inputs.cosign-public-key != ''

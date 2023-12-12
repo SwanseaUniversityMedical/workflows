@@ -91,6 +91,11 @@ jobs:
       release: ${{ toJSON(steps.release.outputs) }}
 
     steps:
+
+      - name: create tag
+        run: |
+          echo "RELEASE_TAG=${{ env.IMAGE }}:${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.registry-tag-suffix }}" >> $GITHUB_ENV 
+
       - name: install cosign
         if: inputs.cosign-public-key != ''
         uses: sigstore/cosign-installer@v3.1.2

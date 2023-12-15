@@ -7,22 +7,32 @@ on:
         required: true
         type: string
 
-      command:
-        description: "Command to test the container named $IMAGE."
-        required: true
+      test-flags:
+        description: "Arguments passed to docker run."
+        default: ''
         type: string
 
-      container-registry:
+      test-args:
+        description: "Arguments passed to the container."
+        default: ''
+        type: string
+
+      registry:
         description: "URL of the container registry."
         required: true
         type: string
 
-      container-registry-user:
+      registry-user:
         description: "Username for the container registry."
         required: true
         type: string
 
-      container-registry-digest:
+      registry-repo:
+        description: "Repo within container registry project."
+        required: true
+        type: string
+
+      registry-digest:
         description: "URI of the container."
         required: true
         type: string
@@ -48,7 +58,7 @@ on:
         description: "Authentication token for Slack."
         required: true
 
-      container-registry-token:
+      registry-token:
         description: "Authentication token for the container registry."
         required: true
 
@@ -66,27 +76,25 @@ jobs:
       - name: login to container registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ inputs.container-registry }}
-          username: ${{ inputs.container-registry-user }}
-          password: ${{ secrets.container-registry-token }}
-
-      - name: build image uri
-        run: |
-          echo "IMAGE=${{ inputs.container-registry-digest }}" >> $GITHUB_ENV
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry-user }}
+          password: ${{ secrets.registry-token }}
 
       - name: cosign verify container
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAG: ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          DIGEST: ${{ inputs.registry-digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.container-registry-digest }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
-      - name: pull container
+      - name: test
         run: |
-          docker pull ${{ inputs.container-registry-digest }}
-
-      - name: test container
-        run: ${{ inputs.command }}
+          docker run \
+            ${{ inputs.test-flags }} \
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }} \
+            ${{ inputs.test-args }}
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
@@ -96,13 +104,5 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
           slack-text: |
-            *${{ github.repository }}*\n
-            *Release ${{ github.ref }}*\n
-            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}\n
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
-            ```
-            Ref:      ${{ github.ref }}\n
-            Sha:      ${{ github.sha }}\n
-            Workflow: ${{ github.workflow }}\n
-            Run:      ${{ github.run_id }}
-            ```
+            :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>

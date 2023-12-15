@@ -7,27 +7,27 @@ on:
         required: true
         type: string
 
-      command:
-        description: "Command to build the container named $IMAGE."
+      build-file:
+        description: "Path to the container file."
         required: true
         type: string
 
-      container-registry:
+      build-context:
+        description: "Path to the build root dir."
+        default: '.'
+        type: string
+
+      registry:
         description: "URL of the container registry."
         required: true
         type: string
 
-      container-registry-user:
+      registry-user:
         description: "Username for the container registry."
         required: true
         type: string
 
-      container-registry-project:
-        description: "Project within container registry."
-        required: true
-        type: string
-
-      container-registry-repo:
+      registry-repo:
         description: "Repo within container registry project."
         required: true
         type: string
@@ -35,11 +35,6 @@ on:
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
-        type: string
-
-      status-failure:
-        description: "Failure status for the message header."
-        default: ':no_entry:'
         type: string
 
       cosign-public-key:
@@ -53,7 +48,7 @@ on:
         description: "Authentication token for Slack."
         required: true
 
-      container-registry-token:
+      registry-token:
         description: "Authentication token for the container registry."
         required: true
 
@@ -67,29 +62,13 @@ on:
 
     outputs:
 
-      registry:
-        description: "URL of the container registry."
-        value: ${{ inputs.container-registry }}
+      meta:
+        description: "Container metadata."
+        value: ${{ jobs.build-pr-container.outputs.meta }}
 
-      project:
-        description: "Project within container registry."
-        value: ${{ inputs.container-registry-project }}
-
-      repo:
-        description: "Repo within container registry project."
-        value: ${{ inputs.container-registry-repo }}
-
-      digest:
-        description: "Docker pull URI with digest."
-        value: ${{ jobs.build-pr-container.outputs.digest }}
-
-      pr-tag:
-        description: "Docker pull URI with pr tag."
-        value: ${{ jobs.build-pr-container.outputs.pr-tag }}
-
-      pr-commit-tag:
-        description: "Docker pull URI with pr and sha tag."
-        value: ${{ jobs.build-pr-container.outputs.pr-commit-tag }}
+      build:
+        description: "Build output."
+        value: ${{ jobs.build-pr-container.outputs.build }}
 
 jobs:
   build-pr-container:
@@ -98,24 +77,10 @@ jobs:
       group: heavy
 
     outputs:
-      digest: ${{ env.DIGEST }}
-      pr-tag: ${{ env.PR_TAG }}
-      pr-commit-tag: ${{ env.PR_COMMIT_TAG }}
+      meta: ${{ toJSON(steps.meta.outputs) }}
+      build: ${{ toJSON(steps.build.outputs) }}
 
     steps:
-      - name: build image uri
-        run: |
-          echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
-
-      - name: get short commit sha
-        run: |
-          echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
-
-      - name: create tags
-        run: |
-          echo "PR_TAG=${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
-          echo "PR_COMMIT_TAG=${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV  
-
       - name: clone repo
         uses: actions/checkout@v3
 
@@ -123,54 +88,76 @@ jobs:
         if: inputs.cosign-public-key != ''
         uses: sigstore/cosign-installer@v3.1.2
 
+      - name: forward proxy settings
+        run: |
+          echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV
+          echo "HTTPS_PROXY=$HTTPS_PROXY" >> $GITHUB_ENV
+          echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
+
+      - name: install buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            env.http_proxy=${{ env.HTTP_PROXY }}
+            env.https_proxy=${{ env.HTTPS_PROXY }}
+            "env.no_proxy='${{ env.NO_PROXY }}'"
+
       - name: login to container registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ inputs.container-registry }}
-          username: ${{ inputs.container-registry-user }}
-          password: ${{ secrets.container-registry-token }}
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry-user }}
+          password: ${{ secrets.registry-token }}
 
-      - name: build container
-        run: ${{ inputs.command }}
+      - name: container metadata
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          tags: |
+            type=ref,event=pr
 
-      - name: tag container
-        run: |
-          docker tag ${{ env.IMAGE }} ${{ env.PR_TAG }}
-          docker tag ${{ env.IMAGE }} ${{ env.PR_COMMIT_TAG }}
+      - name: build and push
+        uses: docker/build-push-action@v5
+        id: build
+        with:
+          file: ${{ inputs.build-file }}
+          context: ${{ inputs.build-context }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
+          github-token: ${{ github.token }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
 
-      - name: push container
-        run: |
-          docker push ${{ env.PR_TAG }}
-          docker push ${{ env.PR_COMMIT_TAG }}
-
-      - name: container digest
-        id: digest
-        run: |
-          echo "DIGEST=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.PR_COMMIT_TAG }}`" >> $GITHUB_ENV
-
-      - name: cosign image
+      - name: cosign image with key
         if: inputs.cosign-public-key != ''
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
           COSIGN_PASSWORD: ${{ secrets.cosign-password }}
-        run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.DIGEST }}"
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build.outputs.digest }}
 
       - name: cosign verify image
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.DIGEST }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
       - name: annotate the ci run with container tags
         run: >-
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           Pushed PR container assets!%0A
           - %0A
-          docker pull ${{ env.PR_TAG }}%0A
-          docker pull ${{ env.PR_COMMIT_TAG }}%0A
-          docker pull ${{ env.DIGEST }}"
+          docker pull ${{ steps.meta.outputs.tags }}%0A
+          ${{ steps.build.outputs.digest }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
@@ -180,16 +167,6 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
           slack-text: |
-            *${{ github.repository }}*\n
-            *PR-${{ github.event.pull_request.number }} Update*\n
-            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}\n
+            :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
             <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
-            ```
-            PR:       ${{ github.event.pull_request.title }}
-            Branch:   ${{ github.head_ref }}
-            Ref:      ${{ github.ref }}
-            Sha:      ${{ github.event.pull_request.head.sha }}
-            Workflow: ${{ github.workflow }}
-            Run:      ${{ github.run_id }}
-            ```
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>

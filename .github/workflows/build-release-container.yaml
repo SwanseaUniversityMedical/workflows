@@ -7,9 +7,14 @@ on:
         required: true
         type: string
 
-      command:
-        description: "Command to build the container named $IMAGE."
+      build-file:
+        description: "Path to the container file."
         required: true
+        type: string
+
+      build-context:
+        description: "Path to the build root dir."
+        default: '.'
         type: string
 
       release-version:
@@ -17,32 +22,27 @@ on:
         required: true
         type: string
 
-      container-registry:
+      registry:
         description: "URL of the container registry."
         required: true
         type: string
 
-      container-registry-user:
+      registry-user:
         description: "Username for the container registry."
         required: true
         type: string
 
-      container-registry-project:
-        description: "Project within container registry."
-        required: true
-        type: string
-
-      container-registry-repo:
+      registry-repo:
         description: "Repo within container registry project."
         required: true
         type: string
 
-      container-tag-prefix:
+      registry-tag-prefix:
         description: "Prefix to use when tagging container"
         required: true
         type: string
 
-      container-tag-suffix:
+      registry-tag-suffix:
         description: "Suffix to use when tagging container"
         required: true
         type: string
@@ -68,7 +68,7 @@ on:
         description: "Authentication token for Slack."
         required: true
 
-      container-registry-token:
+      registry-token:
         description: "Authentication token for the container registry."
         required: true
 
@@ -82,25 +82,13 @@ on:
 
     outputs:
 
-      registry:
-        description: "URL of the container registry."
-        value: ${{ inputs.container-registry }}
+      meta:
+        description: "Container metadata."
+        value: ${{ jobs.build-release-container.outputs.meta }}
 
-      project:
-        description: "Project within container registry."
-        value: ${{ inputs.container-registry-project }}
-
-      repo:
-        description: "Repo within container registry project."
-        value: ${{ inputs.container-registry-repo }}
-
-      digest:
-        description: "Docker pull URI with digest."
-        value: ${{ jobs.build-release-container.outputs.digest }}
-
-      rc-tag:
-        description: "Docker pull URI with rc tag."
-        value: ${{ jobs.build-release-container.outputs.rc-tag }}
+      build:
+        description: "Build output."
+        value: ${{ jobs.build-release-container.outputs.build }}
 
 jobs:
   build-release-container:
@@ -109,18 +97,10 @@ jobs:
       group: heavy
 
     outputs:
-      digest: ${{ env.DIGEST }}
-      rc-tag: ${{ env.RC_TAG }}
+      meta: ${{ toJSON(steps.meta.outputs) }}
+      build: ${{ toJSON(steps.build.outputs) }}
 
     steps:
-      - name: build image uri
-        run: |
-          echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
-
-      - name: create tags
-        run: |
-          echo "RC_TAG=${{ env.IMAGE }}:rc-${{ inputs.container-tag-prefix }}${{ inputs.release-version }}${{ inputs.container-tag-suffix }}" >> $GITHUB_ENV 
-
       - name: clone repo
         uses: actions/checkout@v3
 
@@ -128,51 +108,76 @@ jobs:
         if: inputs.cosign-public-key != ''
         uses: sigstore/cosign-installer@v3.1.2
 
+      - name: forward proxy settings
+        run: |
+          echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV
+          echo "HTTPS_PROXY=$HTTPS_PROXY" >> $GITHUB_ENV
+          echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
+
+      - name: install buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            env.http_proxy=${{ env.HTTP_PROXY }}
+            env.https_proxy=${{ env.HTTPS_PROXY }}
+            "env.no_proxy='${{ env.NO_PROXY }}'"
+
       - name: login to container registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ inputs.container-registry }}
-          username: ${{ inputs.container-registry-user }}
-          password: ${{ secrets.container-registry-token }}
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry-user }}
+          password: ${{ secrets.registry-token }}
 
-      - name: build container
-        run: ${{ inputs.command }}
+      - name: container metadata
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          tags: |
+            type=raw,value=${{ inputs.registry-tag-prefix }}${{ inputs.release-version }}${{ inputs.registry-tag-suffix }}
 
-      - name: tag container
-        run: |
-          docker tag ${{ env.IMAGE }} ${{ env.RC_TAG }}
+      - name: build and push
+        uses: docker/build-push-action@v5
+        id: build
+        with:
+          file: ${{ inputs.build-file }}
+          context: ${{ inputs.build-context }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
+          github-token: ${{ github.token }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
 
-      - name: push container
-        run: |
-          docker push ${{ env.RC_TAG }}
-
-      - name: container digest
-        id: digest
-        run: |
-          echo "DIGEST=`docker inspect --format='{{index .RepoDigests 0}}' ${{ env.RC_TAG }}`" >> $GITHUB_ENV
-
-      - name: cosign image
+      - name: cosign image with key
         if: inputs.cosign-public-key != ''
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
           COSIGN_PASSWORD: ${{ secrets.cosign-password }}
-        run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.DIGEST }}"
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build.outputs.digest }}
 
       - name: cosign verify image
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.DIGEST }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
       - name: annotate the ci run with container tags
         run: >-
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           Pushed release candidate container assets!%0A
           - %0A
-          docker pull ${{ env.RC_TAG }}%0A
-          docker pull ${{ env.DIGEST }}"
+          docker pull ${{ steps.meta.outputs.tags }}%0A
+          docker pull ${{ steps.build.outputs.digest }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

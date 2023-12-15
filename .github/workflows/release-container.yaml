@@ -12,37 +12,32 @@ on:
         required: true
         type: string
         
-      container-registry:
+      registry:
         description: "URL of the container registry."
         required: true
         type: string
 
-      container-registry-user:
+      registry-user:
         description: "Username for the container registry."
         required: true
         type: string
 
-      container-registry-project:
-        description: "Project within container registry."
-        required: true
-        type: string
-
-      container-registry-repo:
+      registry-repo:
         description: "Repo within container registry project."
         required: true
         type: string
 
-      container-registry-digest:
+      registry-digest:
         description: "URI of the container."
         required: true
         type: string
 
-      container-tag-prefix:
+      registry-tag-prefix:
         description: "Prefix to use when tagging container"
         required: true
         type: string
 
-      container-tag-suffix:
+      registry-tag-suffix:
         description: "Suffix to use when tagging container"
         required: true
         type: string
@@ -68,7 +63,7 @@ on:
         description: "Authentication token for Slack."
         required: true
         
-      container-registry-token:
+      registry-token:
         description: "Authentication token for the container registry."
         required: true
 
@@ -96,14 +91,6 @@ jobs:
       release: ${{ toJSON(steps.release.outputs) }}
 
     steps:
-      - name: build image uri
-        run: |
-          echo "IMAGE=${{ inputs.container-registry }}/${{ inputs.container-registry-project }}/${{ inputs.container-registry-repo }}" >> $GITHUB_ENV
-
-      - name: create tag
-        run: |
-          echo "RELEASE_TAG=${{ env.IMAGE }}:${{ inputs.container-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.container-tag-suffix }}" >> $GITHUB_ENV 
-
       - name: install cosign
         if: inputs.cosign-public-key != ''
         uses: sigstore/cosign-installer@v3.1.2
@@ -111,43 +98,63 @@ jobs:
       - name: login to container registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ inputs.container-registry }}
-          username: ${{ inputs.container-registry-user }}
-          password: ${{ secrets.container-registry-token }}
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry-user }}
+          password: ${{ secrets.registry-token }}
+
+      - name: forward proxy settings
+        run: |
+          echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV
+          echo "HTTPS_PROXY=$HTTPS_PROXY" >> $GITHUB_ENV
+          echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
+
+      - name: install buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            env.http_proxy=${{ env.HTTP_PROXY }}
+            env.https_proxy=${{ env.HTTPS_PROXY }}
+            "env.no_proxy='${{ env.NO_PROXY }}'"
 
       - name: cosign verify container
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAG: ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          DIGEST: ${{ inputs.registry-digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ inputs.container-registry-digest }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
-      - name: pull container
-        run: |
-          docker pull ${{ inputs.container-registry-digest }}
+      - name: container metadata
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          tags: |
+            type=raw,value=${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).release-version }}${{ inputs.registry-tag-suffix }}
 
-      - name: tag container
-        run: |
-          docker tag ${{ inputs.container-registry-digest }} ${{ env.RELEASE_TAG }}
+      - name: retag container
+        run: docker buildx imagetools create -t ${{ steps.meta.outputs.tags }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }}
 
-      - name: push container
-        run: |
-          docker push ${{ env.RELEASE_TAG }}
-
-      - name: cosign image
+      - name: cosign image with key
         if: inputs.cosign-public-key != ''
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
           COSIGN_PASSWORD: ${{ secrets.cosign-password }}
-        run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.RELEASE_TAG }}"
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ inputs.registry-digest }}
 
-      - name: cosign verify image
+      - name: cosign verify container
         if: inputs.cosign-public-key != ''
         env:
           COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+          TAG: ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          DIGEST: ${{ inputs.registry-digest }}
         run: |
-          cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.RELEASE_TAG }}"
+          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
 
       - name: release
         uses: actions/github-script@v6
@@ -174,7 +181,7 @@ jobs:
           Pushed release container version ${{ fromJSON(inputs.release-info).release-version }}!%0A
           - %0A
           docker pull ${{ env.RELEASE_TAG }}%0A
-          docker pull ${{ inputs.container-registry-digest }}"
+          docker pull ${{ inputs.registry-digest }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
@@ -184,13 +191,5 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
           slack-channel: ${{ inputs.slack-channel }}
           slack-text: |
-            *${{ github.repository }}*\n
-            *Release ${{ github.ref }}*\n
-            ${{ inputs.status-failure }} job: ${{ github.job }} / ${{ inputs.job-name }}\n
-            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
-            ```
-            Ref:      ${{ github.ref }}\n
-            Sha:      ${{ github.sha }}\n
-            Workflow: ${{ github.workflow }}\n
-            Run:      ${{ github.run_id }}
-            ```
+            :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
+            <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>

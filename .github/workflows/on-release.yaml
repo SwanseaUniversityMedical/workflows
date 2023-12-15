@@ -60,44 +60,43 @@ jobs:
     # Build the whalesay container and push it as :rc-1.0.0
     needs: changes
     if: fromJSON(needs.changes.outputs.changes).container-whalesay == 'true'
-    uses: ./.github/workflows/on-release-container.yaml
+    uses: ./.github/workflows/build-and-test-release-container.yaml
     with:
       job-name: container-whalesay
-      container-registry: ${{ vars.HARBOR_REGISTRY }}
-      container-registry-user: ${{ vars.HARBOR_USER }}
-      container-registry-project: ${{ vars.HARBOR_PROJECT }}
-      container-registry-repo: whalesay
+      registry: ${{ vars.HARBOR_REGISTRY }}
+      registry-user: ${{ vars.HARBOR_USER }}
+      registry-repo: github-workflows/whalesay
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       release-tag-format: 'whalesay-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
-      build-command: |
-        docker build -t $IMAGE -f containers/whalesay/Dockerfile containers/whalesay
+      build-file: containers/whalesay/Dockerfile
+      build-context: containers/whalesay
+      test-args: cowsay boo
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}
-      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
+      registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
 
   container-whalesay2:
     # Build the whalesay2 container and push it as :rc-1.0.0
     needs: changes
     if: fromJSON(needs.changes.outputs.changes).container-whalesay2 == 'true'
-    uses: ./.github/workflows/on-release-container.yaml
+    uses: ./.github/workflows/build-and-test-release-container.yaml
     with:
       job-name: container-whalesay2
-      container-registry: ${{ vars.HARBOR_REGISTRY }}
-      container-registry-user: ${{ vars.HARBOR_USER }}
-      container-registry-project: ${{ vars.HARBOR_PROJECT }}
-      container-registry-repo: whalesay2
+      registry: ${{ vars.HARBOR_REGISTRY }}
+      registry-user: ${{ vars.HARBOR_USER }}
+      registry-repo: github-workflows/whalesay2
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       release-tag-format: 'whalesay2-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
-      build-command: |
-        docker build -t $IMAGE -f containers/whalesay2/Dockerfile containers/whalesay2
+      build-file: containers/whalesay2/Dockerfile
+      build-context: containers/whalesay2
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}
-      container-registry-token: ${{ secrets.HARBOR_TOKEN }}
+      registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
 
   chart-helloworld:

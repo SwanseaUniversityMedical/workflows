@@ -162,6 +162,7 @@ jobs:
     # Test the container
     needs: build
     uses: ./.github/workflows/test-release-container.yaml
+    if: ${{ inputs.test-flags != '' || inputs.test-args != '' }}
     with:
       job-name: ${{ inputs.job-name }}
       registry: ${{ inputs.registry }}

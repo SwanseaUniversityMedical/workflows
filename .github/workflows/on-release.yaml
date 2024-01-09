@@ -29,6 +29,7 @@ jobs:
           - './.github/workflows/slack-release-thread.yaml'
           - './.github/workflows/changes-release.yaml'
           - './.github/workflows/version.yaml'
+          - './.github/workflows/build-and-test-release-container.yaml'
           - './.github/workflows/build-release-container.yaml'
           - './.github/workflows/test-release-container.yaml'
           - './.github/workflows/release-container.yaml'

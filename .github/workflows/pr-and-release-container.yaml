@@ -211,6 +211,14 @@ jobs:
           docker pull ${{ steps.meta.outputs.tags }}%0A
           ${{ steps.build.outputs.digest }}"
 
+      - name: test
+        if: ${{ inputs.test-flags != '' || inputs.test-args != '' }}
+        run: |
+          docker run \
+            ${{ inputs.test-flags }} \
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }} \
+            ${{ inputs.test-args }}
+
       - name: test condition
         if: github.event_name == 'push'
         run: |

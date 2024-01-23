@@ -93,6 +93,7 @@ jobs:
   test:
     needs: build
     uses: ./.github/workflows/test-pr-container.yaml
+    if: ${{ inputs.test-flags != '' || inputs.test-args != '' }}
     with:
       job-name: ${{ inputs.job-name }}
       registry: ${{ inputs.registry }}

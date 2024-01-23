@@ -141,6 +141,9 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
+      - name: clone repo
+        uses: actions/checkout@v3
+
       - name: pr
         if: github.event_name == 'pull_request'
         uses: ./.github/workflows/pr-container-composite.yaml

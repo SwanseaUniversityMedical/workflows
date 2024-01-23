@@ -19,11 +19,4 @@ concurrency:
 
 jobs:
   test:
-    name: print info
-    runs-on:
-      labels: [self-hosted, linux, x64]
-      group: light
-    steps:
-      - name: Print GitHub event action
-        run: |
-          echo "${{ github.event.action }}"
+    uses: ./.github/workflows/pr-and-release-container.yaml

@@ -26,11 +26,6 @@ on:
 #        description: "Arguments passed to the container."
 #        default: ''
 #        type: string
-
-      trigger-event:
-        description: "The type of event that triggered the workflow call"
-        default: ''
-        type: string
 #
 #      registry:
 #        description: "URL of the container registry."

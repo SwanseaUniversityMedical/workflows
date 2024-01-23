@@ -216,7 +216,7 @@ jobs:
         run: |
           docker run \
             ${{ inputs.test-flags }} \
-            ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ inputs.registry-digest }} \
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }} \
             ${{ inputs.test-args }}
 
       - name: test condition

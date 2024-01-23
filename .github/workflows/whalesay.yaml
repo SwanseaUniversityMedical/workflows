@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  test:
+  whalesay:
     uses: ./.github/workflows/pr-and-release-container.yaml
     with:
       job-name: container-whalesay

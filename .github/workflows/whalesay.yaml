@@ -24,6 +24,6 @@ jobs:
       labels: [self-hosted, linux, x64]
       group: light
     steps:
-      name: Print GitHub event action
-      run: |
-        echo "${{ github.event.action }}"
+      - name: Print GitHub event action
+        run: |
+          echo "${{ github.event.action }}"

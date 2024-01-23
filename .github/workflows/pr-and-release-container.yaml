@@ -126,15 +126,6 @@ on:
         required: false
 
 jobs:
-  test:
-    name: print info
-    runs-on:
-      labels: [ self-hosted, linux, x64 ]
-      group: light
-    steps:
-      - name: Print GitHub event action
-        run: |
-          echo "${{ github.event.action }}"
   pr:
     if: ${{ github.event.action }} == "synchronize" || ${{ github.event.action }} == "opened"
     # Build the container and push it as :pr-42 and :pr-42-fe45b3h

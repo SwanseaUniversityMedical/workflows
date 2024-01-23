@@ -211,6 +211,11 @@ jobs:
           docker pull ${{ steps.meta.outputs.tags }}%0A
           ${{ steps.build.outputs.digest }}"
 
+      - name: test condition
+        if: github.event_name == 'push'
+        run: |
+          echo 'Hello World'
+
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0
         continue-on-error: true

@@ -80,40 +80,28 @@ jobs:
       - name: Print GitHub event action
         run: |
           echo "${{ github.event.action }}"
-  build-pr:
-    if: ${{ github.event.action }} == "synchronize"
+  pr:
+    if: ${{ github.event.action }} == "synchronize" || ${{ github.event.action }} == "opened"
     # Build the container and push it as :pr-42 and :pr-42-fe45b3h
-    uses: ./.github/workflows/build-pr-container.yaml
+    uses: ./.github/workflows/build-and-test-pr-container.yaml
     with:
       job-name: ${{ inputs.job-name }}
+      release-version: ${{ fromJSON(needs.version.outputs.release).release-version }}
       registry: ${{ inputs.registry }}
       registry-user: ${{ inputs.registry-user }}
       registry-repo: ${{ inputs.registry-repo }}
+      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
+      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
       cosign-public-key: ${{ inputs.cosign-public-key }}
+      slack-channel: ${{ inputs.slack-channel }}
       build-file: ${{ inputs.build-file }}
       build-context: ${{ inputs.build-context }}
-      slack-channel: ${{ inputs.slack-channel }}
+      test-flags: ${{ inputs.test-flags }}
+      test-args: ${{ inputs.test-args }}
+
 
     secrets:
       cosign-private-key: ${{ secrets.cosign-private-key }}
       cosign-password: ${{ secrets.cosign-password }}
       registry-token: ${{ secrets.registry-token }}
       slack-token: ${{ secrets.slack-token }}
-#
-#  test:
-#    needs: build
-#    uses: ./.github/workflows/test-pr-container.yaml
-#    with:
-#      job-name: ${{ inputs.job-name }}
-#      registry: ${{ inputs.registry }}
-#      registry-user: ${{ inputs.registry-user }}
-#      registry-repo: ${{ inputs.registry-repo }}
-#      registry-digest: ${{ fromJSON(needs.build.outputs.build).digest }}
-#      cosign-public-key: ${{ inputs.cosign-public-key }}
-#      test-flags: ${{ inputs.test-flags }}
-#      test-args: ${{ inputs.test-args }}
-#      slack-channel: ${{ inputs.slack-channel }}
-#
-#    secrets:
-#      registry-token: ${{ secrets.registry-token }}
-#      slack-token: ${{ secrets.slack-token }}

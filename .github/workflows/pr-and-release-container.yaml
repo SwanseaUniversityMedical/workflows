@@ -126,51 +126,56 @@ on:
         required: false
 
 jobs:
-  pr:
-    if: ${{ github.event.action }} == "synchronize" || ${{ github.event.action }} == "opened"
-    # Build the container and push it as :pr-42 and :pr-42-fe45b3h
-    uses: ./.github/workflows/build-and-test-pr-container.yaml
-    with:
-      job-name: ${{ inputs.job-name }}
-      registry: ${{ inputs.registry }}
-      registry-user: ${{ inputs.registry-user }}
-      registry-repo: ${{ inputs.registry-repo }}
-      cosign-public-key: ${{ inputs.cosign-public-key }}
-      slack-channel: ${{ inputs.slack-channel }}
-      build-file: ${{ inputs.build-file }}
-      build-context: ${{ inputs.build-context }}
-      test-flags: ${{ inputs.test-flags }}
-      test-args: ${{ inputs.test-args }}
-
-    secrets:
-      cosign-private-key: ${{ secrets.cosign-private-key }}
-      cosign-password: ${{ secrets.cosign-password }}
-      registry-token: ${{ secrets.registry-token }}
-      slack-token: ${{ secrets.slack-token }}
-
-  release:
-    if: ${{ github.event.action }} == "push"
-    uses: ./.github/workflows/build-and-test-release-container.yaml
-    with:
-      job-name: ${{ inputs.job-name }}
-      registry: ${{ inputs.registry }}
-      registry-user: ${{ inputs.registry-user }}
-      registry-repo: ${{ inputs.registry-repo }}
-      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
-      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
-      release-tag-format: ${{ inputs.release-tag-format}}
-      release-rules: ${{ inputs.release-rules }}
-      release-branches: ${{ inputs.release-branches }}
-      cosign-public-key: ${{ inputs.cosign-public-key }}
-      slack-channel: ${{ inputs.slack-channel }}
-      build-file: ${{ inputs.build-file }}
-      build-context: ${{ inputs.build-context }}
-      status-failure: ${{ inputs.status-failure }}
-      test-flags: ${{ inputs.test-flags }}
-      test-args: ${{ inputs.test-args }}
-
-    secrets:
-      cosign-private-key: ${{ secrets.cosign-private-key }}
-      cosign-password: ${{ secrets.cosign-password }}
-      slack-token: ${{ secrets.slack-token }}
-      registry-token: ${{ secrets.registry-token }}
+  execute:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: heavy
+    steps:
+#  pr:
+#    if: ${{ github.event.action }} == "synchronize" || ${{ github.event.action }} == "opened"
+#    # Build the container and push it as :pr-42 and :pr-42-fe45b3h
+#    uses: ./.github/workflows/build-and-test-pr-container.yaml
+#    with:
+#      job-name: ${{ inputs.job-name }}
+#      registry: ${{ inputs.registry }}
+#      registry-user: ${{ inputs.registry-user }}
+#      registry-repo: ${{ inputs.registry-repo }}
+#      cosign-public-key: ${{ inputs.cosign-public-key }}
+#      slack-channel: ${{ inputs.slack-channel }}
+#      build-file: ${{ inputs.build-file }}
+#      build-context: ${{ inputs.build-context }}
+#      test-flags: ${{ inputs.test-flags }}
+#      test-args: ${{ inputs.test-args }}
+#
+#    secrets:
+#      cosign-private-key: ${{ secrets.cosign-private-key }}
+#      cosign-password: ${{ secrets.cosign-password }}
+#      registry-token: ${{ secrets.registry-token }}
+#      slack-token: ${{ secrets.slack-token }}
+#
+#  release:
+#    if: ${{ github.event.action }} == "push"
+#    uses: ./.github/workflows/build-and-test-release-container.yaml
+#    with:
+#      job-name: ${{ inputs.job-name }}
+#      registry: ${{ inputs.registry }}
+#      registry-user: ${{ inputs.registry-user }}
+#      registry-repo: ${{ inputs.registry-repo }}
+#      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
+#      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
+#      release-tag-format: ${{ inputs.release-tag-format}}
+#      release-rules: ${{ inputs.release-rules }}
+#      release-branches: ${{ inputs.release-branches }}
+#      cosign-public-key: ${{ inputs.cosign-public-key }}
+#      slack-channel: ${{ inputs.slack-channel }}
+#      build-file: ${{ inputs.build-file }}
+#      build-context: ${{ inputs.build-context }}
+#      status-failure: ${{ inputs.status-failure }}
+#      test-flags: ${{ inputs.test-flags }}
+#      test-args: ${{ inputs.test-args }}
+#
+#    secrets:
+#      cosign-private-key: ${{ secrets.cosign-private-key }}
+#      cosign-password: ${{ secrets.cosign-password }}
+#      slack-token: ${{ secrets.slack-token }}
+#      registry-token: ${{ secrets.registry-token }}

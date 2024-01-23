@@ -159,7 +159,7 @@ jobs:
           username: ${{ inputs.registry-user }}
           password: ${{ secrets.registry-token }}
 
-      - name: container metadata
+      - name: pr container metadata
         if: github.event_name == 'pull_request'
         uses: docker/metadata-action@v5
         id: meta
@@ -168,6 +168,16 @@ jobs:
             ${{ inputs.registry }}/${{ inputs.registry-repo }}
           tags: |
             type=ref,event=pr
+
+      - name: release container metadata
+        if: github.event_name == 'push'
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            ${{ inputs.registry }}/${{ inputs.registry-repo }}
+          tags: |
+            type=raw,value=${{ inputs.registry-tag-prefix }}${{ inputs.release-version }}${{ inputs.registry-tag-suffix }}
 
       - name: build and push
         uses: docker/build-push-action@v5
@@ -202,7 +212,7 @@ jobs:
         run: |
           cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
-      - name: annotate the ci run with container tags
+      - name: annotate the ci run with pr container tags
         if: github.event_name == 'pull_request'
         run: >-
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
@@ -210,6 +220,15 @@ jobs:
           - %0A
           docker pull ${{ steps.meta.outputs.tags }}%0A
           ${{ steps.build.outputs.digest }}"
+
+      - name: annotate the ci run with release candidate container tags
+        if: github.event_name == 'push'
+        run: >-
+          echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+          Pushed release candidate container assets!%0A
+          - %0A
+          docker pull ${{ steps.meta.outputs.tags }}%0A
+          docker pull ${{ steps.build.outputs.digest }}"
 
       - name: test
         if: ${{ inputs.test-flags != '' || inputs.test-args != '' }}

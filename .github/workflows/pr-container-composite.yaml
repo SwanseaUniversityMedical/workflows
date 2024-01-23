@@ -5,128 +5,126 @@ inputs:
     required: true
     type: string
 
-    build-file:
+  build-file:
       description: "Path to the container file."
       required: true
       type: string
 
-    build-context:
-      description: "Path to the build root dir."
-      default: '.'
-      type: string
+  build-context:
+    description: "Path to the build root dir."
+    default: '.'
+    type: string
 
-    pr-filters:
-      description: "YAML dictionary of lists of path filters."
-      required: true
-      type: string
+  pr-filters:
+    description: "YAML dictionary of lists of path filters."
+    required: true
+    type: string
 
-    test-flags:
-      description: "Arguments passed to docker run."
-      default: ''
-      type: string
+  test-flags:
+    description: "Arguments passed to docker run."
+    default: ''
+    type: string
 
-    test-args:
-      description: "Arguments passed to the container."
-      default: ''
-      type: string
+  test-args:
+    description: "Arguments passed to the container."
+    default: ''
+    type: string
 
-    registry:
-      description: "URL of the container registry."
-      required: true
-      type: string
+  registry:
+    description: "URL of the container registry."
+    required: true
+    type: string
 
-    registry-user:
-      description: "Username for the container registry."
-      required: true
-      type: string
+  registry-user:
+    description: "Username for the container registry."
+    required: true
+    type: string
 
-    registry-repo:
-      description: "Repo within container registry project."
-      required: true
-      type: string
+  registry-repo:
+    description: "Repo within container registry project."
+    required: true
+    type: string
 
-    registry-tag-prefix:
-      description: "Prefix to use when tagging container"
-      default: ''
-      type: string
+  registry-tag-prefix:
+    description: "Prefix to use when tagging container"
+    default: ''
+    type: string
 
-    registry-tag-suffix:
-      description: "Suffix to use when tagging container"
-      default: ''
-      type: string
+  registry-tag-suffix:
+    description: "Suffix to use when tagging container"
+    default: ''
+    type: string
 
-    release-rules:
-      description: "JSON list of rule dicts for what commit types trigger releases."
-      default: |
-        [
-          {"type": "major", "release": "major"},
-          {"type": "minor", "release": "minor"},
-          {"type": "patch", "release": "patch"},
-          {"type": "no-release", "release": false},
-        
-          {"type": "chore", "release": "patch"},
-          {"type": "refactor", "release": "patch"},
-          {"type": "style", "release": "patch"},
-        
-          {"type": "docs", "release": false},
-          {"type": "test", "release": false},
-          {"type": "ci", "release": false},
-        
-          {"type": "feat", "release": "minor"},
-        
-          {"type": "revert", "release": "patch"},
-          {"type": "perf", "release": "patch"},
-          {"type": "fix", "release": "patch"},
-          {"type": "build", "release": "patch"},
-        ]
-      type: string
+  release-rules:
+    description: "JSON list of rule dicts for what commit types trigger releases."
+    default: |
+      [
+        {"type": "major", "release": "major"},
+        {"type": "minor", "release": "minor"},
+        {"type": "patch", "release": "patch"},
+        {"type": "no-release", "release": false},
+      
+        {"type": "chore", "release": "patch"},
+        {"type": "refactor", "release": "patch"},
+        {"type": "style", "release": "patch"},
+      
+        {"type": "docs", "release": false},
+        {"type": "test", "release": false},
+        {"type": "ci", "release": false},
+      
+        {"type": "feat", "release": "minor"},
+      
+        {"type": "revert", "release": "patch"},
+        {"type": "perf", "release": "patch"},
+        {"type": "fix", "release": "patch"},
+        {"type": "build", "release": "patch"},
+      ]
+    type: string
 
-    release-branches:
-      description: "JSON list of regex branch filters."
-      default: |
-        [
-          '+([0-9])?(.{+([0-9]),x}).x',
-          'main'
-        ]
-      type: string
+  release-branches:
+    description: "JSON list of regex branch filters."
+    default: |
+      [
+        '+([0-9])?(.{+([0-9]),x}).x',
+        'main'
+      ]
+    type: string
 
-    release-tag-format:
-      description: "Semantic-release Github release tag format."
-      default: '${version}'
-      type: string
+  release-tag-format:
+    description: "Semantic-release Github release tag format."
+    default: '${version}'
+    type: string
 
-    slack-channel:
-      description: "ID of the Slack channel to post updates to."
-      required: true
-      type: string
+  slack-channel:
+    description: "ID of the Slack channel to post updates to."
+    required: true
+    type: string
 
-    status-failure:
-      description: "Failure status for the message header."
-      default: ':no_entry:'
-      type: string
+  status-failure:
+    description: "Failure status for the message header."
+    default: ':no_entry:'
+    type: string
 
-    cosign-public-key:
-      description: "Public key for cosigning images."
-      required: false
-      type: string
+  cosign-public-key:
+    description: "Public key for cosigning images."
+    required: false
+    type: string
 
-    secrets:
+  slack-token:
+    description: "Authentication token for Slack."
+    required: true
 
-      slack-token:
-        description: "Authentication token for Slack."
-        required: true
+  registry-token:
+    description: "Authentication token for the container registry."
+    required: true
 
-      registry-token:
-        description: "Authentication token for the container registry."
-        required: true
+  cosign-private-key:
+    description: "Private key for cosigning images."
+    required: false
 
-      cosign-private-key:
-        description: "Private key for cosigning images."
-        required: false
-
-      cosign-password:
-        description: "Private key password for cosigning images."
-        required: false
+  cosign-password:
+    description: "Private key password for cosigning images."
+    required: false
 
 runs:
   using: "composite"
@@ -170,7 +168,7 @@ runs:
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}
-        password: ${{ secrets.registry-token }}
+        password: ${{ inputs.registry-token }}
 
     - name: container metadata
       uses: docker/metadata-action@v5
@@ -200,8 +198,8 @@ runs:
       run: |
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
       env:
-        COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
-        COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
         TAGS: ${{ steps.meta.outputs.tags }}
         DIGEST: ${{ steps.build.outputs.digest }}
 

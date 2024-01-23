@@ -160,7 +160,7 @@ jobs:
           password: ${{ secrets.registry-token }}
 
       - name: container metadata
-        if: github.event_name == "pull_request"
+        if: ${{ github.event_name == "pull_request" }}
         uses: docker/metadata-action@v5
         id: meta
         with:
@@ -203,7 +203,7 @@ jobs:
           cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
       - name: annotate the ci run with container tags
-        if: github.event_name == "pull_request"
+        if: ${{ github.event_name == "pull_request" }}
         run: >-
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           Pushed PR container assets!%0A

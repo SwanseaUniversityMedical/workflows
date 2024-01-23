@@ -2,73 +2,73 @@ on:
   workflow_call:
     inputs:
 
-#      job-name:
-#        description: "Job name to display on Slack messages."
-#        required: true
-#        type: string
-#
-#      build-file:
-#        description: "Path to the container file."
-#        required: true
-#        type: string
-#
-#      build-context:
-#        description: "Path to the build root dir."
-#        default: '.'
-#        type: string
-#
-#      test-flags:
-#        description: "Arguments passed to docker run."
-#        default: ''
-#        type: string
-#
-#      test-args:
-#        description: "Arguments passed to the container."
-#        default: ''
-#        type: string
-#
-#      registry:
-#        description: "URL of the container registry."
-#        required: true
-#        type: string
-#
-#      registry-user:
-#        description: "Username for the container registry."
-#        required: true
-#        type: string
-#
-#      registry-repo:
-#        description: "Repo within container registry project."
-#        required: true
-#        type: string
-#
-#      slack-channel:
-#        description: "ID of the Slack channel to post updates to."
-#        required: true
-#        type: string
-#
-#      cosign-public-key:
-#        description: "Public key for cosigning images."
-#        required: false
-#        type: string
-#
-#    secrets:
-#
-#      slack-token:
-#        description: "Authentication token for Slack."
-#        required: true
-#
-#      registry-token:
-#        description: "Authentication token for the container registry."
-#        required: true
-#
-#      cosign-private-key:
-#        description: "Private key for cosigning images."
-#        required: false
-#
-#      cosign-password:
-#        description: "Private key password for cosigning images."
-#        required: false
+      job-name:
+        description: "Job name to display on Slack messages."
+        required: true
+        type: string
+
+      build-file:
+        description: "Path to the container file."
+        required: true
+        type: string
+
+      build-context:
+        description: "Path to the build root dir."
+        default: '.'
+        type: string
+
+      test-flags:
+        description: "Arguments passed to docker run."
+        default: ''
+        type: string
+
+      test-args:
+        description: "Arguments passed to the container."
+        default: ''
+        type: string
+
+      registry:
+        description: "URL of the container registry."
+        required: true
+        type: string
+
+      registry-user:
+        description: "Username for the container registry."
+        required: true
+        type: string
+
+      registry-repo:
+        description: "Repo within container registry project."
+        required: true
+        type: string
+
+      slack-channel:
+        description: "ID of the Slack channel to post updates to."
+        required: true
+        type: string
+
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        required: false
+        type: string
+
+    secrets:
+
+      slack-token:
+        description: "Authentication token for Slack."
+        required: true
+
+      registry-token:
+        description: "Authentication token for the container registry."
+        required: true
+
+      cosign-private-key:
+        description: "Private key for cosigning images."
+        required: false
+
+      cosign-password:
+        description: "Private key password for cosigning images."
+        required: false
 
 jobs:
   test:
@@ -80,24 +80,25 @@ jobs:
       - name: Print GitHub event action
         run: |
           echo "${{ github.event.action }}"
-#  build:
-#    # Build the container and push it as :pr-42 and :pr-42-fe45b3h
-#    uses: ./.github/workflows/build-pr-container.yaml
-#    with:
-#      job-name: ${{ inputs.job-name }}
-#      registry: ${{ inputs.registry }}
-#      registry-user: ${{ inputs.registry-user }}
-#      registry-repo: ${{ inputs.registry-repo }}
-#      cosign-public-key: ${{ inputs.cosign-public-key }}
-#      build-file: ${{ inputs.build-file }}
-#      build-context: ${{ inputs.build-context }}
-#      slack-channel: ${{ inputs.slack-channel }}
-#
-#    secrets:
-#      cosign-private-key: ${{ secrets.cosign-private-key }}
-#      cosign-password: ${{ secrets.cosign-password }}
-#      registry-token: ${{ secrets.registry-token }}
-#      slack-token: ${{ secrets.slack-token }}
+  build-pr:
+    if: ${{ github.event.action }} == "synchronize"
+    # Build the container and push it as :pr-42 and :pr-42-fe45b3h
+    uses: ./.github/workflows/build-pr-container.yaml
+    with:
+      job-name: ${{ inputs.job-name }}
+      registry: ${{ inputs.registry }}
+      registry-user: ${{ inputs.registry-user }}
+      registry-repo: ${{ inputs.registry-repo }}
+      cosign-public-key: ${{ inputs.cosign-public-key }}
+      build-file: ${{ inputs.build-file }}
+      build-context: ${{ inputs.build-context }}
+      slack-channel: ${{ inputs.slack-channel }}
+
+    secrets:
+      cosign-private-key: ${{ secrets.cosign-private-key }}
+      cosign-password: ${{ secrets.cosign-password }}
+      registry-token: ${{ secrets.registry-token }}
+      slack-token: ${{ secrets.slack-token }}
 #
 #  test:
 #    needs: build

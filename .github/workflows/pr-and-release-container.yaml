@@ -17,6 +17,16 @@ on:
         default: '.'
         type: string
 
+#      pr-filters:
+#        description: "YAML dictionary of lists of path filters."
+#        required: true
+#        type: string
+#
+#      release-filters:
+#        description: "YAML dictionary of lists of path filters."
+#        required: true
+#        type: string
+
       test-flags:
         description: "Arguments passed to docker run."
         default: ''
@@ -159,6 +169,34 @@ jobs:
           username: ${{ inputs.registry-user }}
           password: ${{ secrets.registry-token }}
 
+      - name: determine release
+        if: github.event_name == 'push'
+        uses: docker://ghcr.io/codfish/semantic-release-action:v2
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          dry_run: true
+          branches: ${{ inputs.release-branches }}
+          tag_format: ${{ inputs.release-tag-format }}
+          plugins: |-
+            [
+              ['@semantic-release/commit-analyzer', {
+                "releaseRules": ${{ inputs.release-rules }},
+              }], 
+              '@semantic-release/release-notes-generator',
+              ['@semantic-release/github', {
+                "successComment": false,
+                "failTitle": false
+              }]
+            ]
+
+      - name: annotate the ci run with release version output
+        if: steps.semantic.outputs.new-release-published == 'true' && github.event_name == 'push'
+        run: >-
+          echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+          Next release will be version ${{ steps.semantic.outputs.release-version }}"
+
       - name: pr container metadata
         if: github.event_name == 'pull_request'
         uses: docker/metadata-action@v5
@@ -170,14 +208,14 @@ jobs:
             type=ref,event=pr
 
       - name: release container metadata
-        if: github.event_name == 'push'
+        if: steps.semantic.outputs.new-release-published == 'true' && github.event_name == 'push'
         uses: docker/metadata-action@v5
         id: meta
         with:
           images: |
             ${{ inputs.registry }}/${{ inputs.registry-repo }}
           tags: |
-            type=raw,value=${{ inputs.registry-tag-prefix }}${{ inputs.release-version }}${{ inputs.registry-tag-suffix }}
+            type=raw,value=${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
 
       - name: build and push
         uses: docker/build-push-action@v5
@@ -222,7 +260,7 @@ jobs:
           ${{ steps.build.outputs.digest }}"
 
       - name: annotate the ci run with release candidate container tags
-        if: github.event_name == 'push'
+        if: steps.semantic.outputs.new-release-published == 'true' && github.event_name == 'push'
         run: >-
           echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
           Pushed release candidate container assets!%0A
@@ -242,6 +280,58 @@ jobs:
         if: github.event_name == 'push'
         run: |
           echo 'Hello World'
+
+#      - name: retag container
+#        if: steps.semantic.outputs.new-release-published == 'true' && github.event_name == 'push'
+#        run: docker buildx imagetools create -t ${{ steps.meta.outputs.tags }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+#
+#      - name: cosign image with key
+#        if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != '' && github.event_name == 'push'
+#        run: |
+#          cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
+#        env:
+#          COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+#          COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+#          TAGS: ${{ steps.meta.outputs.tags }}
+#          DIGEST: ${{ steps.build.outputs.digest }}
+#
+#      - name: cosign verify container
+#        if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != '' && github.event_name == 'push'
+#        env:
+#          COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+#          TAG: ${{ inputs.registry }}/${{ inputs.registry-repo }}
+#          DIGEST: ${{ steps.build.outputs.digest }}
+#        run: |
+#          cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
+#
+#      - name: release
+#        if: steps.semantic.outputs.new-release-published == 'true' && github.event_name == 'push'
+#        uses: actions/github-script@v6
+#        id: release
+#        env:
+#          RELEASE_NOTES: |
+#            ${{ steps.semantic.outputs.release-notes }}
+#        with:
+#          retries: 3
+#          github-token: ${{ github.token }}
+#          script: |
+#            github.rest.repos.createRelease({
+#              owner: "${{ github.repository_owner }}",
+#              repo: "${{ github.event.repository.name }}",
+#              tag_name: "${{ steps.semantic.outputs.git-tag }}",
+#              target_commitish: "${{ github.sha }}",
+#              body: process.env.RELEASE_NOTES,
+#              name: "${{ steps.semantic.outputs.git-tag }}"
+#            });
+#
+#      - name: annotate the ci run with release container tags
+#        if: steps.semantic.outputs.new-release-published == 'true' && github.event_name == 'push'
+#        run: >-
+#          echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+#          Pushed release container version ${{ steps.semantic.outputs.release-version }}!%0A
+#          - %0A
+#          docker pull ${{ env.RELEASE_TAG }}%0A
+#          docker pull ${{ steps.build.outputs.digest }}"
 
       - name: update slack thread failure
         uses: archive/github-actions-slack@v2.7.0

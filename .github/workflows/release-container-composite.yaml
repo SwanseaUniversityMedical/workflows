@@ -1,0 +1,321 @@
+name: 'Build, Test and Release Container'
+inputs:
+  job-name:
+    description: "Job name to display on Slack messages."
+    required: true
+    type: string
+
+    build-file:
+      description: "Path to the container file."
+      required: true
+      type: string
+
+    build-context:
+      description: "Path to the build root dir."
+      default: '.'
+      type: string
+
+    release-filters:
+      description: "YAML dictionary of lists of path filters."
+      required: true
+      type: string
+
+    test-flags:
+      description: "Arguments passed to docker run."
+      default: ''
+      type: string
+
+    test-args:
+      description: "Arguments passed to the container."
+      default: ''
+      type: string
+
+    registry:
+      description: "URL of the container registry."
+      required: true
+      type: string
+
+    registry-user:
+      description: "Username for the container registry."
+      required: true
+      type: string
+
+    registry-repo:
+      description: "Repo within container registry project."
+      required: true
+      type: string
+
+    registry-tag-prefix:
+      description: "Prefix to use when tagging container"
+      default: ''
+      type: string
+
+    registry-tag-suffix:
+      description: "Suffix to use when tagging container"
+      default: ''
+      type: string
+
+    release-rules:
+      description: "JSON list of rule dicts for what commit types trigger releases."
+      default: |
+        [
+          {"type": "major", "release": "major"},
+          {"type": "minor", "release": "minor"},
+          {"type": "patch", "release": "patch"},
+          {"type": "no-release", "release": false},
+        
+          {"type": "chore", "release": "patch"},
+          {"type": "refactor", "release": "patch"},
+          {"type": "style", "release": "patch"},
+        
+          {"type": "docs", "release": false},
+          {"type": "test", "release": false},
+          {"type": "ci", "release": false},
+        
+          {"type": "feat", "release": "minor"},
+        
+          {"type": "revert", "release": "patch"},
+          {"type": "perf", "release": "patch"},
+          {"type": "fix", "release": "patch"},
+          {"type": "build", "release": "patch"},
+        ]
+      type: string
+
+    release-branches:
+      description: "JSON list of regex branch filters."
+      default: |
+        [
+          '+([0-9])?(.{+([0-9]),x}).x',
+          'main'
+        ]
+      type: string
+
+    release-tag-format:
+      description: "Semantic-release Github release tag format."
+      default: '${version}'
+      type: string
+
+    slack-channel:
+      description: "ID of the Slack channel to post updates to."
+      required: true
+      type: string
+
+    status-failure:
+      description: "Failure status for the message header."
+      default: ':no_entry:'
+      type: string
+
+    cosign-public-key:
+      description: "Public key for cosigning images."
+      required: false
+      type: string
+
+    secrets:
+
+      slack-token:
+        description: "Authentication token for Slack."
+        required: true
+
+      registry-token:
+        description: "Authentication token for the container registry."
+        required: true
+
+      cosign-private-key:
+        description: "Private key for cosigning images."
+        required: false
+
+      cosign-password:
+        description: "Private key password for cosigning images."
+        required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: detect changed files
+      uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        token: ${{ github.token }}
+        filters: ${{ inputs.release-filters }}
+
+    - name: annotate the ci run with changes
+      run: >-
+        echo "::notice title=Job: ${{ github.job }}::%0A
+        Changes: ${{ steps.changes.outputs.changes }}"
+    # setup
+    - name: install cosign
+      if: inputs.cosign-public-key != ''
+      uses: sigstore/cosign-installer@v3.1.2
+
+    - name: forward proxy settings
+      run: |
+        echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV
+        echo "HTTPS_PROXY=$HTTPS_PROXY" >> $GITHUB_ENV
+        echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
+
+    - name: install buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver-opts: |
+          env.http_proxy=${{ env.HTTP_PROXY }}
+          env.https_proxy=${{ env.HTTPS_PROXY }}
+          "env.no_proxy='${{ env.NO_PROXY }}'"
+
+    - name: login to container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-user }}
+        password: ${{ secrets.registry-token }}
+# remainder
+    - name: determine release
+      uses: docker://ghcr.io/codfish/semantic-release-action:v2
+      id: semantic
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        dry_run: true
+        branches: ${{ inputs.release-branches }}
+        tag_format: ${{ inputs.release-tag-format }}
+        plugins: |-
+          [
+            ['@semantic-release/commit-analyzer', {
+              "releaseRules": ${{ inputs.release-rules }},
+            }], 
+            '@semantic-release/release-notes-generator',
+            ['@semantic-release/github', {
+              "successComment": false,
+              "failTitle": false
+            }]
+          ]
+
+    - name: annotate the ci run with release version output
+      if: steps.semantic.outputs.new-release-published == 'true'
+      run: >-
+        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+        Next release will be version ${{ steps.semantic.outputs.release-version }}"
+
+    - name: release container metadata
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: docker/metadata-action@v5
+      id: meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
+
+    - name: build and push
+      uses: docker/build-push-action@v5
+      id: build
+      with:
+        file: ${{ inputs.build-file }}
+        context: ${{ inputs.build-context }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        push: true
+        github-token: ${{ github.token }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        provenance: true
+
+    - name: cosign image with key
+      if: inputs.cosign-public-key != ''
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
+      env:
+        COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+        TAGS: ${{ steps.meta.outputs.tags }}
+        DIGEST: ${{ steps.build.outputs.digest }}
+
+    - name: cosign verify image
+      if: inputs.cosign-public-key != ''
+      env:
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        TAGS: ${{ steps.meta.outputs.tags }}
+        DIGEST: ${{ steps.build.outputs.digest }}
+      run: |
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
+
+    - name: annotate the ci run with release candidate container tags
+      if: steps.semantic.outputs.new-release-published == 'true'
+      run: >-
+        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+        Pushed release candidate container assets!%0A
+        - %0A
+        docker pull ${{ steps.meta.outputs.tags }}%0A
+        docker pull ${{ steps.build.outputs.digest }}"
+
+    - name: test
+      if: ${{ inputs.test-flags != '' || inputs.test-args != '' }}
+      run: |
+        docker run \
+          ${{ inputs.test-flags }} \
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }} \
+          ${{ inputs.test-args }}
+
+    - name: retag container
+      if: steps.semantic.outputs.new-release-published == 'true'
+      run: docker buildx imagetools create -t ${{ steps.meta.outputs.tags }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+
+    - name: cosign image with key
+      if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
+      env:
+        COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+        TAGS: ${{ steps.meta.outputs.tags }}
+        DIGEST: ${{ steps.build.outputs.digest }}
+
+    - name: cosign verify container
+      if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
+      env:
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        TAG: ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        DIGEST: ${{ steps.build.outputs.digest }}
+      run: |
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
+
+    - name: release
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: actions/github-script@v6
+      id: release
+      env:
+        RELEASE_NOTES: |
+          ${{ steps.semantic.outputs.release-notes }}
+      with:
+        retries: 3
+        github-token: ${{ github.token }}
+        script: |
+          github.rest.repos.createRelease({
+            owner: "${{ github.repository_owner }}",
+            repo: "${{ github.event.repository.name }}",
+            tag_name: "${{ steps.semantic.outputs.git-tag }}",
+            target_commitish: "${{ github.sha }}",
+            body: process.env.RELEASE_NOTES,
+            name: "${{ steps.semantic.outputs.git-tag }}"
+          });
+
+    - name: annotate the ci run with release container tags
+      if: steps.semantic.outputs.new-release-published == 'true'
+      run: >-
+        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+        Pushed release container version ${{ steps.semantic.outputs.release-version }}!%0A
+        - %0A
+        docker pull ${{ env.RELEASE_TAG }}%0A
+        docker pull ${{ steps.build.outputs.digest }}"
+
+    - name: update slack thread failure
+      uses: archive/github-actions-slack@v2.7.0
+      if: failure()
+      continue-on-error: true
+      with:
+        slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+        slack-channel: ${{ inputs.slack-channel }}
+        slack-text: |
+          :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
+          <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>
+    
+

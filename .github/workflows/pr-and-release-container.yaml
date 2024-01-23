@@ -86,12 +86,9 @@ jobs:
     uses: ./.github/workflows/build-and-test-pr-container.yaml
     with:
       job-name: ${{ inputs.job-name }}
-      release-version: ${{ fromJSON(needs.version.outputs.release).release-version }}
       registry: ${{ inputs.registry }}
       registry-user: ${{ inputs.registry-user }}
       registry-repo: ${{ inputs.registry-repo }}
-      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
-      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
       cosign-public-key: ${{ inputs.cosign-public-key }}
       slack-channel: ${{ inputs.slack-channel }}
       build-file: ${{ inputs.build-file }}

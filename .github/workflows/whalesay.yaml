@@ -9,6 +9,7 @@ on:
       - './.github/actions/pr-container/action.yaml'
       - './.github/actions/release-container.yaml'
       - './containers/whalesay/**'
+      - './**'
   push:
     branches:
       - main

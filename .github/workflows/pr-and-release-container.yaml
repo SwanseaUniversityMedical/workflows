@@ -17,16 +17,6 @@ on:
         default: '.'
         type: string
 
-      pr-filters:
-        description: "YAML dictionary of lists of path filters."
-        required: true
-        type: string
-
-      release-filters:
-        description: "YAML dictionary of lists of path filters."
-        required: true
-        type: string
-
       test-flags:
         description: "Arguments passed to docker run."
         default: ''
@@ -158,7 +148,6 @@ jobs:
           build-context: ${{ inputs.build-context }}
           test-flags: ${{ inputs.test-flags }}
           test-args: ${{ inputs.test-args }}
-          pr-filters: ${{ inputs.pr-filters }}
           cosign-private-key: ${{ secrets.cosign-private-key }}
           cosign-password: ${{ secrets.cosign-password }}
           registry-token: ${{ secrets.registry-token }}

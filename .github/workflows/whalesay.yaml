@@ -3,9 +3,21 @@ on:
     types:
       - opened
       - synchronize
+    paths:
+      - './.github/workflows/whalesay.yaml'
+      - './.github/workflows/pr-and-release-container.yaml'
+      - './.github/actions/pr-container.yaml'
+      - './.github/actions/release-container.yaml'
+      - './containers/whalesay/**'
   push:
     branches:
       - main
+    paths:
+      - './.github/workflows/whalesay.yaml'
+      - './.github/workflows/pr-and-release-container.yaml'
+      - './.github/actions/pr-container.yaml'
+      - './.github/actions/release-container.yaml'
+      - './containers/whalesay/**'
 
 permissions:
   # Permission needed to author a Github release
@@ -30,27 +42,6 @@ jobs:
       build-file: containers/whalesay/Dockerfile
       build-context: containers/whalesay
       test-args: cowsay boo
-      pr-filters: |
-        container-whalesay:
-          - './.github/workflows/on-pr-update.yaml'
-          - './.github/workflows/slack-pr-thread.yaml'
-          - './.github/workflows/changes-pr.yaml'
-          - './.github/workflows/build-and-test-pr-container.yaml'
-          - './.github/workflows/build-pr-container.yaml'
-          - './.github/workflows/test-pr-container.yaml'
-          - './containers/whalesay/**'
-      release-filters: |
-        container-whalesay:
-          - './.github/workflows/on-release.yaml'
-          - './.github/workflows/on-release-container.yaml'
-          - './.github/workflows/slack-release-thread.yaml'
-          - './.github/workflows/changes-release.yaml'
-          - './.github/workflows/version.yaml'
-          - './.github/workflows/build-and-test-release-container.yaml'
-          - './.github/workflows/build-release-container.yaml'
-          - './.github/workflows/test-release-container.yaml'
-          - './.github/workflows/release-container.yaml'
-          - './containers/whalesay/**'
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}

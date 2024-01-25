@@ -198,6 +198,7 @@ runs:
         echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
 
     - name: test chart
+      if: ${{ inputs.test-command != '' }}
       shell: bash
       run: ${{ inputs.test-command }}
 

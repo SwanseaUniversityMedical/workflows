@@ -1,0 +1,61 @@
+# Disabled chart example
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths-ignore: # present to disable workflow
+      - '**'
+#    paths:
+#      - '.github/workflows/helloworld-chart.yaml'
+#      - '.github/workflows/pr-and-release-container.yaml'
+#      - '.github/actions/pr-chart/action.yaml'
+#      - '.github/actions/release-chart/action.yaml'
+#      - 'charts/helloworld/**'
+  push:
+    branches:
+      - main
+    paths-ignore: # present to disable workflow
+      - '**'
+#    paths:
+#      - '.github/workflows/helloworld-chart.yaml'
+#      - '.github/workflows/pr-and-release-container.yaml'
+#      - '.github/actions/pr-chart/action.yaml'
+#      - '.github/actions/release-chart/action.yaml'
+#      - 'charts/helloworld/**'
+
+permissions:
+  # Permission needed to author a Github release
+  contents: write
+  # pull-request: write if you enable PR thread comments
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  chart-helloworld:
+    # Build the helloworld chart and push it
+    needs: changes
+    if: fromJSON(needs.changes.outputs.changes).chart-helloworld == 'true'
+    uses: ./.github/workflows/pr-and-release-chart.yaml
+    with:
+      job-name: chart-helloworld
+      chart-registry: ${{ vars.HARBOR_REGISTRY }}
+      chart-registry-user: ${{ vars.HARBOR_USER }}
+      chart-registry-project: ${{ vars.HARBOR_PROJECT }}
+      chart-registry-repo: helloworld
+      release-tag-format: 'helloworld-${version}'
+      cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+      chart: charts/helloworld
+      test-command: |
+        helm template $CHART --values tests/charts/helloworld/values.yaml
+
+    secrets:
+      cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+      chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
+      slack-token: ${{ secrets.SLACK_TOKEN }}

@@ -6,7 +6,7 @@ on:
 #    paths:
 #      - './.github/workflows/whalesay.yaml'
 #      - './.github/workflows/pr-and-release-container.yaml'
-#      - './.github/actions/pr-container'
+#      - './.github/actions/pr-container/action.yaml'
 #      - './.github/actions/release-container.yaml'
 #      - './containers/whalesay/**'
   push:
@@ -15,7 +15,7 @@ on:
     paths:
       - './.github/workflows/whalesay.yaml'
       - './.github/workflows/pr-and-release-container.yaml'
-      - './.github/actions/pr-container'
+      - './.github/actions/pr-container/action.yaml'
       - './.github/actions/release-container.yaml'
       - './containers/whalesay/**'
 

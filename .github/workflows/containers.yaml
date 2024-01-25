@@ -4,20 +4,22 @@ on:
       - opened
       - synchronize
     paths:
-      - '.github/workflows/whalesay.yaml'
+      - '.github/workflows/containers.yaml'
       - '.github/workflows/pr-and-release-container.yaml'
       - '.github/actions/pr-container/action.yaml'
       - '.github/actions/release-container/action.yaml'
       - 'containers/whalesay/**'
+      - 'containers/whalesay2/**'
   push:
     branches:
       - main
     paths:
-      - '.github/workflows/whalesay.yaml'
+      - '.github/workflows/containers.yaml'
       - '.github/workflows/pr-and-release-container.yaml'
       - '.github/actions/pr-container/action.yaml'
       - '.github/actions/release-container/action.yaml'
       - 'containers/whalesay/**'
+      - 'containers/whalesay2/**'
 
 permissions:
   # Permission needed to author a Github release

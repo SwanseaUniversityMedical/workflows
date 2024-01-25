@@ -121,7 +121,6 @@ runs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
         provenance: true
-        load: true
 
     - name: cosign image with key
       if: inputs.cosign-public-key != ''

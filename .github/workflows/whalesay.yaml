@@ -44,6 +44,7 @@ jobs:
       test-args: cowsay boo
       registry-tag-suffix: "-test"
       release-branches: feat/single-pipeline-for-both-pr-and-release
+      release-tag-format: 'whalesay-${version}'
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}

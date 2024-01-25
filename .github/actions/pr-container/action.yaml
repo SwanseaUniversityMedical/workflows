@@ -210,3 +210,15 @@ runs:
           ${{ inputs.test-flags }} \
           ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }} \
           ${{ inputs.test-args }}
+
+    - name: update slack thread failure
+      uses: archive/github-actions-slack@v2.7.0
+      continue-on-error: true
+      if: failure()
+      with:
+        slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+        slack-channel: ${{ inputs.slack-channel }}
+        slack-text: |
+          :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
+          <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
+          <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>

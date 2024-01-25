@@ -68,14 +68,17 @@ runs:
       uses: actions/checkout@v3
 
     - name: build chart uri
+      shell: bash
       run: |
         echo "CHART_REPO=${{ inputs.chart-registry }}/${{ inputs.chart-registry-project }}/chart" >> $GITHUB_ENV
 
     - name: get short commit sha
+      shell: bash
       run: |
         echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
 
     - name: create tags
+      shell: bash
       run: |
         echo "PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
         echo "PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV
@@ -99,6 +102,7 @@ runs:
         token: ${{ github.token }}
 
     - name: login to chart registry
+      shell: bash
       run: |
         helm registry login \
           --username '${{ inputs.chart-registry-user }}' \
@@ -106,14 +110,17 @@ runs:
           ${{ inputs.chart-registry }}
 
     - name: update chart dependencies
+      shell: bash
       run: |
         helm dependency update ${{ inputs.chart }}
 
     - name: package chart with pr tag
+      shell: bash
       run: |
         helm package ${{ inputs.chart }} --version ${{ env.PR_TAG }} --app-version ${{ env.PR_TAG }}
 
     - name: push chart with pr tag
+      shell: bash
       run: |
         helm push ${{ inputs.chart-registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
@@ -122,6 +129,7 @@ runs:
       env:
         COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
         COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+      shell: bash
       run: |
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_TAG }}"
 
@@ -129,14 +137,17 @@ runs:
       if: inputs.cosign-public-key != ''
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+      shell: bash
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_TAG }}"
 
     - name: package chart with pr commit tag
+      shell: bash
       run: |
         helm package ${{ inputs.chart }} --version ${{ env.PR_COMMIT_TAG }} --app-version ${{ env.PR_COMMIT_TAG }}
 
     - name: push chart with pr commit tag
+      shell: bash
       run: |
         helm push ${{ inputs.chart-registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
@@ -145,6 +156,7 @@ runs:
       env:
         COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
         COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+      shell: bash
       run: |
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${PR_COMMIT_TAG//\+/_}"
 
@@ -152,10 +164,12 @@ runs:
       if: inputs.cosign-public-key != ''
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+      shell: bash
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${PR_COMMIT_TAG//\+/_}"
 
     - name: annotate the ci run with chart tags
+      shell: bash
       run: >-
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Pushed PR chart assets!%0A
@@ -169,18 +183,22 @@ runs:
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         DIGEST: ${{ env.PR_COMMIT_TAG }}
+      shell: bash
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${DIGEST//\+/_}"
 
     - name: pull chart
+      shell: bash
       run: |
         helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}
 
     - name: build chart install name
+      shell: bash
       run: |
         echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
 
     - name: test chart
+      shell: bash
       run: ${{ inputs.test-command }}
 
     - name: update slack thread failure

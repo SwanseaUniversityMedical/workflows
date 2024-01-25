@@ -169,10 +169,10 @@ jobs:
             github.rest.repos.createRelease({
               owner: "${{ github.repository_owner }}",
               repo: "${{ github.event.repository.name }}",
-              tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
+              tag_name: "${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).git-tag }}${{ inputs.registry-tag-suffix }}",
               target_commitish: "${{ github.sha }}",
               body: process.env.RELEASE_NOTES,
-              name: "${{ fromJSON(inputs.release-info).git-tag }}"
+              name: "${{ inputs.registry-tag-prefix }}${{ fromJSON(inputs.release-info).git-tag }}${{ inputs.registry-tag-suffix }}"
             });
 
       - name: annotate the ci run with container tags

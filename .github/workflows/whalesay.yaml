@@ -11,7 +11,7 @@ on:
       - 'containers/whalesay/**'
   push:
     branches:
-      - feat/single-pipeline-for-both-pr-and-release
+      - main
     paths:
       - '.github/workflows/whalesay.yaml'
       - '.github/workflows/pr-and-release-container.yaml'
@@ -42,8 +42,6 @@ jobs:
       build-file: containers/whalesay/Dockerfile
       build-context: containers/whalesay
       test-args: cowsay boo
-      registry-tag-suffix: "-test"
-      release-branches: feat/single-pipeline-for-both-pr-and-release
       release-tag-format: 'whalesay-${version}'
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}

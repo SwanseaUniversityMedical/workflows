@@ -136,7 +136,7 @@ jobs:
 
       - name: pr
         if: github.event_name == 'pull_request'
-        uses: ./.github/actions/pr-container/action.yaml
+        uses: ./.github/actions/pr-container
         with:
           job-name: ${{ inputs.job-name }}
           registry: ${{ inputs.registry }}

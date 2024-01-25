@@ -3,12 +3,12 @@ on:
     types:
       - opened
       - synchronize
-    paths:
-      - './.github/workflows/whalesay.yaml'
-      - './.github/workflows/pr-and-release-container.yaml'
-      - './.github/actions/pr-container.yaml'
-      - './.github/actions/release-container.yaml'
-      - './containers/whalesay/**'
+#    paths:
+#      - './.github/workflows/whalesay.yaml'
+#      - './.github/workflows/pr-and-release-container.yaml'
+#      - './.github/actions/pr-container.yaml'
+#      - './.github/actions/release-container.yaml'
+#      - './containers/whalesay/**'
   push:
     branches:
       - main

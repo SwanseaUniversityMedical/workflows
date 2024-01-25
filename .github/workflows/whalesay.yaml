@@ -1,23 +1,27 @@
+# Disabled container example
+
 on:
   pull_request:
     types:
       - opened
       - synchronize
-    paths:
-      - '.github/workflows/whalesay.yaml'
-      - '.github/workflows/pr-and-release-container.yaml'
-      - '.github/actions/pr-container/action.yaml'
-      - '.github/actions/release-container/action.yaml'
-      - 'containers/whalesay/**'
+    paths-ignore:
+      - '**'
+#      - '.github/workflows/whalesay.yaml'
+#      - '.github/workflows/pr-and-release-container.yaml'
+#      - '.github/actions/pr-container/action.yaml'
+#      - '.github/actions/release-container/action.yaml'
+#      - 'containers/whalesay/**'
   push:
     branches:
       - main
-    paths:
-      - '.github/workflows/whalesay.yaml'
-      - '.github/workflows/pr-and-release-container.yaml'
-      - '.github/actions/pr-container/action.yaml'
-      - '.github/actions/release-container/action.yaml'
-      - 'containers/whalesay/**'
+    paths-ignore:
+      - '**'
+#      - '.github/workflows/whalesay.yaml'
+#      - '.github/workflows/pr-and-release-container.yaml'
+#      - '.github/actions/pr-container/action.yaml'
+#      - '.github/actions/release-container/action.yaml'
+#      - 'containers/whalesay/**'
 
 permissions:
   # Permission needed to author a Github release
@@ -38,11 +42,11 @@ jobs:
       registry-user: ${{ vars.HARBOR_USER }}
       registry-repo: github-workflows/whalesay
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
+      release-tag-format: 'whalesay-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       build-file: containers/whalesay/Dockerfile
       build-context: containers/whalesay
       test-args: cowsay boo
-      release-tag-format: 'whalesay-${version}'
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}

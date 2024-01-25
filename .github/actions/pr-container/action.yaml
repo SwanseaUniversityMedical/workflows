@@ -216,7 +216,7 @@ runs:
       continue-on-error: true
       if: failure()
       with:
-        slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+        slack-bot-user-oauth-access-token: ${{ inputs.slack-token }}
         slack-channel: ${{ inputs.slack-channel }}
         slack-text: |
           :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n

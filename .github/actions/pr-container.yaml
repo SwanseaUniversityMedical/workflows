@@ -95,11 +95,6 @@ inputs:
     required: true
     type: string
 
-  status-failure:
-    description: "Failure status for the message header."
-    default: ':no_entry:'
-    type: string
-
   cosign-public-key:
     description: "Public key for cosigning images."
     required: false

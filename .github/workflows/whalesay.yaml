@@ -5,8 +5,9 @@ on:
     types:
       - opened
       - synchronize
-    paths-ignore:
+    paths-ignore: # present to disable workflow
       - '**'
+#    paths:
 #      - '.github/workflows/whalesay.yaml'
 #      - '.github/workflows/pr-and-release-container.yaml'
 #      - '.github/actions/pr-container/action.yaml'
@@ -15,8 +16,9 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
+    paths-ignore: # present to disable workflow
       - '**'
+#    paths:
 #      - '.github/workflows/whalesay.yaml'
 #      - '.github/workflows/pr-and-release-container.yaml'
 #      - '.github/actions/pr-container/action.yaml'

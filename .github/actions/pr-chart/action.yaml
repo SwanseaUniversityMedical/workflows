@@ -1,0 +1,206 @@
+name: 'Build and Test a Chart'
+inputs:
+  job-name:
+    description: "Job name to display on Slack messages."
+    required: true
+    type: string
+
+  chart:
+    description: "Path to the helm chart."
+    required: true
+    type: string
+
+  test-command:
+    description: "Command to test the chart named $CHART."
+    default: ''
+    type: string
+
+  chart-registry:
+    description: "URL of the chart registry."
+    required: true
+    type: string
+
+  chart-registry-user:
+    description: "Username for the chart registry."
+    required: true
+    type: string
+
+  chart-registry-project:
+    description: "Project within chart registry."
+    required: true
+    type: string
+
+  chart-registry-repo:
+    description: "Repo within chart registry project."
+    required: true
+    type: string
+
+  slack-channel:
+    description: "ID of the Slack channel to post updates to."
+    required: true
+    type: string
+
+  cosign-public-key:
+    description: "Public key for cosigning images."
+    required: false
+    type: string
+
+  slack-token:
+    description: "Authentication token for Slack."
+    required: true
+
+  chart-registry-token:
+    description: "Authentication token for the chart registry."
+    required: true
+
+  cosign-private-key:
+    description: "Private key for cosigning charts."
+    required: false
+
+  cosign-password:
+    description: "Private key password for cosigning charts."
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: clone repo
+      uses: actions/checkout@v3
+
+    - name: build chart uri
+      run: |
+        echo "CHART_REPO=${{ inputs.chart-registry }}/${{ inputs.chart-registry-project }}/chart" >> $GITHUB_ENV
+
+    - name: get short commit sha
+      run: |
+        echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
+
+    - name: create tags
+      run: |
+        echo "PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
+        echo "PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV
+
+    - name: install cosign
+      if: inputs.cosign-public-key != ''
+      uses: sigstore/cosign-installer@v3.1.2
+
+    - name: login to container registry for cosign
+      if: inputs.cosign-public-key != ''
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ inputs.chart-registry }}
+        username: ${{ inputs.chart-registry-user }}
+        password: ${{ secrets.chart-registry-token }}
+
+    - name: install helm
+      uses: azure/setup-helm@v3
+      with:
+        version: 'v3.9.0'
+        token: ${{ github.token }}
+
+    - name: login to chart registry
+      run: |
+        helm registry login \
+          --username '${{ inputs.chart-registry-user }}' \
+          --password '${{ secrets.chart-registry-token }}' \
+          ${{ inputs.chart-registry }}
+
+    - name: update chart dependencies
+      run: |
+        helm dependency update ${{ inputs.chart }}
+
+    - name: package chart with pr tag
+      run: |
+        helm package ${{ inputs.chart }} --version ${{ env.PR_TAG }} --app-version ${{ env.PR_TAG }}
+
+    - name: push chart with pr tag
+      run: |
+        helm push ${{ inputs.chart-registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_REPO }}
+
+    - name: cosign pr tag
+      if: inputs.cosign-public-key != ''
+      env:
+        COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_TAG }}"
+
+    - name: cosign verify pr tag
+      if: inputs.cosign-public-key != ''
+      env:
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+      run: |
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_TAG }}"
+
+    - name: package chart with pr commit tag
+      run: |
+        helm package ${{ inputs.chart }} --version ${{ env.PR_COMMIT_TAG }} --app-version ${{ env.PR_COMMIT_TAG }}
+
+    - name: push chart with pr commit tag
+      run: |
+        helm push ${{ inputs.chart-registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_REPO }}
+
+    - name: cosign pr commit tag
+      if: inputs.cosign-public-key != ''
+      env:
+        COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${PR_COMMIT_TAG//\+/_}"
+
+    - name: cosign verify pr commit tag
+      if: inputs.cosign-public-key != ''
+      env:
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+      run: |
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${PR_COMMIT_TAG//\+/_}"
+
+    - name: annotate the ci run with chart tags
+      run: >-
+        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+        Pushed PR chart assets!%0A
+        - %0A
+        helm registry login --username <user> --password <token> oci://${{ inputs.chart-registry }}%0A
+        helm pull --version ${{ env.PR_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}%0A
+        helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}"
+
+    - name: cosign verify chart
+      if: inputs.cosign-public-key != ''
+      env:
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        DIGEST: ${{ env.PR_COMMIT_TAG }}
+      run: |
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${DIGEST//\+/_}"
+
+    - name: pull chart
+      run: |
+        helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}
+
+    - name: build chart install name
+      run: |
+        echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
+
+    - name: test chart
+      run: ${{ inputs.test-command }}
+
+    - name: update slack thread failure
+      uses: archive/github-actions-slack@v2.7.0
+      continue-on-error: true
+      if: failure()
+      with:
+        slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+        slack-channel: ${{ inputs.slack-channel }}
+        slack-text: |
+          *${{ github.repository }}*\n
+          *PR-${{ github.event.pull_request.number }} Update*\n
+          :no_entry: job: ${{ github.job }} / ${{ inputs.job-name }}\n
+          <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
+          <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
+          ```
+          PR:       ${{ github.event.pull_request.title }}
+          Branch:   ${{ github.head_ref }}
+          Ref:      ${{ github.ref }}
+          Sha:      ${{ github.event.pull_request.head.sha }}
+          Workflow: ${{ github.workflow }}
+          Run:      ${{ github.run_id }}
+          ```

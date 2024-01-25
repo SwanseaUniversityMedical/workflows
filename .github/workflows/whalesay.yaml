@@ -5,11 +5,6 @@ on:
       - synchronize
     paths:
       - './.github/workflows/whalesay.yaml'
-      - './.github/workflows/pr-and-release-container.yaml'
-      - './.github/actions/pr-container/action.yaml'
-      - './.github/actions/release-container/action.yaml'
-      - './containers/whalesay/**'
-      - './**'
   push:
     branches:
       - main

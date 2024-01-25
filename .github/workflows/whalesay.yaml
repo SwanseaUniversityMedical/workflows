@@ -4,7 +4,7 @@ on:
       - opened
       - synchronize
     paths:
-      - './.github/workflows/whalesay.yaml'
+      - '.github/workflows/whalesay.yaml'
   push:
     branches:
       - main

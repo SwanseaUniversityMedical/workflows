@@ -51,9 +51,7 @@ jobs:
 
   whalesay2:
     # Build the whalesay2 container
-    needs: changes
-    if: fromJSON(needs.changes.outputs.changes).container-whalesay2 == 'true'
-    uses: ./.github/workflows/build-and-test-release-container.yaml
+    uses: ./.github/workflows/pr-and-release-container.yaml
     with:
       job-name: container-whalesay2
       registry: ${{ vars.HARBOR_REGISTRY }}

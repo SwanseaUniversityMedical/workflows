@@ -1,0 +1,160 @@
+on:
+  workflow_call:
+    inputs:
+
+      job-name:
+        description: "Job name to display on Slack messages."
+        required: true
+        type: string
+
+      chart:
+        description: "Path to the helm chart."
+        required: true
+        type: string
+
+      test-command:
+        description: "Command to test the chart named $CHART."
+        default: ''
+        type: string
+
+      chart-registry:
+        description: "URL of the chart registry."
+        required: true
+        type: string
+
+      chart-registry-user:
+        description: "Username for the chart registry."
+        required: true
+        type: string
+
+      chart-registry-project:
+        description: "Project within chart registry."
+        required: true
+        type: string
+
+      chart-registry-repo:
+        description: "Repo within chart registry project."
+        required: true
+        type: string
+
+      chart-tag-suffix:
+        description: "Suffix to use when tagging chart"
+        default: ''
+        type: string
+
+      release-rules:
+        description: "JSON list of rule dicts for what commit types trigger releases."
+        default: |
+          [
+            {"type": "major", "release": "major"},
+            {"type": "minor", "release": "minor"},
+            {"type": "patch", "release": "patch"},
+            {"type": "no-release", "release": false},
+
+            {"type": "chore", "release": "patch"},
+            {"type": "refactor", "release": "patch"},
+            {"type": "style", "release": "patch"},
+
+            {"type": "docs", "release": false},
+            {"type": "test", "release": false},
+            {"type": "ci", "release": false},
+
+            {"type": "feat", "release": "minor"},
+
+            {"type": "revert", "release": "patch"},
+            {"type": "perf", "release": "patch"},
+            {"type": "fix", "release": "patch"},
+            {"type": "build", "release": "patch"},
+          ]
+        type: string
+
+      release-branches:
+        description: "JSON list of regex branch filters."
+        default: |
+          [
+            '+([0-9])?(.{+([0-9]),x}).x',
+            'main'
+          ]
+        type: string
+
+      release-tag-format:
+        description: "Semantic-release Github release tag format."
+        default: '${version}'
+        type: string
+
+      slack-channel:
+        description: "ID of the Slack channel to post updates to."
+        required: true
+        type: string
+
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        required: false
+        type: string
+
+    secrets:
+
+      slack-token:
+        description: "Authentication token for Slack."
+        required: true
+
+      chart-registry-token:
+        description: "Authentication token for the chart registry."
+        required: true
+
+      cosign-private-key:
+        description: "Private key for cosigning charts."
+        required: false
+
+      cosign-password:
+        description: "Private key password for cosigning charts."
+        required: false
+
+jobs:
+  execute:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: heavy
+    steps:
+      - name: clone repo
+        uses: actions/checkout@v3
+
+      - name: pr
+        if: github.event_name == 'pull_request'
+        uses: ./.github/actions/pr-chart
+        with:
+          job-name: ${{ inputs.job-name }}
+          chart-registry: ${{ inputs.chart-registry }}
+          chart-registry-user: ${{ inputs.chart-registry-user }}
+          chart-registry-project: ${{ inputs.chart-registry-project }}
+          chart-registry-repo: ${{ inputs.chart-registry-repo }}
+          cosign-public-key: ${{ inputs.cosign-public-key }}
+          slack-channel: ${{ inputs.slack-channel }}
+          chart: ${{ inputs.chart }}
+          test-command: ${{ inputs.test-command }}
+          cosign-private-key: ${{ secrets.cosign-private-key }}
+          cosign-password: ${{ secrets.cosign-password }}
+          registry-token: ${{ secrets.registry-token }}
+          slack-token: ${{ secrets.slack-token }}
+
+      - name: release
+        if: github.event_name == 'push'
+        uses: ./.github/actions/release-chart
+        with:
+          job-name: ${{ inputs.job-name }}
+          chart-registry: ${{ inputs.chart-registry }}
+          chart-registry-user: ${{ inputs.chart-registry-user }}
+          chart-registry-project: ${{ inputs.chart-registry-project }}
+          chart-registry-repo: ${{ inputs.chart-registry-repo }}
+          cosign-public-key: ${{ inputs.cosign-public-key }}
+          slack-channel: ${{ inputs.slack-channel }}
+          chart: ${{ inputs.chart }}
+          test-command: ${{ inputs.test-command }}
+          release-branches: ${{ inputs.release-branches }}
+          release-rules: ${{ inputs.release-rules }}
+          chart-tag-suffix: ${{ inputs.chart-tag-suffix }}
+          release-tag-format: ${{ inputs.release-tag-format }}
+          cosign-private-key: ${{ secrets.cosign-private-key }}
+          cosign-password: ${{ secrets.cosign-password }}
+          registry-token: ${{ secrets.registry-token }}
+          slack-token: ${{ secrets.slack-token }}

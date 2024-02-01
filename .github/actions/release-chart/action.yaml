@@ -204,7 +204,7 @@ runs:
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.RC_TAG }}"
 
     - name: cosign verify tag
-      if: inputs.cosign-public-key != '' & steps.semantic.outputs.new-release-published == 'true'
+      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
       shell: bash

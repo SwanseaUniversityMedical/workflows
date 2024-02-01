@@ -172,6 +172,7 @@ runs:
 
     - name: create RC tags
       if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
       run: |
         echo "RC_TAG=${{ steps.semantic.outputs.release-version }}-rc${{ inputs.chart-tag-suffix }}" >> $GITHUB_ENV
 

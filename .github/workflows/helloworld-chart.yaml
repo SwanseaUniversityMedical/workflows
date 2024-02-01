@@ -1,29 +1,25 @@
-# Disabled chart example
+# chart example
 
 on:
   pull_request:
     types:
       - opened
       - synchronize
-    paths-ignore: # present to disable workflow
-      - '**'
-#    paths:
-#      - '.github/workflows/helloworld-chart.yaml'
-#      - '.github/workflows/pr-and-release-container.yaml'
-#      - '.github/actions/pr-chart/action.yaml'
-#      - '.github/actions/release-chart/action.yaml'
-#      - 'charts/helloworld/**'
+    paths:
+      - '.github/workflows/helloworld-chart.yaml'
+      - '.github/workflows/pr-and-release-container.yaml'
+      - '.github/actions/pr-chart/action.yaml'
+      - '.github/actions/release-chart/action.yaml'
+      - 'charts/helloworld/**'
   push:
     branches:
       - main
-    paths-ignore: # present to disable workflow
-      - '**'
-#    paths:
-#      - '.github/workflows/helloworld-chart.yaml'
-#      - '.github/workflows/pr-and-release-container.yaml'
-#      - '.github/actions/pr-chart/action.yaml'
-#      - '.github/actions/release-chart/action.yaml'
-#      - 'charts/helloworld/**'
+    paths:
+      - '.github/workflows/helloworld-chart.yaml'
+      - '.github/workflows/pr-and-release-container.yaml'
+      - '.github/actions/pr-chart/action.yaml'
+      - '.github/actions/release-chart/action.yaml'
+      - 'charts/helloworld/**'
 
 permissions:
   # Permission needed to author a Github release

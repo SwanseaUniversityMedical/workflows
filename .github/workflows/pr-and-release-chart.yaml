@@ -134,7 +134,7 @@ jobs:
           test-command: ${{ inputs.test-command }}
           cosign-private-key: ${{ secrets.cosign-private-key }}
           cosign-password: ${{ secrets.cosign-password }}
-          registry-token: ${{ secrets.registry-token }}
+          chart-registry-token: ${{ secrets.chart-registry-token }}
           slack-token: ${{ secrets.slack-token }}
 
       - name: release
@@ -156,5 +156,5 @@ jobs:
           release-tag-format: ${{ inputs.release-tag-format }}
           cosign-private-key: ${{ secrets.cosign-private-key }}
           cosign-password: ${{ secrets.cosign-password }}
-          registry-token: ${{ secrets.registry-token }}
+          chart-registry-token: ${{ secrets.chart-registry-token }}
           slack-token: ${{ secrets.slack-token }}

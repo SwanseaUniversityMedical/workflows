@@ -258,13 +258,13 @@ runs:
       shell: bash
       run: |
         mkdir -p ./repackage/
-        tar -zxvf ${{ inputs.chart-registry-repo }}-${{ env.RELEASE_TAG }}.tgz -C ./repackage/
+        tar -zxvf ${{ inputs.chart-registry-repo }}-${{ env.RC_TAG }}.tgz -C ./repackage/
 
     - name: repackage chart
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
-        helm package ./repackage/${{ inputs.chart-registry-repo }} --version ${{ env.RC_TAG }} --app-version ${{ env.RELEASE_TAG }}
+        helm package ./repackage/${{ inputs.chart-registry-repo }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }}
 
     - name: push chart
       if: steps.semantic.outputs.new-release-published == 'true'

@@ -34,7 +34,6 @@ concurrency:
 jobs:
   chart-helloworld:
     # Build the helloworld chart and push it
-    if: fromJSON(needs.changes.outputs.changes).chart-helloworld == 'true'
     uses: ./.github/workflows/pr-and-release-chart.yaml
     with:
       job-name: chart-helloworld

@@ -188,6 +188,7 @@ runs:
           type=raw,value=${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
 
     - name: build and push
+      if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/build-push-action@v5
       id: build
       with:
@@ -202,7 +203,7 @@ runs:
         provenance: true
 
     - name: cosign image with key
-      if: inputs.cosign-public-key != ''
+      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
@@ -213,7 +214,7 @@ runs:
         DIGEST: ${{ steps.build.outputs.digest }}
 
     - name: cosign verify image
-      if: inputs.cosign-public-key != ''
+      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         TAGS: ${{ steps.meta.outputs.tags }}
@@ -233,7 +234,7 @@ runs:
         docker pull ${{ steps.build.outputs.digest }}"
 
     - name: test
-      if: ${{ inputs.test-flags != '' || inputs.test-args != '' }}
+      if: ${{ inputs.test-flags != '' || inputs.test-args != '' }} && steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         docker run \

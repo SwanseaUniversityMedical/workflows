@@ -122,7 +122,7 @@ runs:
       with:
         registry: ${{ inputs.chart-registry }}
         username: ${{ inputs.chart-registry-user }}
-        password: ${{ secrets.chart-registry-token }}
+        password: ${{ inputs.chart-registry-token }}
 
     - name: install helm
       uses: azure/setup-helm@v3
@@ -136,7 +136,7 @@ runs:
         set -x
         helm registry login \
           --username '${{ inputs.chart-registry-user }}' \
-          --password '${{ secrets.chart-registry-token }}' \
+          --password '${{ inputs.chart-registry-token }}' \
           ${{ inputs.chart-registry }}
 
     - name: build chart uri
@@ -196,8 +196,8 @@ runs:
     - name: cosign tag
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
-        COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
-        COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
       shell: bash
       run: |
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.RC_TAG }}"
@@ -274,8 +274,8 @@ runs:
     - name: cosign tag
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
-        COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
-        COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
       shell: bash
       run: |
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.RELEASE_TAG }}"
@@ -332,7 +332,7 @@ runs:
       if: failure()
       continue-on-error: true
       with:
-        slack-bot-user-oauth-access-token: ${{ secrets.slack-token }}
+        slack-bot-user-oauth-access-token: ${{ inputs.slack-token }}
         slack-channel: ${{ inputs.slack-channel }}
         slack-text: |
           *${{ github.repository }}*\n

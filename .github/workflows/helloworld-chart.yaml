@@ -13,7 +13,7 @@ on:
       - 'charts/helloworld/**'
   push:
     branches:
-      - main
+      - feat/single-pipeline-for-both-pr-and-release
     paths:
       - '.github/workflows/helloworld-chart.yaml'
       - '.github/workflows/pr-and-release-chart.yaml'
@@ -42,6 +42,8 @@ jobs:
       chart-registry-project: ${{ vars.HARBOR_PROJECT }}
       chart-registry-repo: helloworld
       release-tag-format: 'helloworld-${version}'
+      chart-tag-suffix: "-test"
+      release-branches: feat/single-pipeline-for-both-pr-and-release
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       chart: charts/helloworld

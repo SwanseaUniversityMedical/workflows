@@ -7,7 +7,7 @@ on:
       - synchronize
     paths:
       - '.github/workflows/helloworld-chart.yaml'
-      - '.github/workflows/pr-and-release-container.yaml'
+      - '.github/workflows/pr-and-release-chart.yaml'
       - '.github/actions/pr-chart/action.yaml'
       - '.github/actions/release-chart/action.yaml'
       - 'charts/helloworld/**'
@@ -16,7 +16,7 @@ on:
       - main
     paths:
       - '.github/workflows/helloworld-chart.yaml'
-      - '.github/workflows/pr-and-release-container.yaml'
+      - '.github/workflows/pr-and-release-chart.yaml'
       - '.github/actions/pr-chart/action.yaml'
       - '.github/actions/release-chart/action.yaml'
       - 'charts/helloworld/**'

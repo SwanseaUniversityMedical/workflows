@@ -239,7 +239,7 @@ runs:
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
-        echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
+        echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-${{ env.RC_TAG}}.tgz)" >> $GITHUB_ENV
 
     - name: test chart
       if: ${{ inputs.test-command != '' }} && steps.semantic.outputs.new-release-published == 'true'
@@ -303,7 +303,7 @@ runs:
       id: release
       env:
         RELEASE_NOTES: |
-          ${{ fromJSON(inputs.release-info).release-notes }}
+          ${{ steps.semantic.outputs.release-notes }}
       with:
         retries: 3
         github-token: ${{ github.token }}
@@ -311,10 +311,10 @@ runs:
           github.rest.repos.createRelease({
             owner: "${{ github.repository_owner }}",
             repo: "${{ github.event.repository.name }}",
-            tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
+            tag_name: "${{ steps.semantic.outputs.git-tag }}",
             target_commitish: "${{ github.sha }}",
             body: process.env.RELEASE_NOTES,
-            name: "${{ fromJSON(inputs.release-info).git-tag }}"
+            name: "${{ steps.semantic.outputs.git-tag }}"
           });
 
     - name: annotate the ci run with chart tags
@@ -322,7 +322,7 @@ runs:
       shell: bash
       run: >-
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-        Pushed release chart version ${{ fromJSON(inputs.release-info).release-version }}!%0A
+        Pushed release chart version ${{ steps.semantic.outputs.release-version }}!%0A
         - %0A
         helm registry login --username <user> --password <token> oci://${{ inputs.chart-registry }}%0A
         helm pull --version ${{ env.RELEASE_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}"

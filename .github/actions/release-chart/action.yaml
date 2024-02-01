@@ -225,7 +225,7 @@ runs:
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        DIGEST: ${{ inputs.chart-registry-digest }}
+        DIGEST: ${{ env.RC_TAG }}
       shell: bash
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${DIGEST//\+/_}"
@@ -234,7 +234,7 @@ runs:
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
-        helm pull --version ${{ inputs.chart-registry-digest }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}
+        helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}
 
     - name: build chart install name
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -251,14 +251,14 @@ runs:
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
-        helm pull --version ${{ inputs.chart-registry-digest }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}
+        helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}
 
     - name: unpack chart
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         mkdir -p ./repackage/
-        tar -zxvf ${{ inputs.chart-registry-repo }}-${{ inputs.chart-registry-digest }}.tgz -C ./repackage/
+        tar -zxvf ${{ inputs.chart-registry-repo }}-${{ env.RELEASE_TAG }}.tgz -C ./repackage/
 
     - name: repackage chart
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -293,7 +293,7 @@ runs:
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        DIGEST: ${{ inputs.chart-registry-digest }}
+        DIGEST: ${{ env.RELEASE_TAG }}
       shell: bash
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${DIGEST//\+/_}"

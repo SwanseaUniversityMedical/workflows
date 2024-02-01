@@ -195,7 +195,7 @@ runs:
     - name: build chart install name
       shell: bash
       run: |
-        echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-*.tgz)" >> $GITHUB_ENV
+        echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz)" >> $GITHUB_ENV
 
     - name: test chart
       if: ${{ inputs.test-command != '' }}

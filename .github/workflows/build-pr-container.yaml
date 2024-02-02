@@ -105,21 +105,15 @@ jobs:
           buildkitd-flags: --debug --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
           config-inline: |
             debug = true
-          # [registry."docker.io"]
-          #   mirrors = ["${{ env.REGISTRY_MIRROR }}"]
-          #   http = true
-          #   insecure = true
-          # [registry."ghcr.io"]
-          #   mirrors = ["${{ env.REGISTRY_MIRROR }}"]
-          #   http = true
-          #   insecure = true
-          # [registry."quay.io"]
-          #   mirrors = ["${{ env.REGISTRY_MIRROR }}"]
-          #   http = true
-          #   insecure = true
-          # [registry."${{ env.REGISTRY_MIRROR }}"]
-          #   http = true
-          #   insecure = true
+            [registry."docker.io"]
+              mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+            [registry."ghcr.io"]
+              mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+            [registry."quay.io"]
+              mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+            [registry."${{ env.REGISTRY_MIRROR }}"]
+              http = true
+              insecure = true
 
       - name: login to container registry
         uses: docker/login-action@v2

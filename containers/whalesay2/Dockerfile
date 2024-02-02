@@ -1,1 +1,1 @@
-FROM centos:centos8.4.2105
+FROM projectnessie/nessie:0.76.6

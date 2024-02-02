@@ -1,1 +1,1 @@
-FROM quay.io/jetstack/cert-manager-controller:v1.14.0
+FROM centos:centos8.4.2105

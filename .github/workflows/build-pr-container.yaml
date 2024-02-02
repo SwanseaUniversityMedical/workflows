@@ -101,6 +101,9 @@ jobs:
             env.http_proxy=${{ env.HTTP_PROXY }}
             env.https_proxy=${{ env.HTTPS_PROXY }}
             "env.no_proxy='${{ env.NO_PROXY }}'"
+          config-inline: |
+            [registry."docker.io"]
+              mirrors = ["192.168.7.56:8082"]  
 
       - name: login to container registry
         uses: docker/login-action@v2

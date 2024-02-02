@@ -102,7 +102,7 @@ jobs:
             env.http_proxy=${{ env.HTTP_PROXY }}
             env.https_proxy=${{ env.HTTPS_PROXY }}
             "env.no_proxy='${{ env.NO_PROXY }}'"
-          buildkitd-flags: --debug
+          buildkitd-flags: --debug --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
           config-inline: |
             debug = true
             [registry."docker.io"]

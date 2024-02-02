@@ -102,22 +102,23 @@ jobs:
             env.http_proxy=${{ env.HTTP_PROXY }}
             env.https_proxy=${{ env.HTTPS_PROXY }}
             "env.no_proxy='${{ env.NO_PROXY }}'"
-          # config-inline: |
-          #   [registry."docker.io"]
-          #     mirrors = ["${{ env.REGISTRY_MIRROR }}"]
-          #     http = true
-          #     insecure = true
-          #   [registry."ghcr.io"]
-          #     mirrors = ["${{ env.REGISTRY_MIRROR }}"]
-          #     http = true
-          #     insecure = true
-          #   [registry."quay.io"]
-          #     mirrors = ["${{ env.REGISTRY_MIRROR }}"]
-          #     http = true
-          #     insecure = true
-          #   [registry."${{ env.REGISTRY_MIRROR }}"]
-          #     http = true
-          #     insecure = true
+          config-inline: |
+            debug = true
+            [registry."docker.io"]
+              mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+              http = true
+              insecure = true
+            [registry."ghcr.io"]
+              mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+              http = true
+              insecure = true
+            [registry."quay.io"]
+              mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+              http = true
+              insecure = true
+            [registry."${{ env.REGISTRY_MIRROR }}"]
+              http = true
+              insecure = true
 
       - name: login to container registry
         uses: docker/login-action@v2

@@ -1,1 +1,1 @@
-FROM alpine:3.19.1
+FROM quay.io/jetstack/cert-manager-controller:v1.14.0

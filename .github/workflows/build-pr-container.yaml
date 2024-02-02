@@ -105,10 +105,16 @@ jobs:
           config-inline: |
             [registry."docker.io"]
               mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+              http = true
+              insecure = true
             [registry."ghcr.io"]
               mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+              http = true
+              insecure = true
             [registry."quay.io"]
               mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+              http = true
+              insecure = true
             [registry."${{ env.REGISTRY_MIRROR }}"]
               http = true
               insecure = true

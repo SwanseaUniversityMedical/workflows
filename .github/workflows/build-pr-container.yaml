@@ -106,12 +106,15 @@ jobs:
           config-inline: |
             debug = true
             [registry."docker.io"]
-              mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+              mirrors = ["http://192.168.7.56:8082", "192.168.7.56:8082"]
             [registry."ghcr.io"]
               mirrors = ["${{ env.REGISTRY_MIRROR }}"]
             [registry."quay.io"]
               mirrors = ["${{ env.REGISTRY_MIRROR }}"]
-            [registry."${{ env.REGISTRY_MIRROR }}"]
+            [registry."http://192.168.7.56:8082"]
+              http = true
+              insecure = true
+            [registry."192.168.7.56:8082"]
               http = true
               insecure = true
 

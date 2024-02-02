@@ -107,10 +107,8 @@ jobs:
             debug = true
             [registry."docker.io"]
               mirrors=["harbor.ukserp.ac.uk/proxycache"]
-              insecure = true
-
-            [registry."harbor.ukserp.ac.uk/proxycache"]
-              insecure=true
+            [registry."quay.io"]
+              mirrors=["harbor.ukserp.ac.uk/quaycache"]
 
       - name: login to container registry
         uses: docker/login-action@v2

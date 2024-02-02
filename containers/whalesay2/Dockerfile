@@ -1,1 +1,1 @@
-FROM projectnessie/nessie:0.76.6
+FROM quay.io/coreos/alpine-sh:latest

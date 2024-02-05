@@ -108,10 +108,13 @@ jobs:
             debug = true
             [registry."docker.io"]
               mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+              http = true
             [registry."ghcr.io"]
               mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+              http = true
             [registry."quay.io"]
               mirrors = ["${{ env.REGISTRY_MIRROR }}"]
+              http = true
             [registry."${{ env.REGISTRY_MIRROR }}"]
               http = true
 

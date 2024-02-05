@@ -1,1 +1,1 @@
-FROM centos:centos8.4.2105
+FROM busybox:1.36.1-musl

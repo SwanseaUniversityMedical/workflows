@@ -150,7 +150,7 @@ jobs:
 
       - name: pr
         if: github.event_name == 'pull_request'
-        uses: .tmp/.github/actions/pr-container
+        uses: ./.tmp/.github/actions/pr-container
         with:
           job-name: ${{ inputs.job-name }}
           registry: ${{ inputs.registry }}
@@ -169,7 +169,7 @@ jobs:
 
       - name: release
         if: github.event_name == 'push'
-        uses: .tmp/.github/actions/release-container
+        uses: ./.tmp/.github/actions/release-container
         with:
           job-name: ${{ inputs.job-name }}
           registry: ${{ inputs.registry }}

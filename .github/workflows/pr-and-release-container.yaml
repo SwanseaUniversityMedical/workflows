@@ -141,7 +141,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: SwanseaUniversityMedical/workflows
-          ref: ${{ workflows-ref.outputs.sha }}
+          ref: ${{ steps.workflows-ref.outputs.sha }}
           sparse-checkout: |
             .github/actions/**
 

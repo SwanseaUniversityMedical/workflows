@@ -126,86 +126,53 @@ on:
         required: false
 
 jobs:
-  version:
-    # Determine if a release should happen and what its version would be
-    uses: ./.github/workflows/version.yaml
-    with:
-      job-name: ${{ inputs.job-name }}
-      release-tag-format: ${{ inputs.release-tag-format}}
-      release-rules: ${{ inputs.release-rules }}
-      release-branches: ${{ inputs.release-branches }}
-      slack-channel: ${{ inputs.slack-channel }}
+  execute:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: heavy
+    steps:
+      - name: clone repo
+        uses: actions/checkout@v3
 
-    secrets:
-      slack-token: ${{ secrets.slack-token }}
+      - name: pr
+        if: github.event_name == 'pull_request'
+        uses: ./.github/actions/pr-container
+        with:
+          job-name: ${{ inputs.job-name }}
+          registry: ${{ inputs.registry }}
+          registry-user: ${{ inputs.registry-user }}
+          registry-repo: ${{ inputs.registry-repo }}
+          cosign-public-key: ${{ inputs.cosign-public-key }}
+          slack-channel: ${{ inputs.slack-channel }}
+          build-file: ${{ inputs.build-file }}
+          build-context: ${{ inputs.build-context }}
+          test-flags: ${{ inputs.test-flags }}
+          test-args: ${{ inputs.test-args }}
+          cosign-private-key: ${{ secrets.cosign-private-key }}
+          cosign-password: ${{ secrets.cosign-password }}
+          registry-token: ${{ secrets.registry-token }}
+          slack-token: ${{ secrets.slack-token }}
 
-  build:
-    # Build the container and push it as :rc-1.0.0
-    needs: version
-    if: fromJSON(needs.version.outputs.release).new-release-published == 'true'
-    uses: ./.github/workflows/build-release-container.yaml
-    with:
-      job-name: ${{ inputs.job-name }}
-      release-version: ${{ fromJSON(needs.version.outputs.release).release-version }}
-      registry: ${{ inputs.registry }}
-      registry-user: ${{ inputs.registry-user }}
-      registry-repo: ${{ inputs.registry-repo }}
-      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
-      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
-      cosign-public-key: ${{ inputs.cosign-public-key }}
-      slack-channel: ${{ inputs.slack-channel }}
-      build-file: ${{ inputs.build-file }}
-      build-context: ${{ inputs.build-context }}
-
-    secrets:
-      cosign-private-key: ${{ secrets.cosign-private-key }}
-      cosign-password: ${{ secrets.cosign-password }}
-      registry-token: ${{ secrets.registry-token }}
-      slack-token: ${{ secrets.slack-token }}
-
-  test:
-    # Test the container
-    needs: build
-    uses: ./.github/workflows/test-release-container.yaml
-    if: ${{ inputs.test-flags != '' || inputs.test-args != '' }}
-    with:
-      job-name: ${{ inputs.job-name }}
-      registry: ${{ inputs.registry }}
-      registry-user: ${{ inputs.registry-user }}
-      registry-repo: ${{ inputs.registry-repo }}
-      registry-digest: ${{ fromJSON(needs.build.outputs.build).digest }}
-      cosign-public-key: ${{ inputs.cosign-public-key }}
-      test-flags: ${{ inputs.test-flags }}
-      test-args: ${{ inputs.test-args }}
-      slack-channel: ${{ inputs.slack-channel }}
-
-    secrets:
-      registry-token: ${{ secrets.registry-token }}
-      slack-token: ${{ secrets.slack-token }}
-
-  release-container:
-    # Release the container re-tagging it as :1.0.0
-    needs:
-      - version
-      - build
-      - test
-    uses: ./.github/workflows/release-container.yaml
-    if: ${{ always() && ((needs.test.result == 'skipped' || needs.test.result == 'success') && needs.build.result == 'success') }}
-    with:
-      job-name: ${{ inputs.job-name }}
-      release-info: ${{ needs.version.outputs.release }}
-      registry: ${{ inputs.registry }}
-      registry-user: ${{ inputs.registry-user }}
-      registry-digest: ${{ fromJSON(needs.build.outputs.build).digest }}
-      registry-repo: ${{ inputs.registry-repo }}
-      registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
-      registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
-      cosign-public-key: ${{ inputs.cosign-public-key }}
-      slack-channel: ${{ inputs.slack-channel }}
-      status-failure: ${{ inputs.status-failure }}
-
-    secrets:
-      cosign-private-key: ${{ secrets.cosign-private-key }}
-      cosign-password: ${{ secrets.cosign-password }}
-      slack-token: ${{ secrets.slack-token }}
-      registry-token: ${{ secrets.registry-token }}
+      - name: release
+        if: github.event_name == 'push'
+        uses: ./.github/actions/release-container
+        with:
+          job-name: ${{ inputs.job-name }}
+          registry: ${{ inputs.registry }}
+          registry-user: ${{ inputs.registry-user }}
+          registry-repo: ${{ inputs.registry-repo }}
+          cosign-public-key: ${{ inputs.cosign-public-key }}
+          slack-channel: ${{ inputs.slack-channel }}
+          build-file: ${{ inputs.build-file }}
+          build-context: ${{ inputs.build-context }}
+          test-flags: ${{ inputs.test-flags }}
+          test-args: ${{ inputs.test-args }}
+          cosign-private-key: ${{ secrets.cosign-private-key }}
+          cosign-password: ${{ secrets.cosign-password }}
+          registry-token: ${{ secrets.registry-token }}
+          slack-token: ${{ secrets.slack-token }}
+          release-branches: ${{ inputs.release-branches }}
+          release-rules: ${{ inputs.release-rules }}
+          registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
+          registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
+          release-tag-format: ${{ inputs.release-tag-format }}

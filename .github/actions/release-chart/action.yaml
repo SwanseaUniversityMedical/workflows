@@ -1,0 +1,348 @@
+name: 'Build, Test and Release a Chart'
+inputs:
+  job-name:
+    description: "Job name to display on Slack messages."
+    required: true
+    type: string
+
+  chart:
+    description: "Path to the helm chart."
+    required: true
+    type: string
+
+  test-command:
+    description: "Command to test the chart named $CHART."
+    default: ''
+    type: string
+
+  registry:
+    description: "URL of the chart registry."
+    required: true
+    type: string
+
+  registry-user:
+    description: "Username for the chart registry."
+    required: true
+    type: string
+
+  registry-project:
+    description: "Project within chart registry."
+    required: true
+    type: string
+
+  registry-repo:
+    description: "Repo within chart registry project."
+    required: true
+    type: string
+
+  tag-suffix:
+    description: "Suffix to use when tagging chart"
+    default: ''
+    type: string
+
+  release-rules:
+    description: "JSON list of rule dicts for what commit types trigger releases."
+    default: |
+      [
+        {"type": "major", "release": "major"},
+        {"type": "minor", "release": "minor"},
+        {"type": "patch", "release": "patch"},
+        {"type": "no-release", "release": false},
+
+        {"type": "chore", "release": "patch"},
+        {"type": "refactor", "release": "patch"},
+        {"type": "style", "release": "patch"},
+
+        {"type": "docs", "release": false},
+        {"type": "test", "release": false},
+        {"type": "ci", "release": false},
+
+        {"type": "feat", "release": "minor"},
+
+        {"type": "revert", "release": "patch"},
+        {"type": "perf", "release": "patch"},
+        {"type": "fix", "release": "patch"},
+        {"type": "build", "release": "patch"},
+      ]
+    type: string
+
+  release-branches:
+    description: "JSON list of regex branch filters."
+    default: |
+      [
+        '+([0-9])?(.{+([0-9]),x}).x',
+        'main'
+      ]
+    type: string
+
+  release-tag-format:
+    description: "Semantic-release Github release tag format."
+    default: '${version}'
+    type: string
+
+  slack-channel:
+    description: "ID of the Slack channel to post updates to."
+    required: true
+    type: string
+
+  cosign-public-key:
+    description: "Public key for cosigning images."
+    required: false
+    type: string
+
+  slack-token:
+    description: "Authentication token for Slack."
+    required: true
+
+  registry-token:
+    description: "Authentication token for the chart registry."
+    required: true
+
+  cosign-private-key:
+    description: "Private key for cosigning charts."
+    required: false
+
+  cosign-password:
+    description: "Private key password for cosigning charts."
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: clone repo
+      uses: actions/checkout@v3
+
+    - name: install cosign
+      if: inputs.cosign-public-key != ''
+      uses: sigstore/cosign-installer@v3.1.2
+
+    - name: login to container registry for cosign
+      if: inputs.cosign-public-key != ''
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-user }}
+        password: ${{ inputs.registry-token }}
+
+    - name: install helm
+      uses: azure/setup-helm@v3
+      with:
+        version: 'v3.9.0'
+        token: ${{ github.token }}
+
+    - name: login to chart registry
+      shell: bash
+      run: |
+        set -x
+        helm registry login \
+          --username '${{ inputs.registry-user }}' \
+          --password '${{ inputs.registry-token }}' \
+          ${{ inputs.registry }}
+
+    - name: build chart uri
+      shell: bash
+      run: |
+        echo "CHART_REPO=${{ inputs.registry }}/${{ inputs.registry-project }}/chart" >> $GITHUB_ENV    
+
+    - name: determine release
+      uses: docker://ghcr.io/codfish/semantic-release-action:v3
+      id: semantic
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        dry-run: true
+        branches: ${{ inputs.release-branches }}
+        tag-format: ${{ inputs.release-tag-format }}
+        plugins: |-
+          [
+            ['@semantic-release/commit-analyzer', {
+              "releaseRules": ${{ inputs.release-rules }},
+            }], 
+            '@semantic-release/release-notes-generator',
+            ['@semantic-release/github', {
+              "successComment": false,
+              "failTitle": false
+            }]
+          ]
+    - name: create release tag
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "RELEASE_TAG=${{ steps.semantic.outputs.release-version }}${{ inputs.tag-suffix }}" >> $GITHUB_ENV
+
+    - name: create RC tags
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "RC_TAG=${{ steps.semantic.outputs.release-version }}-rc${{ inputs.tag-suffix }}" >> $GITHUB_ENV
+
+    - name: update chart dependencies
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        helm dependency update ${{ inputs.chart }}
+
+    - name: package chart
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        helm package ${{ inputs.chart }} --version ${{ env.RC_TAG }} --app-version ${{ env.RC_TAG }}
+
+    - name: push chart
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        helm push ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz oci://${{ env.CHART_REPO }}
+
+    - name: cosign tag
+      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+      shell: bash
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RC_TAG }}"
+
+    - name: cosign verify tag
+      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+      env:
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+      shell: bash
+      run: |
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RC_TAG }}"
+
+    - name: annotate the ci run with chart tags
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: >-
+        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+        Pushed release candidate chart assets!%0A
+        - %0A
+        helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
+        helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}"
+
+    - name: cosign verify chart
+      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+      env:
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        DIGEST: ${{ env.RC_TAG }}
+      shell: bash
+      run: |
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${DIGEST//\+/_}"
+
+    - name: pull chart
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}
+
+    - name: build chart install name
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "CHART=$(echo ${{ inputs.registry-repo }}-${{ env.RC_TAG}}.tgz)" >> $GITHUB_ENV
+
+    - name: test chart
+      if: ${{ inputs.test-command != '' }} && steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: ${{ inputs.command }}
+
+    - name: pull chart
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}
+
+    - name: unpack chart
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        mkdir -p ./repackage/
+        tar -zxvf ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz -C ./repackage/
+
+    - name: repackage chart
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        helm package ./repackage/${{ inputs.registry-repo }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }}
+
+    - name: push chart
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        helm push ${{ inputs.registry-repo }}-${{ env.RELEASE_TAG }}.tgz oci://${{ env.CHART_REPO }}
+
+    - name: cosign tag
+      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+      shell: bash
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RELEASE_TAG }}"
+
+    - name: cosign verify tag
+      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+      env:
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+      shell: bash
+      run: |
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RELEASE_TAG }}"
+
+    - name: cosign verify chart
+      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+      env:
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        DIGEST: ${{ env.RELEASE_TAG }}
+      shell: bash
+      run: |
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${DIGEST//\+/_}"
+
+    - name: release
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: actions/github-script@v6
+      id: release
+      env:
+        RELEASE_NOTES: |
+          ${{ steps.semantic.outputs.release-notes }}
+      with:
+        retries: 3
+        github-token: ${{ github.token }}
+        script: |
+          github.rest.repos.createRelease({
+            owner: "${{ github.repository_owner }}",
+            repo: "${{ github.event.repository.name }}",
+            tag_name: "${{ steps.semantic.outputs.git-tag }}${{ inputs.tag-suffix }}",
+            target_commitish: "${{ github.sha }}",
+            body: process.env.RELEASE_NOTES,
+            name: "${{ steps.semantic.outputs.git-tag }}${{ inputs.tag-suffix }}"
+          });
+
+    - name: annotate the ci run with chart tags
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: >-
+        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
+        Pushed release chart version ${{ steps.semantic.outputs.release-version }}!%0A
+        - %0A
+        helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
+        helm pull --version ${{ env.RELEASE_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}"
+
+    - name: update slack thread failure
+      uses: archive/github-actions-slack@v2.7.0
+      if: failure()
+      continue-on-error: true
+      with:
+        slack-bot-user-oauth-access-token: ${{ inputs.slack-token }}
+        slack-channel: ${{ inputs.slack-channel }}
+        slack-text: |
+          *${{ github.repository }}*\n
+          *Release ${{ github.ref }}*\n
+          :no_entry: job: ${{ github.job }} / ${{ inputs.job-name }}\n
+          <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
+          ```
+          Ref:      ${{ github.ref }}\n
+          Sha:      ${{ github.sha }}\n
+          Workflow: ${{ github.workflow }}\n
+          Run:      ${{ github.run_id }}
+          ```

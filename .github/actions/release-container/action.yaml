@@ -231,7 +231,7 @@ runs:
         docker pull ${{ steps.build.outputs.digest }}"
 
     - name: test
-      if: ${{ inputs.test-flags != '' || inputs.test-args != '' }} && steps.semantic.outputs.new-release-published == 'true'
+      if: ${{ (inputs.test-flags != '' || inputs.test-args != '') && steps.semantic.outputs.new-release-published == 'true' }}
       shell: bash
       run: |
         docker run \

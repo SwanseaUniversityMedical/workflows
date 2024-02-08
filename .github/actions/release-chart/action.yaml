@@ -240,7 +240,7 @@ runs:
         echo "CHART=$(echo ${{ inputs.registry-repo }}-${{ env.RC_TAG}}.tgz)" >> $GITHUB_ENV
 
     - name: test chart
-      if: ${{ inputs.test-command != '' }} && steps.semantic.outputs.new-release-published == 'true'
+      if: ${{ inputs.test-command != '' && steps.semantic.outputs.new-release-published == 'true' }}
       shell: bash
       run: ${{ inputs.command }}
 

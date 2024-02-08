@@ -117,10 +117,6 @@ on:
         description: "Authentication token for the container registry."
         required: true
 
-      workflows-token:
-        description: "Authentication token for the workflows repository."
-        required: true
-
       cosign-private-key:
         description: "Private key for cosigning images."
         required: false
@@ -148,7 +144,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: SwanseaUniversityMedical/workflows
-          token: ${{ secrets.workflows-token }}
           ref: ${{ steps.workflows-ref.outputs.sha }}
           path: .tmp
           sparse-checkout: |

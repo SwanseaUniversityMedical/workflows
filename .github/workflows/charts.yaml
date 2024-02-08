@@ -53,3 +53,18 @@ jobs:
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}
       chart-registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
+
+  workflows:
+    # Release the workflows repo
+    needs:
+      - whalesay
+      - whalesay2
+    if: ${{ success() && github.event_name == 'push' }}
+
+    uses: ./.github/workflows/on-release-repo.yaml
+    with:
+      job-name: workflows-chart
+      release-tag-format: 'charts-v${version}'
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+    secrets:
+      slack-token: ${{ secrets.SLACK_TOKEN }}

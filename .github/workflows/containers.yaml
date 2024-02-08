@@ -75,7 +75,7 @@ jobs:
       needs:
         - whalesay
         - whalesay2
-      if:  ${{ success() && github.event_name == 'push') }}
+      if:  ${{ success() && github.event_name == 'push' }}
 
       uses: ./.github/workflows/on-release-repo.yaml
       with:

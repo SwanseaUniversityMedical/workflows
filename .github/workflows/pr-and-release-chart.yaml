@@ -17,27 +17,27 @@ on:
         default: ''
         type: string
 
-      chart-registry:
+      registry:
         description: "URL of the chart registry."
         required: true
         type: string
 
-      chart-registry-user:
+      registry-user:
         description: "Username for the chart registry."
         required: true
         type: string
 
-      chart-registry-project:
+      registry-project:
         description: "Project within chart registry."
         required: true
         type: string
 
-      chart-registry-repo:
+      registry-repo:
         description: "Repo within chart registry project."
         required: true
         type: string
 
-      chart-tag-suffix:
+      tag-suffix:
         description: "Suffix to use when tagging chart"
         default: ''
         type: string
@@ -98,7 +98,7 @@ on:
         description: "Authentication token for Slack."
         required: true
 
-      chart-registry-token:
+      registry-token:
         description: "Authentication token for the chart registry."
         required: true
 
@@ -124,17 +124,17 @@ jobs:
         uses: ./.github/actions/pr-chart
         with:
           job-name: ${{ inputs.job-name }}
-          chart-registry: ${{ inputs.chart-registry }}
-          chart-registry-user: ${{ inputs.chart-registry-user }}
-          chart-registry-project: ${{ inputs.chart-registry-project }}
-          chart-registry-repo: ${{ inputs.chart-registry-repo }}
+          registry: ${{ inputs.registry }}
+          registry-user: ${{ inputs.registry-user }}
+          registry-project: ${{ inputs.registry-project }}
+          registry-repo: ${{ inputs.registry-repo }}
           cosign-public-key: ${{ inputs.cosign-public-key }}
           slack-channel: ${{ inputs.slack-channel }}
           chart: ${{ inputs.chart }}
           test-command: ${{ inputs.test-command }}
           cosign-private-key: ${{ secrets.cosign-private-key }}
           cosign-password: ${{ secrets.cosign-password }}
-          chart-registry-token: ${{ secrets.chart-registry-token }}
+          registry-token: ${{ secrets.registry-token }}
           slack-token: ${{ secrets.slack-token }}
 
       - name: release
@@ -142,19 +142,19 @@ jobs:
         uses: ./.github/actions/release-chart
         with:
           job-name: ${{ inputs.job-name }}
-          chart-registry: ${{ inputs.chart-registry }}
-          chart-registry-user: ${{ inputs.chart-registry-user }}
-          chart-registry-project: ${{ inputs.chart-registry-project }}
-          chart-registry-repo: ${{ inputs.chart-registry-repo }}
+          registry: ${{ inputs.registry }}
+          registry-user: ${{ inputs.registry-user }}
+          registry-project: ${{ inputs.registry-project }}
+          registry-repo: ${{ inputs.registry-repo }}
           cosign-public-key: ${{ inputs.cosign-public-key }}
           slack-channel: ${{ inputs.slack-channel }}
           chart: ${{ inputs.chart }}
           test-command: ${{ inputs.test-command }}
           release-branches: ${{ inputs.release-branches }}
           release-rules: ${{ inputs.release-rules }}
-          chart-tag-suffix: ${{ inputs.chart-tag-suffix }}
+          tag-suffix: ${{ inputs.tag-suffix }}
           release-tag-format: ${{ inputs.release-tag-format }}
           cosign-private-key: ${{ secrets.cosign-private-key }}
           cosign-password: ${{ secrets.cosign-password }}
-          chart-registry-token: ${{ secrets.chart-registry-token }}
+          registry-token: ${{ secrets.registry-token }}
           slack-token: ${{ secrets.slack-token }}

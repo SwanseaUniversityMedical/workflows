@@ -15,22 +15,22 @@ inputs:
     default: ''
     type: string
 
-  chart-registry:
+  registry:
     description: "URL of the chart registry."
     required: true
     type: string
 
-  chart-registry-user:
+  registry-user:
     description: "Username for the chart registry."
     required: true
     type: string
 
-  chart-registry-project:
+  registry-project:
     description: "Project within chart registry."
     required: true
     type: string
 
-  chart-registry-repo:
+  registry-repo:
     description: "Repo within chart registry project."
     required: true
     type: string
@@ -49,7 +49,7 @@ inputs:
     description: "Authentication token for Slack."
     required: true
 
-  chart-registry-token:
+  registry-token:
     description: "Authentication token for the chart registry."
     required: true
 
@@ -70,7 +70,7 @@ runs:
     - name: build chart uri
       shell: bash
       run: |
-        echo "CHART_REPO=${{ inputs.chart-registry }}/${{ inputs.chart-registry-project }}/chart" >> $GITHUB_ENV
+        echo "CHART_REPO=${{ inputs.registry }}/${{ inputs.registry-project }}/chart" >> $GITHUB_ENV
 
     - name: get short commit sha
       shell: bash
@@ -91,9 +91,9 @@ runs:
       if: inputs.cosign-public-key != ''
       uses: docker/login-action@v2
       with:
-        registry: ${{ inputs.chart-registry }}
-        username: ${{ inputs.chart-registry-user }}
-        password: ${{ inputs.chart-registry-token }}
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-user }}
+        password: ${{ inputs.registry-token }}
 
     - name: install helm
       uses: azure/setup-helm@v3
@@ -105,9 +105,9 @@ runs:
       shell: bash
       run: |
         helm registry login \
-          --username '${{ inputs.chart-registry-user }}' \
-          --password '${{ inputs.chart-registry-token }}' \
-          ${{ inputs.chart-registry }}
+          --username '${{ inputs.registry-user }}' \
+          --password '${{ inputs.registry-token }}' \
+          ${{ inputs.registry }}
 
     - name: update chart dependencies
       shell: bash
@@ -122,7 +122,7 @@ runs:
     - name: push chart with pr tag
       shell: bash
       run: |
-        helm push ${{ inputs.chart-registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_REPO }}
+        helm push ${{ inputs.registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
     - name: cosign pr tag
       if: inputs.cosign-public-key != ''
@@ -131,7 +131,7 @@ runs:
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_TAG }}"
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.PR_TAG }}"
 
     - name: cosign verify pr tag
       if: inputs.cosign-public-key != ''
@@ -139,7 +139,7 @@ runs:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
       shell: bash
       run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${{ env.PR_TAG }}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.PR_TAG }}"
 
     - name: package chart with pr commit tag
       shell: bash
@@ -149,7 +149,7 @@ runs:
     - name: push chart with pr commit tag
       shell: bash
       run: |
-        helm push ${{ inputs.chart-registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_REPO }}
+        helm push ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
     - name: cosign pr commit tag
       if: inputs.cosign-public-key != ''
@@ -158,7 +158,7 @@ runs:
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${PR_COMMIT_TAG//\+/_}"
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${PR_COMMIT_TAG//\+/_}"
 
     - name: cosign verify pr commit tag
       if: inputs.cosign-public-key != ''
@@ -166,7 +166,7 @@ runs:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
       shell: bash
       run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${PR_COMMIT_TAG//\+/_}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${PR_COMMIT_TAG//\+/_}"
 
     - name: annotate the ci run with chart tags
       shell: bash
@@ -174,9 +174,9 @@ runs:
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Pushed PR chart assets!%0A
         - %0A
-        helm registry login --username <user> --password <token> oci://${{ inputs.chart-registry }}%0A
-        helm pull --version ${{ env.PR_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}%0A
-        helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}"
+        helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
+        helm pull --version ${{ env.PR_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}%0A
+        helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}"
 
     - name: cosign verify chart
       if: inputs.cosign-public-key != ''
@@ -185,17 +185,17 @@ runs:
         DIGEST: ${{ env.PR_COMMIT_TAG }}
       shell: bash
       run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}:${DIGEST//\+/_}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${DIGEST//\+/_}"
 
     - name: pull chart
       shell: bash
       run: |
-        helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.chart-registry-repo }}
+        helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}
 
     - name: build chart install name
       shell: bash
       run: |
-        echo "CHART=$(echo ${{ inputs.chart-registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz)" >> $GITHUB_ENV
+        echo "CHART=$(echo ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz)" >> $GITHUB_ENV
 
     - name: test chart
       if: ${{ inputs.test-command != '' }}

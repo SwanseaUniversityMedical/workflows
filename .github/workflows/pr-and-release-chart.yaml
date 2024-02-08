@@ -102,10 +102,6 @@ on:
         description: "Authentication token for the chart registry."
         required: true
 
-      workflows-token:
-        description: "Authentication token for the workflows repository."
-        required: true
-
       cosign-private-key:
         description: "Private key for cosigning charts."
         required: false
@@ -133,7 +129,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: SwanseaUniversityMedical/workflows
-          token: ${{ secrets.workflows-token }}
           ref: ${{ steps.workflows-ref.outputs.sha }}
           path: .tmp
           sparse-checkout: |

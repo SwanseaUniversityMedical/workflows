@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  whalesay:
+  container-whalesay:
     uses: ./.github/workflows/pr-and-release-container.yaml
     with:
       job-name: container-whalesay
@@ -51,7 +51,7 @@ jobs:
       registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
 
-  whalesay2:
+  container-whalesay2:
     # Build the whalesay2 container
     uses: ./.github/workflows/pr-and-release-container.yaml
     with:
@@ -73,8 +73,8 @@ jobs:
   workflows:
       # Release the workflows repo
       needs:
-        - whalesay
-        - whalesay2
+        - container-whalesay
+        - container-whalesay2
       if:  ${{ success() && github.event_name == 'push' }}
 
       uses: ./.github/workflows/on-release-repo.yaml

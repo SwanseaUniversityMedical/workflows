@@ -69,9 +69,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: clone repo
-      uses: actions/checkout@v3
-
     # setup
     - name: install cosign
       if: inputs.cosign-public-key != ''

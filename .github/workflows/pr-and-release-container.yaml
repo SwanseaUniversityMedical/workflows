@@ -143,7 +143,7 @@ jobs:
           repository: SwanseaUniversityMedical/workflows
           ref: ${{ steps.workflows-ref.outputs.sha }}
           sparse-checkout: |
-            .github/actions/**
+            .github/actions
 
       - name: clone repo
         uses: actions/checkout@v3

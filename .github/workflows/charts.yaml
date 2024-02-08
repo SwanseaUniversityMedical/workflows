@@ -6,7 +6,7 @@ on:
       - opened
       - synchronize
     paths:
-      - '.github/workflows/helloworld-chart.yaml'
+      - '.github/workflows/charts.yaml'
       - '.github/workflows/pr-and-release-chart.yaml'
       - '.github/actions/pr-chart/action.yaml'
       - '.github/actions/release-chart/action.yaml'
@@ -15,7 +15,7 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/helloworld-chart.yaml'
+      - '.github/workflows/charts.yaml'
       - '.github/workflows/pr-and-release-chart.yaml'
       - '.github/actions/pr-chart/action.yaml'
       - '.github/actions/release-chart/action.yaml'

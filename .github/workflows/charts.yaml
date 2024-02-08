@@ -57,8 +57,7 @@ jobs:
   workflows:
     # Release the workflows repo
     needs:
-      - whalesay
-      - whalesay2
+      - chart-helloworld
     if: ${{ success() && github.event_name == 'push' }}
 
     uses: ./.github/workflows/on-release-repo.yaml

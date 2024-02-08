@@ -146,7 +146,9 @@ jobs:
           repository: SwanseaUniversityMedical/workflows
           ref: ${{ steps.workflows-ref.outputs.sha }}
           path: .tmp
-          sparse-checkout: .github/actions
+          sparse-checkout: |
+            .github/actions/pr-container
+            .github/actions/release-container
 
       - name: pr
         if: github.event_name == 'pull_request'

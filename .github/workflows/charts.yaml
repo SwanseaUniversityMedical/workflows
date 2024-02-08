@@ -22,9 +22,8 @@ on:
       - 'charts/helloworld/**'
 
 permissions:
-  # Permission needed to author a Github release
+  actions: read
   contents: write
-  # pull-request: write if you enable PR thread comments
   pull-requests: read
 
 concurrency:

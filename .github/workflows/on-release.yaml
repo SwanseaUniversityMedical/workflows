@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 5.x
 
 permissions:
   # Permission needed to author a Github release 

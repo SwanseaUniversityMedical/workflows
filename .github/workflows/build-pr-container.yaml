@@ -108,7 +108,7 @@ jobs:
               mirrors = ["https://harbor.ukserp.ac.uk/quaycache"]
 
       - name: login to container registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-user }}

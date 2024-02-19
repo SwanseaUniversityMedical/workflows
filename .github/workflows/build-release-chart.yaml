@@ -129,14 +129,14 @@ jobs:
 
       - name: login to container registry for cosign
         if: inputs.cosign-public-key != ''
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ inputs.chart-registry }}
           username: ${{ inputs.chart-registry-user }}
           password: ${{ secrets.chart-registry-token }}
 
       - name: install helm
-        uses: azure/setup-helm@v3
+        uses: azure/setup-helm@v4.0.0
         with:
           version: 'v3.9.0'
           token: ${{ github.token }}

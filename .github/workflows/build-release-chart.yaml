@@ -136,7 +136,7 @@ jobs:
           password: ${{ secrets.chart-registry-token }}
 
       - name: install helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@v4.0.0
         with:
           version: 'v3.9.0'
           token: ${{ github.token }}

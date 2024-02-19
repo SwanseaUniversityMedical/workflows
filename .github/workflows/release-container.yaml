@@ -115,6 +115,11 @@ jobs:
             env.http_proxy=${{ env.HTTP_PROXY }}
             env.https_proxy=${{ env.HTTPS_PROXY }}
             "env.no_proxy='${{ env.NO_PROXY }}'"
+          config-inline: |
+            [registry."docker.io"]
+              mirrors = ["https://harbor.ukserp.ac.uk/proxycache"]
+            [registry."quay.io"]
+              mirrors = ["https://harbor.ukserp.ac.uk/quaycache"]
 
       - name: cosign verify container
         if: inputs.cosign-public-key != ''

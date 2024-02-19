@@ -121,7 +121,7 @@ jobs:
           echo "RC_TAG=${{ inputs.release-version }}-rc${{ inputs.chart-tag-suffix }}" >> $GITHUB_ENV 
 
       - name: clone repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: install cosign
         if: inputs.cosign-public-key != ''

@@ -129,7 +129,7 @@ jobs:
 
       - name: login to container registry for cosign
         if: inputs.cosign-public-key != ''
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ inputs.chart-registry }}
           username: ${{ inputs.chart-registry-user }}

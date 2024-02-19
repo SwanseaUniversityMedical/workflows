@@ -92,7 +92,7 @@ jobs:
 
     steps:
       - name: clone repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: determine release
         uses: docker://ghcr.io/codfish/semantic-release-action:v2

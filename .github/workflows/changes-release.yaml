@@ -40,10 +40,10 @@ jobs:
 
     steps:
       - name: clone repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: detect changed files
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@v3.0.1
         id: changes
         with:
           token: ${{ github.token }}

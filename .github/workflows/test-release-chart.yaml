@@ -74,7 +74,7 @@ jobs:
           echo "CHART_REPO=${{ inputs.chart-registry }}/${{ inputs.chart-registry-project }}/chart" >> $GITHUB_ENV
 
       - name: clone repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: install cosign
         if: inputs.cosign-public-key != ''

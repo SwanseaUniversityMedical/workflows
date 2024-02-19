@@ -22,7 +22,6 @@ on:
       - 'containers/whalesay2/**'
 
 permissions:
-  actions: read
   contents: write
   pull-requests: read
 

@@ -86,7 +86,7 @@ runs:
 
     - name: login to container registry for cosign
       if: inputs.cosign-public-key != ''
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}

@@ -187,6 +187,7 @@ runs:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
+          type=raw,value=rc-${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
           type=raw,value=${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
 
     - name: build and push
@@ -196,7 +197,7 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
-        tags: ${{ steps.meta.outputs.tags }}
+        tags: ${{ steps.meta.outputs.tags[0] }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
@@ -210,14 +211,14 @@ runs:
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        TAGS: ${{ steps.meta.outputs.tags }}
+        TAGS: ${{ steps.meta.outputs.tags[0] }}
         DIGEST: ${{ steps.build.outputs.digest }}
 
     - name: cosign verify image
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        TAGS: ${{ steps.meta.outputs.tags }}
+        TAGS: ${{ steps.meta.outputs.tags[0] }}
         DIGEST: ${{ steps.build.outputs.digest }}
       shell: bash
       run: |
@@ -230,7 +231,7 @@ runs:
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Pushed release candidate container assets!%0A
         - %0A
-        docker pull ${{ steps.meta.outputs.tags }}%0A
+        docker pull ${{ steps.meta.outputs.tags[0] }}%0A
         docker pull ${{ steps.build.outputs.digest }}"
 
     - name: test
@@ -245,7 +246,7 @@ runs:
     - name: retag container
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
-      run: docker buildx imagetools create -t ${{ steps.meta.outputs.tags }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+      run: docker buildx imagetools create -t ${{ steps.meta.outputs.tags[1] }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
 
     - name: cosign image with key
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
@@ -255,14 +256,14 @@ runs:
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        TAGS: ${{ steps.meta.outputs.tags }}
+        TAGS: ${{ steps.meta.outputs.tags[1] }}
         DIGEST: ${{ steps.build.outputs.digest }}
 
     - name: cosign verify container
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        TAG: ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        TAG: ${{ steps.meta.outputs.tags[1] }}
         DIGEST: ${{ steps.build.outputs.digest }}
       shell: bash
       run: |

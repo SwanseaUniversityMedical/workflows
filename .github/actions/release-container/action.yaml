@@ -232,7 +232,7 @@ runs:
         Pushed release candidate container assets!%0A
         - %0A
         docker pull ${{ steps.meta.outputs.tags[0] }}%0A
-        docker pull ${{ steps.build.outputs.digest }}"
+        docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}"
 
     - name: test
       if: ${{ (inputs.test-flags != '' || inputs.test-args != '') && steps.semantic.outputs.new-release-published == 'true' }}
@@ -296,8 +296,8 @@ runs:
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Pushed release container version ${{ steps.semantic.outputs.release-version }}!%0A
         - %0A
-        docker pull ${{ env.RELEASE_TAG }}%0A
-        docker pull ${{ steps.build.outputs.digest }}"
+        docker pull ${{ steps.meta.outputs.tags[1] }}%0A
+        docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}"
 
     - name: update slack thread failure
       uses: archive/github-actions-slack@v2.7.0

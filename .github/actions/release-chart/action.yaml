@@ -115,14 +115,14 @@ runs:
 
     - name: login to container registry for cosign
       if: inputs.cosign-public-key != ''
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}
         password: ${{ inputs.registry-token }}
 
     - name: install helm
-      uses: azure/setup-helm@v3
+      uses: azure/setup-helm@v4.0.0
       with:
         version: 'v3.9.0'
         token: ${{ github.token }}
@@ -297,7 +297,7 @@ runs:
 
     - name: release
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       id: release
       env:
         RELEASE_NOTES: |

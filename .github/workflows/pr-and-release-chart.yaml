@@ -123,10 +123,10 @@ jobs:
           echo "sha=$sha" >> $GITHUB_OUTPUT
 
       - name: clone repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: clone actions from workflows repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: SwanseaUniversityMedical/workflows
           ref: ${{ steps.workflows-ref.outputs.sha }}

@@ -199,7 +199,7 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
-        tags: ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}
+        tags: ${{ fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
@@ -213,14 +213,14 @@ runs:
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        TAGS: ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}
+        TAGS: ${{ fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}
         DIGEST: ${{ steps.build.outputs.digest }}
 
     - name: cosign verify image
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        TAGS: ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}
+        TAGS: ${{ fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}
         DIGEST: ${{ steps.build.outputs.digest }}
       shell: bash
       run: |
@@ -233,7 +233,7 @@ runs:
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Pushed release candidate container assets!%0A
         - %0A
-        docker pull ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}%0A
+        docker pull ${{ fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}%0A
         docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}"
 
     - name: test
@@ -248,7 +248,7 @@ runs:
     - name: retag container
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
-      run: docker buildx imagetools create -t ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+      run: docker buildx imagetools create -t ${{ fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
 
     - name: cosign image with key
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
@@ -258,14 +258,14 @@ runs:
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        TAGS: ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }}
+        TAGS: ${{ fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }}
         DIGEST: ${{ steps.build.outputs.digest }}
 
     - name: cosign verify container
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        TAG: ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }}
+        TAG: ${{ fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }}
         DIGEST: ${{ steps.build.outputs.digest }}
       shell: bash
       run: |
@@ -298,7 +298,7 @@ runs:
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Pushed release container version ${{ steps.semantic.outputs.release-version }}!%0A
         - %0A
-        docker pull ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }}%0A
+        docker pull ${{ fromJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }}%0A
         docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}"
 
     - name: update slack thread failure

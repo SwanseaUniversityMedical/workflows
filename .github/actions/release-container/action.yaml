@@ -181,16 +181,6 @@ runs:
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Next release will be version ${{ steps.semantic.outputs.release-version }}"
 
-    - name: release candidate container metadata
-      if: steps.semantic.outputs.new-release-published == 'true'
-      uses: docker/metadata-action@v5
-      id: rc-meta
-      with:
-        images: |
-          ${{ inputs.registry }}/${{ inputs.registry-repo }}
-        tags: |
-          type=raw,value=rc-${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
-
     - name: release container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/metadata-action@v5
@@ -209,7 +199,7 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
-        tags: ${{ steps.rc-meta.outputs.tags }}
+        tags: ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
@@ -223,14 +213,14 @@ runs:
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        TAGS: ${{ steps.rc-meta.outputs.tags }}
+        TAGS: ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}
         DIGEST: ${{ steps.build.outputs.digest }}
 
     - name: cosign verify image
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        TAGS: ${{ steps.rc-meta.outputs.tags }}
+        TAGS: ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}
         DIGEST: ${{ steps.build.outputs.digest }}
       shell: bash
       run: |
@@ -243,7 +233,7 @@ runs:
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Pushed release candidate container assets!%0A
         - %0A
-        docker pull ${{ steps.rc-meta.outputs.tags }}%0A
+        docker pull ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[0] }}%0A
         docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}"
 
     - name: test
@@ -258,7 +248,7 @@ runs:
     - name: retag container
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
-      run: docker buildx imagetools create -t ${{ steps.meta.outputs.tags[1] }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+      run: docker buildx imagetools create -t ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
 
     - name: cosign image with key
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
@@ -268,14 +258,14 @@ runs:
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        TAGS: ${{ steps.meta.outputs.tags[1] }}
+        TAGS: ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }}
         DIGEST: ${{ steps.build.outputs.digest }}
 
     - name: cosign verify container
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        TAG: ${{ steps.meta.outputs.tags }}
+        TAG: ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }}
         DIGEST: ${{ steps.build.outputs.digest }}
       shell: bash
       run: |
@@ -308,7 +298,7 @@ runs:
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Pushed release container version ${{ steps.semantic.outputs.release-version }}!%0A
         - %0A
-        docker pull ${{ steps.meta.outputs.tags }}%0A
+        docker pull ${{ toJSON(env.DOCKER_METADATA_OUTPUT_JSON).tags[1] }}%0A
         docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}"
 
     - name: update slack thread failure

@@ -145,6 +145,8 @@ runs:
             mirrors = ["https://harbor.ukserp.ac.uk/quaycache"]
           [registry."ghcr.io"]
             mirrors = ["https://harbor.ukserp.ac.uk/ghcrcache"]
+          [registry."mcr.microsoft.com"]
+            mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
 
     - name: login to container registry
       uses: docker/login-action@v3

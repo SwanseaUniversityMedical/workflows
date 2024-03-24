@@ -82,6 +82,7 @@ jobs:
   release-repo:
     needs: version
     uses: ./.github/workflows/release-repo.yaml
+    if: ${{ fromJSON(needs.version.outputs.release).new-release-published == 'true' }}
     with:
       job-name: ${{ inputs.job-name }}
       release-info: ${{ needs.version.outputs.release }}

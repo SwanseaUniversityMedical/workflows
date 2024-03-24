@@ -79,7 +79,7 @@ jobs:
       uses: ./.github/workflows/on-release-repo.yaml
       with:
         job-name: workflows-container
-        release-tag-format: 'containers-v${version}'
+        release-tag-format: 'v${version}-containers'
         slack-channel: ${{ vars.SLACK_CHANNEL }}
       secrets:
         slack-token: ${{ secrets.SLACK_TOKEN }}

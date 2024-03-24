@@ -193,6 +193,16 @@ runs:
         tags: |
           type=ref,event=branch,prefix=rc-
 
+    - name: cache container metadata
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: docker/metadata-action@v5
+      id: recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=rc-recent
+
     - name: release container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/metadata-action@v5
@@ -223,12 +233,15 @@ runs:
         tags: |
           ${{ steps.rc-meta.outputs.tags }}
           ${{ steps.cache-meta.outputs.tags }}
+          ${{ steps.recent-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
         provenance: true
         cache-to: type=inline
-        cache-from: type=registry,ref=${{ steps.cache-meta.outputs.tags }}
+        cache-from: |
+          type=registry,ref=${{ steps.cache-meta.outputs.tags }}
+          type=registry,ref=${{ steps.recent-meta.outputs.tags }}
 
     - name: cosign image with key
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'

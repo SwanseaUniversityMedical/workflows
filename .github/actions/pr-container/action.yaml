@@ -125,9 +125,8 @@ runs:
         push: true
         github-token: ${{ github.token }}
         provenance: true
-        cache-from: type=registry,ref=${{ steps.meta.outputs.tags }}-cache
-        cache-to: type=registry,ref=${{ steps.meta.outputs.tags }}-cache,mode=max
-
+        cache-to: type=inline
+        cache-from: type=registry,ref=${{ steps.meta.outputs.tags }}
 
     - name: cosign image with key
       if: inputs.cosign-public-key != ''

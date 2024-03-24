@@ -215,6 +215,8 @@ runs:
         push: true
         github-token: ${{ github.token }}
         provenance: true
+        cache-to: type=registry,ref=${{ steps.rc-meta.outputs.tags }}-cache,mode=max
+        cache-from: type=registry,ref=${{ steps.rc-meta.outputs.tags }}-cache
 
     - name: cosign image with key
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'

@@ -183,6 +183,16 @@ runs:
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Next release will be version ${{ steps.semantic.outputs.release-version }}"
 
+    - name: cache container metadata
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: docker/metadata-action@v5
+      id: cache-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=ref,event=branch,prefix=rc-
+
     - name: release container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/metadata-action@v5
@@ -210,13 +220,15 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
-        tags: ${{ steps.rc-meta.outputs.tags }}
+        tags: |
+          ${{ steps.rc-meta.outputs.tags }}
+          ${{ steps.cache-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
         provenance: true
-        cache-to: type=registry,ref=${{ steps.rc-meta.outputs.tags }}-cache,mode=max
-        cache-from: type=registry,ref=${{ steps.rc-meta.outputs.tags }}-cache
+        cache-to: type=inline
+        cache-from: type=registry,ref=${{ steps.cache-meta.outputs.tags }}
 
     - name: cosign image with key
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'

@@ -105,7 +105,7 @@ runs:
         username: ${{ inputs.registry-user }}
         password: ${{ inputs.registry-token }}
 
-    - name: container metadata
+    - name: pr container metadata
       uses: docker/metadata-action@v5
       id: meta
       with:
@@ -114,9 +114,27 @@ runs:
         tags: |
           type=ref,event=pr
 
-    - name: recent container metadata
+    - name: pr hash container metadata
       uses: docker/metadata-action@v5
-      id: recent-meta
+      id: hash-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=ref,event=pr,suffix=-{{sha}}
+
+    - name: pr recent container metadata
+      uses: docker/metadata-action@v5
+      id: pr-recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=pr-recent
+
+    - name: rc recent container metadata
+      uses: docker/metadata-action@v5
+      id: rc-recent-meta
       with:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
@@ -131,7 +149,8 @@ runs:
         context: ${{ inputs.build-context }}
         tags: |
           ${{ steps.meta.outputs.tags }}
-          ${{ steps.recent-meta.outputs.tags }}
+          ${{ steps.hash-meta.outputs.tags }}
+          ${{ steps.pr-recent-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
@@ -139,7 +158,8 @@ runs:
         cache-to: type=inline
         cache-from: |
           type=registry,ref=${{ steps.meta.outputs.tags }}
-          type=registry,ref=${{ steps.recent-meta.outputs.tags }}
+          type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
+          type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
 
     - name: cosign image with key
       if: inputs.cosign-public-key != ''

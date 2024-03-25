@@ -186,24 +186,34 @@ runs:
     - name: cache container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/metadata-action@v5
-      id: cache-meta
+      id: branch-recent-meta
       with:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
           type=ref,event=branch,prefix=rc-
 
-    - name: cache container metadata
+    - name: pr cache container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/metadata-action@v5
-      id: recent-meta
+      id: pr-recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=pr-recent
+
+    - name: rc cache container metadata
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: docker/metadata-action@v5
+      id: rc-recent-meta
       with:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
           type=raw,value=rc-recent
 
-    - name: release container metadata
+    - name: rc container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/metadata-action@v5
       id: rc-meta
@@ -232,16 +242,16 @@ runs:
         context: ${{ inputs.build-context }}
         tags: |
           ${{ steps.rc-meta.outputs.tags }}
-          ${{ steps.cache-meta.outputs.tags }}
-          ${{ steps.recent-meta.outputs.tags }}
+          ${{ steps.branch-recent-meta.outputs.tags }}
+          ${{ steps.rc-recent-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
         provenance: true
         cache-to: type=inline
         cache-from: |
-          type=registry,ref=${{ steps.cache-meta.outputs.tags }}
-          type=registry,ref=${{ steps.recent-meta.outputs.tags }}
+          type=registry,ref=${{ steps.branch-recent-meta.outputs.tags }}
+          type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
 
     - name: cosign image with key
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'

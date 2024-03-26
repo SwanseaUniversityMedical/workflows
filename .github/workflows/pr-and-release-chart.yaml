@@ -111,7 +111,7 @@ on:
         required: false
 
 jobs:
-  execute:
+  chart:
     runs-on:
       labels: [ self-hosted, linux, x64 ]
       group: heavy

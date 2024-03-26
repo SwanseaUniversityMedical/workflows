@@ -126,7 +126,7 @@ on:
         required: false
 
 jobs:
-  execute:
+  container:
     runs-on:
       labels: [ self-hosted, linux, x64 ]
       group: heavy

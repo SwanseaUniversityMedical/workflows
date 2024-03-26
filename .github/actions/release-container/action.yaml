@@ -183,7 +183,37 @@ runs:
         echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
         Next release will be version ${{ steps.semantic.outputs.release-version }}"
 
-    - name: release container metadata
+    - name: cache container metadata
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: docker/metadata-action@v5
+      id: branch-recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=ref,event=branch,prefix=rc-
+
+    - name: pr cache container metadata
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: docker/metadata-action@v5
+      id: pr-recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=pr-recent
+
+    - name: rc cache container metadata
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: docker/metadata-action@v5
+      id: rc-recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=rc-recent
+
+    - name: rc container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/metadata-action@v5
       id: rc-meta
@@ -210,11 +240,18 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
-        tags: ${{ steps.rc-meta.outputs.tags }}
+        tags: |
+          ${{ steps.rc-meta.outputs.tags }}
+          ${{ steps.branch-recent-meta.outputs.tags }}
+          ${{ steps.rc-recent-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
         provenance: true
+        cache-to: type=inline
+        cache-from: |
+          type=registry,ref=${{ steps.branch-recent-meta.outputs.tags }}
+          type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
 
     - name: cosign image with key
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'

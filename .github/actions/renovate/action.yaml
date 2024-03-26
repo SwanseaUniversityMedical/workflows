@@ -1,0 +1,60 @@
+name: 'Renovate'
+inputs:
+  registry:
+    description: "URL of the chart registry."
+    required: true
+    type: string
+
+  registry-user:
+    description: "Username for the chart registry."
+    required: true
+    type: string
+
+  registry-project:
+    description: "Project within chart registry."
+    required: true
+    type: string
+
+  registry-repo:
+    description: "Repo within chart registry project."
+    required: true
+    type: string
+
+  registry-token:
+    description: "Authentication token for the chart registry."
+    required: true
+
+concurrency:
+  group: ${{ github.renovate }}
+  cancel-in-progress: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: clone repo
+      uses: actions/checkout@v4
+
+    - name: generate token
+      id: generate-token
+      uses: tibdex/github-app-token@v2.1.0
+      with:
+        app_id: ${{ vars.APP_ID }}
+        private_key: ${{ secrets.APP_PRIVATE_KEY }}
+        #TODO figure out how to bring these variables in.
+
+    - name: dump env
+      run: |
+        env
+
+    - name: renovate
+      uses: renovatebot/github-action@v39.1.1
+      with:
+        configurationFile: .github/renovate.js
+        token: ${{ steps.generate-token.outputs.token }}
+        env-regex: "^(?:RENOVATE_\\w+|LOG_LEVEL|\\w+_PROXY)$"
+
+      env:
+        LOG_LEVEL: debug
+        RENOVATE_HARBOR_REGISTRY: ${{ inputs.registry }}
+        RENOVATE_HARBOR_USER: ${{ inputs.registry-user }}
+        RENOVATE_HARBOR_TOKEN: ${{ inputs.registry-token }}

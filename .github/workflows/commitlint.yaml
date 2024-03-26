@@ -6,6 +6,12 @@ on:
       - opened
       - edited
       - synchronize
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/commitlint.yaml'
+      - '.github/workflows/pr-title-commitlint.yaml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,3 +20,14 @@ concurrency:
 jobs:
   pr-title-commitlint:
     uses: ./.github/workflows/pr-title-commitlint.yaml
+
+  release-commitlint:
+    needs: pr-title-commitlint
+    if: ${{ success() && github.event_name == 'push' }}
+    uses: ./.github/workflows/on-release-repo.yaml
+    with:
+      job-name: release-commitlint
+      release-tag-format: 'v${version}-pr-title-commitlint'
+      slack-channel: ${{ vars.SLACK_CHANNEL }}
+    secrets:
+      slack-token: ${{ secrets.SLACK_TOKEN }}

@@ -8,10 +8,11 @@ on:
         type: string
 
 jobs:
-  lint:
+  label:
     runs-on:
       labels: [self-hosted, linux, x64]
       group: light
+
     steps:
       - name: clone config from repo
         uses: actions/checkout@v4

@@ -233,7 +233,7 @@ runs:
         tags: |
           type=raw,value=${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
 
-    - name: build and push
+    - name: build and push rc container using inline cache
       if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/build-push-action@v5
       id: build
@@ -251,6 +251,7 @@ runs:
         cache-to: type=inline
         cache-from: |
           type=registry,ref=${{ steps.branch-recent-meta.outputs.tags }}
+          type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
           type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
 
     - name: cosign image with key
@@ -293,10 +294,22 @@ runs:
           ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }} \
           ${{ inputs.test-args }}
 
-    - name: retag container
+    - name: build and push release container
       if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: docker buildx imagetools create -t ${{ steps.meta.outputs.tags }} ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+      uses: docker/build-push-action@v5
+      id: build-release
+      with:
+        file: ${{ inputs.build-file }}
+        context: ${{ inputs.build-context }}
+        tags: |
+          ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        push: true
+        github-token: ${{ github.token }}
+        provenance: true
+        cache-from: |
+          type=registry,ref=${{ steps.rc-meta.outputs.tags }}
+          type=registry,ref=${{ steps.meta.outputs.tags }}
 
     - name: cosign image with key
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
@@ -307,14 +320,14 @@ runs:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
         TAGS: ${{ steps.meta.outputs.tags }}
-        DIGEST: ${{ steps.build.outputs.digest }}
+        DIGEST: ${{ steps.build-release.outputs.digest }}
 
     - name: cosign verify container
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         TAG: ${{ steps.meta.outputs.tags }}
-        DIGEST: ${{ steps.build.outputs.digest }}
+        DIGEST: ${{ steps.build-release.outputs.digest }}
       shell: bash
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
@@ -347,7 +360,7 @@ runs:
         Pushed release container version ${{ steps.semantic.outputs.release-version }}!%0A
         - %0A
         docker pull ${{ steps.meta.outputs.tags }}%0A
-        docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}"
+        docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build-release.outputs.digest }}"
 
     - name: update slack thread failure
       uses: archive/github-actions-slack@v2.7.0

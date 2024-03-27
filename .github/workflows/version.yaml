@@ -95,14 +95,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: determine release
-        uses: docker://ghcr.io/codfish/semantic-release-action:v2
+        uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
         id: release
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          dry_run: true
+          dry-run: true
           branches: ${{ inputs.release-branches }}
-          tag_format: ${{ inputs.release-tag-format }}
+          tag-format: ${{ inputs.release-tag-format }}
           plugins: |-
             [
               ['@semantic-release/commit-analyzer', {

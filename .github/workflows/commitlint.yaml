@@ -13,5 +13,4 @@ concurrency:
 
 jobs:
   pr-title-commitlint:
-    if: ${{ success() && github.event_name == 'pull_request' }}
     uses: ./.github/workflows/pr-title-commitlint.yaml

@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/commitlint.yaml'
+      - '.github/workflows/pr-title-commitlint.yaml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

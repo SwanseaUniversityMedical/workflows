@@ -144,6 +144,29 @@ runs:
       if: inputs.cosign-public-key != ''
       uses: sigstore/cosign-installer@v3.1.2
 
+    - name: install gh cli
+      uses: ksivamuthu/actions-setup-gh-cli@v2
+      with:
+        version: 2.46.0
+
+    - name: merge release commit into trunk branch
+      env:
+        TRUNK: "main"
+        TITLE: "chore(release): Merge release commit ${{ github.sha }}"
+        BODY: "Merge release commit ${{ github.sha }} on branch ${{ github.ref }} into ${TRUNK} using a merge commit."
+        LABELS: "trunk,bot,release-merge"
+      shell: bash
+      run: |
+        set -x
+        
+        gh pr create --base="${TRUNK}" \
+          --title="${TITLE}" \
+          --body="${BODY}"
+          --labels="${LABELS}"
+        
+        #gh pr merge "${{ github.ref }}" --auto
+        
+
     - name: forward proxy settings
       shell: bash
       run: |
@@ -381,41 +404,27 @@ runs:
         - %0A
         docker pull ${{ steps.meta.outputs.tags }}%0A
         docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build-release.outputs.digest }}"
-
-    - name: generate release merge token
-      if: steps.semantic.outputs.new-release-published == 'true'
-      id: generate-release-token
-      uses: tibdex/github-app-token@v2.1.0
-      with:
-        app_id: ${{ inputs.release-app-id }}
-        private_key: ${{ inputs.release-app-private-key }}
-
-    - name: Merge release commit into the trunk branch
-      env:
-        USER: ${{ inputs.release-app-user }}
-        CLIENT_ID: ${{ inputs.release-app-client-id }}
-        TOKEN: ${{ steps.generate-release-token.outputs.token }}
-        REPO: ${{ github.repository }}
-        COMMIT: ${{ github.sha }}
-        TRUNK: main
-      shell: bash
-      run: |
-        set -x
-        git config user.email "${CLIENT_ID}+${USER}@users.noreply.github.com"
-        git config user.name "${USER}"
-        
-        # Fetch the trunk branch
-        git fetch origin "${TRUNK}"
-        
-        # Test if the commit for this ci run is already on the trunk branch 
-        if git merge-base --is-ancestor "origin/${TRUNK}" "${COMMIT}"; then
-          echo "${COMMIT} already on branch origin/${TRUNK}"
-        else
-          git checkout "${TRUNK}"
-          git pull
-          git merge --no-ff "${COMMIT}"
-          git push https://${USER}:${TOKEN}@github.com/${REPO}.git "${TRUNK}"
-        fi
+#
+#    - name: generate release merge token
+#      if: steps.semantic.outputs.new-release-published == 'true'
+#      id: generate-release-token
+#      uses: tibdex/github-app-token@v2.1.0
+#      with:
+#        app_id: ${{ inputs.release-app-id }}
+#        private_key: ${{ inputs.release-app-private-key }}
+#
+#    - name: Merge release commit into the trunk branch
+#      if: steps.semantic.outputs.new-release-published == 'true'
+#      env:
+#        USER: ${{ inputs.release-app-user }}
+#        CLIENT_ID: ${{ inputs.release-app-client-id }}
+#        TOKEN: ${{ steps.generate-release-token.outputs.token }}
+#        REPO: ${{ github.repository }}
+#        COMMIT: ${{ github.sha }}
+#        TRUNK: main
+#      shell: bash
+#      run: |
+#
 
     - name: update slack thread failure
       uses: archive/github-actions-slack@v2.7.0

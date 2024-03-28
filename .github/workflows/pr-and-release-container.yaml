@@ -107,11 +107,6 @@ on:
         required: true
         type: string
 
-      release-app-private-key:
-        description: "Github App private key for making a release merge commit"
-        required: true
-        type: string
-
       slack-channel:
         description: "ID of the Slack channel to post updates to."
         required: true
@@ -128,6 +123,10 @@ on:
         type: string
 
     secrets:
+
+      release-app-private-key:
+        description: "Github App private key for making a release merge commit"
+        required: true
 
       slack-token:
         description: "Authentication token for Slack."

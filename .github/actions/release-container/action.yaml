@@ -388,7 +388,7 @@ runs:
       uses: tibdex/github-app-token@v2.1.0
       with:
         app_id: ${{ inputs.release-app-id }}
-        private_key: ${{ secrets.release-app-private-key }}
+        private_key: ${{ inputs.release-app-private-key }}
 
     - name: Merge release commit into the trunk branch
       env:

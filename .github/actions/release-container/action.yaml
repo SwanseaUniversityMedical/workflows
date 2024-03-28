@@ -395,16 +395,26 @@ runs:
         USER: ${{ inputs.release-app-user }}
         CLIENT_ID: ${{ inputs.release-app-client-id }}
         TOKEN: ${{ steps.generate-release-token.outputs.token }}
-        REPO: ${{ github.repo }}
+        REPO: ${{ github.repository }}
+        COMMIT: ${{ github.sha }}
+        TRUNK: main
       shell: bash
       run: |
         git config user.email "${CLIENT_ID}+${USER}@users.noreply.github.com"
         git config user.name "${USER}"
-        git fetch origin/main
-        git checkout main
-        git pull main
-        git merge --no-ff ${{ github.sha }}
-        git push https://${USER}:${TOKEN}@github.com/${REPO}.git main
+        
+        # Fetch the trunk branch
+        git fetch origin "${TRUNK}"
+        
+        # Test if the commit for this ci run is already on the trunk branch 
+        if git merge-base --is-ancestor "origin/${TRUNK}" "${COMMIT}"; then
+          echo "${COMMIT} already on branch origin/${TRUNK}"
+        else
+          git checkout "${TRUNK}"
+          git pull "${TRUNK}"
+          git merge --no-ff "${COMMIT}"
+          git push https://${USER}:${TOKEN}@github.com/${REPO}.git "${TRUNK}"
+        fi
 
     - name: update slack thread failure
       uses: archive/github-actions-slack@v2.7.0

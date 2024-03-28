@@ -90,6 +90,26 @@ inputs:
     default: '${version}'
     type: string
 
+  release-app-id:
+    description: "Github App ID for making a release merge commit."
+    required: true
+    type: string
+
+  release-app-client-id:
+    description: "Github App Client ID for making a release merge commit."
+    required: true
+    type: string
+
+  release-app-user:
+    description: "Github App User for making a release merge commit."
+    required: true
+    type: string
+
+  release-app-private-key:
+    description: "Github App private key for making a release merge commit"
+    required: true
+    type: string
+
   slack-channel:
     description: "ID of the Slack channel to post updates to."
     required: true
@@ -362,6 +382,30 @@ runs:
         docker pull ${{ steps.meta.outputs.tags }}%0A
         docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build-release.outputs.digest }}"
 
+    - name: generate release merge token
+      if: steps.semantic.outputs.new-release-published == 'true'
+      id: generate-release-token
+      uses: tibdex/github-app-token@v2.1.0
+      with:
+        app_id: ${{ inputs.release-app-id }}
+        private_key: ${{ secrets.release-app-private-key }}
+
+    - name: Merge release commit into the trunk branch
+      env:
+        USER: ${{ inputs.release-app-user }}
+        CLIENT_ID: ${{ inputs.release-app-client-id }}
+        TOKEN: ${{ steps.generate-release-token.outputs.token }}
+        REPO: ${{ github.repo }}
+      shell: bash
+      run: |
+        git config user.email "${CLIENT_ID}+${USER}@users.noreply.github.com"
+        git config user.name "${USER}"
+        git fetch origin/main
+        git checkout main
+        git pull main
+        git merge --no-ff ${{ github.sha }}
+        git push https://${USER}:${TOKEN}@github.com/${REPO}.git main
+
     - name: update slack thread failure
       uses: archive/github-actions-slack@v2.7.0
       if: failure()
@@ -372,5 +416,3 @@ runs:
         slack-text: |
           :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
           <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>
-    
-

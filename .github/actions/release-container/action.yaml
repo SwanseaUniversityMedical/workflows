@@ -412,7 +412,7 @@ runs:
           echo "${COMMIT} already on branch origin/${TRUNK}"
         else
           git checkout "${TRUNK}"
-          git pull "${TRUNK}"
+          git pull
           git merge --no-ff "${COMMIT}"
           git push https://${USER}:${TOKEN}@github.com/${REPO}.git "${TRUNK}"
         fi

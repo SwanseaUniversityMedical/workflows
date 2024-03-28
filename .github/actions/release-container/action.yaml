@@ -155,6 +155,7 @@ runs:
         TITLE: "chore(release): Merge release commit ${{ github.sha }}"
         BODY: "Merge release commit ${{ github.sha }} on branch ${{ github.ref }} into ${TRUNK} using a merge commit."
         LABELS: "trunk,bot,release-merge"
+        GH_TOKEN: ${{ github.token }}
       shell: bash
       run: |
         set -x

@@ -160,14 +160,13 @@ runs:
       env:
         TITLE: "chore(release): Merge release commit ${{ github.sha }}"
         BODY: "Merge release commit ${{ github.sha }} on branch ${{ github.ref }} into ${TRUNK} using a merge commit."
-        LABELS: "trunk,bot,release-merge"
         GH_TOKEN: ${{ steps.generate-release-token.outputs.token }}
       shell: bash
       run: |
         set -x
         
-        pr=$(gh pr create --base="${TRUNK}" --title="${TITLE}" --body="${BODY}" --label="${LABELS}")
-        gh pr merge "${pr}" --auto
+        pr=$(gh pr create --base="${TRUNK}" --title="${TITLE}" --body="${BODY}")
+        gh pr merge --auto --merge --subject="${TITLE}" --body="${BODY}" "${pr}"
         
     - name: install cosign
       if: inputs.cosign-public-key != ''

@@ -158,7 +158,7 @@ runs:
 
     - name: merge release commit into trunk branch
       env:
-        TITLE: "chore(${{ inputs.job-name }}): Merge release commit ${{ github.sha }}"
+        TITLE: "chore(${{ inputs.job-name }}): merge release commit ${{ github.sha }}"
         BODY: "Merge release commit ${{ github.sha }} on branch ${{ github.ref }} into ${{ env.TRUNK }} using a merge commit."
         GH_TOKEN: ${{ steps.generate-release-token.outputs.token }}
       shell: bash

@@ -167,7 +167,7 @@ runs:
       run: |
         set -x
         
-        pr=$(gh pr create --base="${TRUNK}" --title="${TITLE}" --body="${BODY}" --labels="${LABELS}")
+        pr=$(gh pr create --base="${TRUNK}" --title="${TITLE}" --body="${BODY}" --label="${LABELS}")
         gh pr merge "${pr}" --auto
         
     - name: install cosign

@@ -145,7 +145,6 @@ runs:
         version: 2.46.0
 
     - name: generate release merge token
-      if: steps.semantic.outputs.new-release-published == 'true'
       id: generate-release-token
       uses: tibdex/github-app-token@v2.1.0
       with:

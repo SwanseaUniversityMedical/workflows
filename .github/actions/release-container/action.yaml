@@ -152,9 +152,13 @@ runs:
         app_id: ${{ inputs.release-app-id }}
         private_key: ${{ inputs.release-app-private-key }}
 
+    - name: determine trunk branch
+      shell: bash
+      run: |
+        echo "TRUNK=main" >> $GITHUB_ENV
+
     - name: merge release commit into trunk branch
       env:
-        TRUNK: "main"
         TITLE: "chore(release): Merge release commit ${{ github.sha }}"
         BODY: "Merge release commit ${{ github.sha }} on branch ${{ github.ref }} into ${TRUNK} using a merge commit."
         LABELS: "trunk,bot,release-merge"

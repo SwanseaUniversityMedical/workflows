@@ -1,0 +1,52 @@
+{
+  "name": "semantic-release-action",
+  "version": "0.0.0-semantically-released",
+  "description": "GitHub action runs `semantic-release`. Respects .releaserc.js in your repo. Exports version variables for you to use in subsequent actions.",
+  "homepage": "https://github.com/codfish/semantic-release-action",
+  "author": {
+    "name": "Chris O'Donnell",
+    "email": "dev@codfish.io",
+    "url": "https://codfish.io"
+  },
+  "type": "module",
+  "main": "entrypoint.js",
+  "keywords": [],
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.10.1",
+    "@babel/runtime": "^7.23.2",
+    "arrify": "^3.0.0",
+    "json5": "^2.2.1",
+    "semantic-release": "^22.0.5"
+  },
+  "devDependencies": {
+    "cod-scripts": "^12.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codfish/semantic-release-action.git"
+  },
+  "scripts": {
+    "format": "cod-scripts format",
+    "lint": "cod-scripts lint",
+    "lint:commit": "cod-scripts commitlint",
+    "test": "cod-scripts test"
+  },
+  "eslintConfig": {
+    "extends": [
+      "./node_modules/cod-scripts/eslint.js"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "cod-scripts pre-commit",
+      "commit-msg": "cod-scripts commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  }
+}

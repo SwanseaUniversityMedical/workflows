@@ -9,8 +9,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  test-semantic:
-    name: test-semantic
+  test-semantic-large:
+    name: test-semantic-large
     runs-on:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
@@ -39,6 +39,19 @@ jobs:
               }]
             ]
 
+      - name: output
+        run: |
+          echo large: ${{steps.semantic-large.outputs}}
+
+  test-semantic-small:
+    name: test-semantic-small
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: heavy
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
       - name: test-semantic-small
         uses: ./containers/semantic/Dockerfile
         id: semantic-small
@@ -62,5 +75,4 @@ jobs:
 
       - name: output
         run: |
-          echo large: ${{steps.semantic-large.outputs}}
-          echo small: ${{steps.semantic-small.outputs}
+          echo small: ${{steps.semantic-small.outputs}}

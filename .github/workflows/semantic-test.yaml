@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: test-semantic-small
-        uses: ./containers/semantic/Dockerfile
+        uses: ./containers/semantic/
         id: semantic-small
         env:
           GITHUB_TOKEN: ${{ github.token }}

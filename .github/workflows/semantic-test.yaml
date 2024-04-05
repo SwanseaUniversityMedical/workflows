@@ -1,0 +1,66 @@
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test-semantic:
+    name: test-semantic
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: heavy
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: test-semantic-large
+        uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
+        id: semantic-large
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          dry-run: true
+          branches: ${{ inputs.release-branches }}
+          tag-format: ${{ inputs.release-tag-format }}
+          plugins: |-
+            [
+              ['@semantic-release/commit-analyzer', {
+                "releaseRules": ${{ inputs.release-rules }},
+              }], 
+              '@semantic-release/release-notes-generator',
+              ['@semantic-release/github', {
+                "successComment": false,
+                "failTitle": false
+              }]
+            ]
+
+      - name: test-semantic-small
+        uses: ./containers/semantic/Dockerfile
+        id: semantic-small
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          dry-run: true
+          branches: ${{ inputs.release-branches }}
+          tag-format: ${{ inputs.release-tag-format }}
+          plugins: |-
+            [
+              ['@semantic-release/commit-analyzer', {
+                "releaseRules": ${{ inputs.release-rules }},
+              }], 
+              '@semantic-release/release-notes-generator',
+              ['@semantic-release/github', {
+                "successComment": false,
+                "failTitle": false
+              }]
+            ]
+
+      - name: output
+        run: |
+          echo large: ${{steps.semantic-large.outputs}}
+          echo small: ${{steps.semantic-small.outputs}

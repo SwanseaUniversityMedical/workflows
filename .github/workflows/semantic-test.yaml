@@ -25,12 +25,33 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           dry-run: true
-          branches: ${{ inputs.release-branches }}
-          tag-format: ${{ inputs.release-tag-format }}
+          branches: feat/smaller-semantic-release-container
+          tag-format: '${version}'
           plugins: |-
             [
               ['@semantic-release/commit-analyzer', {
-                "releaseRules": ${{ inputs.release-rules }},
+                "releaseRules": |
+            [
+            {"type": "major", "release": "major"},
+            {"type": "minor", "release": "minor"},
+            {"type": "patch", "release": "patch"},
+            {"type": "no-release", "release": false},
+          
+            {"type": "chore", "release": "patch"},
+            {"type": "refactor", "release": "patch"},
+            {"type": "style", "release": "patch"},
+          
+            {"type": "docs", "release": false},
+            {"type": "test", "release": false},
+            {"type": "ci", "release": false},
+          
+            {"type": "feat", "release": "minor"},
+          
+            {"type": "revert", "release": "patch"},
+            {"type": "perf", "release": "patch"},
+            {"type": "fix", "release": "patch"},
+            {"type": "build", "release": "patch"},
+            ],
               }], 
               '@semantic-release/release-notes-generator',
               ['@semantic-release/github', {
@@ -59,12 +80,33 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           dry-run: true
-          branches: ${{ inputs.release-branches }}
-          tag-format: ${{ inputs.release-tag-format }}
+          branches: feat/smaller-semantic-release-container
+          tag-format: '${version}'
           plugins: |-
             [
               ['@semantic-release/commit-analyzer', {
-                "releaseRules": ${{ inputs.release-rules }},
+                "releaseRules": |
+            [
+            {"type": "major", "release": "major"},
+            {"type": "minor", "release": "minor"},
+            {"type": "patch", "release": "patch"},
+            {"type": "no-release", "release": false},
+          
+            {"type": "chore", "release": "patch"},
+            {"type": "refactor", "release": "patch"},
+            {"type": "style", "release": "patch"},
+          
+            {"type": "docs", "release": false},
+            {"type": "test", "release": false},
+            {"type": "ci", "release": false},
+          
+            {"type": "feat", "release": "minor"},
+          
+            {"type": "revert", "release": "patch"},
+            {"type": "perf", "release": "patch"},
+            {"type": "fix", "release": "patch"},
+            {"type": "build", "release": "patch"},
+            ],
               }], 
               '@semantic-release/release-notes-generator',
               ['@semantic-release/github', {

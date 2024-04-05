@@ -30,7 +30,7 @@ jobs:
           plugins: |-
             [
               ['@semantic-release/commit-analyzer', {
-                "releaseRules": |
+                "releaseRules":
             [
             {"type": "major", "release": "major"},
             {"type": "minor", "release": "minor"},
@@ -95,7 +95,7 @@ jobs:
           plugins: |-
             [
               ['@semantic-release/commit-analyzer', {
-                "releaseRules": |
+                "releaseRules":
             [
             {"type": "major", "release": "major"},
             {"type": "minor", "release": "minor"},

@@ -19,12 +19,12 @@ jobs:
         with:
           node-version: 20.11.0
 
+      - name: checkout
+        uses: actions/checkout@v4
+
       - run: npm ci
 
       - run: npm run lint
-
-      - name: checkout
-        uses: actions/checkout@v4
 
       - name: test-semantic-large
         uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
@@ -82,12 +82,12 @@ jobs:
         with:
           node-version: 20.11.0
 
+      - name: checkout
+        uses: actions/checkout@v4
+
       - run: npm ci
 
       - run: npm run lint
-
-      - name: checkout
-        uses: actions/checkout@v4
 
       - name: test-semantic-small
         uses: ./containers/semantic/

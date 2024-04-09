@@ -78,7 +78,9 @@ jobs:
         env:
           SUMMARY: |
             #### ${{ inputs.comment-header }} - ${{ inputs.comment-error }}
-            Expected PR title to be conventional commit format: ie. `type(scope): summary`
+            Expected PR title to be conventional commit format: ie. 
+            - `type: summary`
+            - `type(scope): summary`
             
             Commitlint output:
             ```
@@ -107,7 +109,7 @@ jobs:
 
       - name: create or update pr comment
         uses: peter-evans/create-or-update-comment@v4
-        if: always() && (steps.commitlint.outcome == 'success' || steps.commitlint.outcome == 'failed')
+        if: always() && (steps.commitlint.outcome == 'success' || steps.commitlint.outcome == 'failure')
         with:
           comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}

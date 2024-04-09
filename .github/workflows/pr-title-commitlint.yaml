@@ -72,7 +72,7 @@ jobs:
           body: |
             ### :x: ${{ inputs.comment-header }}
             ```
-            ${{ steps.commitlint.outputs.stdout }}
+            ${{ steps.commitlint.outputs.stderr }}
             ```
 
       - name: create or update pr comment on successful lint

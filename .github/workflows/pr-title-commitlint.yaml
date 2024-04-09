@@ -4,7 +4,12 @@ on:
 
       error-label:
         description: "Label to add on bad lints."
-        default: "BAD PR TITLE"
+        default: ":black_nib: Bad PR Title"
+        type: string
+
+      comment-header:
+        description: "Header line for the PR comment."
+        default: ":black_nib: Commitlint PR Title"
         type: string
 
       config:
@@ -14,9 +19,7 @@ on:
 
 jobs:
   lint:
-    runs-on:
-      labels: [self-hosted, linux, x64]
-      group: light
+    runs-on: ubuntu-latest
     steps:
       - name: clone config from repo
         uses: actions/checkout@v4
@@ -44,14 +47,51 @@ jobs:
         id: commitlint
         shell: bash
         run: |
-          echo "$TITLE" | npx commitlint --config="$CONFIG"
+          set +e
+          lint=$(echo "$TITLE" | npx commitlint --config="$CONFIG")
+          status=$?
+          echo "$lint"
+          printf "lint<<EOF\n%s\nEOF" "${lint}" >> "$GITHUB_OUTPUT"
+          exit $status
         env:
           TITLE: ${{ github.event.pull_request.title }}
           CONFIG: ${{ inputs.config }}
 
-      - name: Add error label on bad lint
+      - name: find pr comment
+        uses: peter-evans/find-comment@v3
+        if: always()
+        id: find-pr-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: ${{ inputs.comment-header }}
+          comment-author: "github-actions[bot]"
+
+      - name: create or update pr comment on bad lint
+        uses: peter-evans/create-or-update-comment@v4
+        if: always() && steps.commitlint.outcome == 'failure'
+        with:
+          comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            #### :x: ${{ inputs.comment-header }}: Fix title before merge!
+            ```
+            ${{ steps.commitlint.outputs.lint }}
+            ```
+
+      - name: create or update pr comment on successful lint
+        uses: peter-evans/create-or-update-comment@v4
+        if: always() && steps.commitlint.outcome == 'success'
+        with:
+          comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            #### :heavy_check_mark: ${{ inputs.comment-header }}: Good Title
+
+      - name: add error label on bad lint
         uses: actions/github-script@v7.0.1
-        if: failure()
+        if: always() && steps.commitlint.outcome == 'failure'
         with:
           script: |
             github.rest.issues.addLabels({
@@ -61,9 +101,9 @@ jobs:
               labels: ["${{ inputs.error-label }}"]
             })
 
-      - name: Remove error label on successful lint
+      - name: remove error label on successful lint
         uses: actions/github-script@v7.0.1
-        if: success()
+        if: always() && steps.commitlint.outcome == 'success'
         continue-on-error: true
         with:
           script: |
@@ -72,4 +112,4 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               name: "${{ inputs.error-label }}"
-            });
+            })

@@ -70,7 +70,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            ## :x: ${{ inputs.comment-header }}
+            ### :x: ${{ inputs.comment-header }}
             ```
             ${{ steps.commitlint.outputs.stdout }}
             ```
@@ -83,10 +83,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            ## :heavy_check_mark: ${{ inputs.comment-header }}
-            ```
-            ${{ steps.commitlint.outputs.stdout }}
-            ```
+            ### :heavy_check_mark: ${{ inputs.comment-header }}
 
       - name: add error label on bad lint
         uses: actions/github-script@v7.0.1

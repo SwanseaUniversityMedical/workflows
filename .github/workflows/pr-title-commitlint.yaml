@@ -49,11 +49,12 @@ jobs:
         id: commitlint
         shell: bash
         run: |
-          output=$(echo "$TITLE" | npx commitlint --config="$CONFIG" 2>&1)
-          status=$?
-          echo $output
-          echo "output=$output" >> $GITHUB_OUTPUT
-          exit $status
+          set -e
+          LINT=$(echo "$TITLE" | npx commitlint --config="$CONFIG" 2>&1)
+          STATUS=$?
+          echo $LINT
+          echo "lint=$LINT" >> $GITHUB_OUTPUTS
+          exit $STATUS
         env:
           TITLE: ${{ github.event.pull_request.title }}
           CONFIG: ${{ inputs.config }}
@@ -77,7 +78,7 @@ jobs:
           body: |
             ### :x: ${{ inputs.comment-header }}
             ```
-            ${{ steps.commitlint.outputs.output }}
+            ${{ steps.commitlint.outputs.lint }}
             ```
 
       - name: create or update pr comment on successful lint

@@ -19,9 +19,7 @@ on:
 
 jobs:
   lint:
-    runs-on:
-      labels: [self-hosted, linux, x64]
-      group: light
+    runs-on: ubuntu-latest
     steps:
       - name: clone config from repo
         uses: actions/checkout@v4
@@ -76,7 +74,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            #### :x: ${{ inputs.comment-header }} - Fix title before merge!
+            #### :x: ${{ inputs.comment-header }}: Fix title before merge!
             ```
             ${{ steps.commitlint.outputs.lint }}
             ```
@@ -89,7 +87,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            #### :heavy_check_mark: ${{ inputs.comment-header }} - Good Title
+            #### :heavy_check_mark: ${{ inputs.comment-header }}: Good Title
 
       - name: add error label on bad lint
         uses: actions/github-script@v7.0.1

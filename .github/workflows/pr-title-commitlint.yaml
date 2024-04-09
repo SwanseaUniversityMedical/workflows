@@ -49,12 +49,12 @@ jobs:
         id: commitlint
         shell: bash
         run: |
-          set -e
-          LINT=$(echo "$TITLE" | npx commitlint --config="$CONFIG" 2>&1)
-          STATUS=$?
-          echo $LINT
-          echo "lint=$LINT" >> $GITHUB_OUTPUTS
-          exit $STATUS
+          set +e
+          lint=$(echo "$TITLE" | npx commitlint --config="$CONFIG")
+          status=$?
+          echo $lint
+          echo "lint=$lint" >> "$GITHUB_OUTPUT"
+          exit $status
         env:
           TITLE: ${{ github.event.pull_request.title }}
           CONFIG: ${{ inputs.config }}

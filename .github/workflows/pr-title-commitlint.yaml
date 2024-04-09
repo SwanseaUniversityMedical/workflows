@@ -52,8 +52,8 @@ jobs:
           set +e
           lint=$(echo "$TITLE" | npx commitlint --config="$CONFIG")
           status=$?
-          echo $lint
-          echo "lint=$lint" >> "$GITHUB_OUTPUT"
+          echo "$lint"
+          printf "lint<<EOF\n%s\nEOF" "${lint}" >> "$GITHUB_OUTPUT"
           exit $status
         env:
           TITLE: ${{ github.event.pull_request.title }}

@@ -51,6 +51,7 @@ jobs:
         run: |
           output=$(echo "$TITLE" | npx commitlint --config="$CONFIG" 2>&1)
           status=$?
+          echo $output
           echo "output=$output" >> $GITHUB_OUTPUT
           exit $status
         env:
@@ -64,7 +65,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: ${{ inputs.comment-header }}
-          comment-author: ${{ github.actor }}
+          comment-author: "github-actions[bot]"
 
       - name: create or update pr comment on bad lint
         uses: peter-evans/create-or-update-comment@v4

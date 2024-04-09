@@ -9,7 +9,7 @@ on:
 
       comment-header:
         description: "Header line for the PR comment."
-        default: ":black_nib: Commitlint PR Title"
+        default: ":black_nib: PR Title Commitlint"
         type: string
 
       comment-success:
@@ -78,9 +78,13 @@ jobs:
         env:
           SUMMARY: |
             #### ${{ inputs.comment-header }} - ${{ inputs.comment-error }}
+            Expected PR title to be conventional commit format: ie. `type(scope): summary`
+            
+            Commitlint output:
             ```
             ${{ steps.commitlint.outputs.lint }}
             ```
+            Check the Commitlint config file to review which rules are being applied.
 
       - name: create step summary on good lint
         if: always() && steps.commitlint.outcome == 'success'

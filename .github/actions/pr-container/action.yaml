@@ -172,8 +172,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.event.pull_request.head.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
@@ -187,8 +186,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.event.pull_request.head.sha }}  
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}  
           :x: Build Failure
 
     - name: find pr comment
@@ -208,13 +206,12 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.event.pull_request.head.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :heavy_check_mark: Build Success  
+          :whale: Build Success  
 
     - name: create or update pr comment on build error
       uses: peter-evans/create-or-update-comment@v4
@@ -224,8 +221,7 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.event.pull_request.head.sha }}  
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}  
           :x: Build Failure
 
     - name: cosign image with key
@@ -257,7 +253,7 @@ runs:
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":heavy_check_mark: Cosign Success  "
+        SUMMARY: ":black_nib: Cosign Success  "
 
     - name: append to step summary on cosign error
       if: failure() && (steps.cosign-sign.outcome == 'failure' || steps.cosign-verify.outcome == 'failure')
@@ -275,14 +271,13 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.event.pull_request.head.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :heavy_check_mark: Build Success  
-          :heavy_check_mark: Cosign Success
+          :whale: Build Success  
+          :black_nib: Cosign Success
 
     - name: create or update pr comment on cosign error
       uses: peter-evans/create-or-update-comment@v4
@@ -292,13 +287,12 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.event.pull_request.head.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :heavy_check_mark: Build Success  
+          :whale: Build Success  
           :x: Cosign Failure
 
     - name: test
@@ -317,7 +311,7 @@ runs:
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":heavy_check_mark: Test Success"
+        SUMMARY: ":eyes: Test Success"
 
     - name: append to step summary on test error
       if: failure() && steps.test.outcome == 'failure'
@@ -335,15 +329,14 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.event.pull_request.head.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :heavy_check_mark: Build Success  
-          :heavy_check_mark: Cosign Success  
-          :heavy_check_mark: Test Success
+          :whale: Build Success  
+          :black_nib: Cosign Success  
+          :eyes: Test Success
 
     - name: create or update pr comment on test error
       uses: peter-evans/create-or-update-comment@v4
@@ -353,12 +346,11 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.event.pull_request.head.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :heavy_check_mark: Build Success  
-          :heavy_check_mark: Cosign Success  
+          :whale: Build Success  
+          :black_nib: Cosign Success  
           :x: Test Failure

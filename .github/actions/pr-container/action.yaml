@@ -119,6 +119,11 @@ runs:
         tags: |
           type=ref,event=pr
 
+    - name: create short sha of the pr branch commit
+      shell: bash
+      run: |
+        echo "SHORT_SHA=`echo '${{ github.event.pull_request.head.sha }}' | cut -c1-8`" >> $GITHUB_ENV
+
     - name: pr hash container metadata
       uses: docker/metadata-action@v5
       id: hash-meta
@@ -126,7 +131,7 @@ runs:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
-          type=ref,event=pr,suffix=-{{sha}}
+          type=ref,event=pr,suffix=-${{ env.SHORT_SHA }}
 
     - name: pr recent container metadata
       uses: docker/metadata-action@v5

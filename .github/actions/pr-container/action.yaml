@@ -5,6 +5,11 @@ inputs:
     required: true
     type: string
 
+  comment-header:
+    description: "Header line for the PR comment."
+    default: ":whale: Build PR Container"
+    type: string
+
   build-file:
       description: "Path to the container file."
       required: true
@@ -114,6 +119,11 @@ runs:
         tags: |
           type=ref,event=pr
 
+    - name: create short sha of the pr branch commit
+      shell: bash
+      run: |
+        echo "SHORT_SHA=`echo '${{ github.event.pull_request.head.sha }}' | cut -c1-7`" >> $GITHUB_ENV
+
     - name: pr hash container metadata
       uses: docker/metadata-action@v5
       id: hash-meta
@@ -121,7 +131,7 @@ runs:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
-          type=ref,event=pr,suffix=-{{sha}}
+          type=ref,event=pr,suffix=-${{ env.SHORT_SHA }}
 
     - name: pr recent container metadata
       uses: docker/metadata-action@v5
@@ -161,7 +171,56 @@ runs:
           type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
           type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
 
+    - name: create step summary on build success
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
+          ```
+          ${{ steps.meta.outputs.tags }}
+          ${{ steps.hash-meta.outputs.tags }}
+          ${{ steps.build.outputs.digest }}
+          ```
+          :hammer_and_wrench: Build Success  
+
+    - name: create step summary on build error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
+          :x: Build Failure
+
+    - name: find pr comment
+      uses: peter-evans/find-comment@v3
+      if: always()
+      id: find-pr-comment
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        comment-author: "github-actions[bot]"
+
+    - name: create or update pr comment on build success
+      id: build-pr-comment
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        edit-mode: replace
+        body: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          ```
+          ${{ steps.meta.outputs.tags }}
+          ${{ steps.hash-meta.outputs.tags }}
+          ${{ steps.build.outputs.digest }}
+          ``` 
+
     - name: cosign image with key
+      id: cosign-sign
       if: inputs.cosign-public-key != ''
       shell: bash
       run: |
@@ -173,6 +232,7 @@ runs:
         DIGEST: ${{ steps.build.outputs.digest }}
 
     - name: cosign verify image
+      id: cosign-verify
       if: inputs.cosign-public-key != ''
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
@@ -182,17 +242,25 @@ runs:
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
-    - name: annotate the ci run with container tags
+    - name: append to step summary on cosign success
+      if: success() && (steps.cosign-sign.outcome == 'success' || steps.cosign-verify.outcome == 'success')
       shell: bash
-      run: >-
-        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-        Pushed PR container assets!%0A
-        - %0A
-        docker pull ${{ steps.meta.outputs.tags }}%0A
-        ${{ steps.build.outputs.digest }}"
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: append to step summary on cosign error
+      if: failure() && (steps.cosign-sign.outcome == 'failure' || steps.cosign-verify.outcome == 'failure')
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
 
     - name: test
-      if: ${{ inputs.test-flags != '' || inputs.test-args != '' }}
+      id: test
+      if: inputs.test-flags != '' || inputs.test-args != ''
       shell: bash
       run: |
         docker run \
@@ -200,14 +268,18 @@ runs:
           ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }} \
           ${{ inputs.test-args }}
 
-    - name: update slack thread failure
-      uses: archive/github-actions-slack@v2.7.0
-      continue-on-error: true
-      if: failure()
-      with:
-        slack-bot-user-oauth-access-token: ${{ inputs.slack-token }}
-        slack-channel: ${{ inputs.slack-channel }}
-        slack-text: |
-          :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
-          <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
-          <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>
+    - name: append to step summary on test success
+      if: success() && steps.test.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":eyes: Test Success"
+
+    - name: append to step summary on test error
+      if: failure() && steps.test.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Test Failure"

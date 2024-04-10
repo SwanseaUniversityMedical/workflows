@@ -5,6 +5,11 @@ inputs:
     required: true
     type: string
 
+  comment-header:
+    description: "Header line for the Release summary."
+    default: ":whale: Build Release Container"
+    type: string
+
   build-file:
     description: "Path to the container file."
     required: true
@@ -254,7 +259,32 @@ runs:
           type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
           type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
 
+    - name: create step summary on build success
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
+          ```
+          ${{ steps.rc-meta.outputs.tags }}
+          ${{ steps.build.outputs.digest }}
+          ```
+          :hammer_and_wrench: Build Success  
+
+    - name: create step summary on build error
+      if: failure() && steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
+          :x: Build Failure
+
     - name: cosign image with key
+      id: rc-cosign-sign
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
@@ -266,6 +296,7 @@ runs:
         DIGEST: ${{ steps.build.outputs.digest }}
 
     - name: cosign verify image
+      id: rc-cosign-verify
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
@@ -275,24 +306,47 @@ runs:
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
-    - name: annotate the ci run with release candidate container tags
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: append to step summary on cosign success
+      if: success() && (steps.rc-cosign-sign.outcome == 'success' || steps.rc-cosign-verify.outcome == 'success') && steps.semantic.outputs.new-release-published == 'true'
       shell: bash
-      run: >-
-        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-        Pushed release candidate container assets!%0A
-        - %0A
-        docker pull ${{ steps.rc-meta.outputs.tags }}%0A
-        docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}"
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: append to step summary on cosign error
+      if: failure() && (steps.rc-cosign-sign.outcome == 'failure' || steps.rc-cosign-verify.outcome == 'failure') && steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
 
     - name: test
-      if: ${{ (inputs.test-flags != '' || inputs.test-args != '') && steps.semantic.outputs.new-release-published == 'true' }}
+      id: test
+      if: (inputs.test-flags != '' || inputs.test-args != '') && steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         docker run \
           ${{ inputs.test-flags }} \
           ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }} \
           ${{ inputs.test-args }}
+
+    - name: append to step summary on test success
+      if: success() && steps.test.outcome == 'success' && steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":eyes: Test Success"
+
+    - name: append to step summary on test error
+      if: failure() && steps.test.outcome == 'failure' && steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Test Failure"
 
     - name: build and push release container
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -311,7 +365,29 @@ runs:
           type=registry,ref=${{ steps.rc-meta.outputs.tags }}
           type=registry,ref=${{ steps.meta.outputs.tags }}
 
+    - name: append to step summary on release build success
+      if: success() && steps.build-release.outcome == 'success' && steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ```
+          ${{ steps.meta.outputs.tags }}
+          ${{ steps.build-release.outputs.digest }}
+          ```
+          :hammer_and_wrench: Release Build Success  
+
+    - name: append to step summary on release build error
+      if: failure() && steps.build-release.outcome == 'failure' && steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Release Build Failure"
+
     - name: cosign image with key
+      id: cosign-sign
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       shell: bash
       run: |
@@ -323,6 +399,7 @@ runs:
         DIGEST: ${{ steps.build-release.outputs.digest }}
 
     - name: cosign verify container
+      id: cosign-verify
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
@@ -331,6 +408,22 @@ runs:
       shell: bash
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${TAG}@${DIGEST}"
+
+    - name: append to step summary on cosign success
+      if: success() && (steps.cosign-sign.outcome == 'success' || steps.cosign-verify.outcome == 'success') && steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Release Cosign Success  "
+
+    - name: append to step summary on cosign error
+      if: failure() && (steps.cosign-sign.outcome == 'failure' || steps.cosign-verify.outcome == 'failure') && steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Release Cosign Failure"
 
     - name: release
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -351,26 +444,3 @@ runs:
             body: process.env.RELEASE_NOTES,
             name: "${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.git-tag }}${{ inputs.registry-tag-suffix }}"
           });
-
-    - name: annotate the ci run with release container tags
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: >-
-        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-        Pushed release container version ${{ steps.semantic.outputs.release-version }}!%0A
-        - %0A
-        docker pull ${{ steps.meta.outputs.tags }}%0A
-        docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build-release.outputs.digest }}"
-
-    - name: update slack thread failure
-      uses: archive/github-actions-slack@v2.7.0
-      if: failure()
-      continue-on-error: true
-      with:
-        slack-bot-user-oauth-access-token: ${{ inputs.slack-token }}
-        slack-channel: ${{ inputs.slack-channel }}
-        slack-text: |
-          :no_entry: ${{ github.repository }} / ${{ github.job }} / ${{ inputs.job-name }}\n
-          <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>
-    
-

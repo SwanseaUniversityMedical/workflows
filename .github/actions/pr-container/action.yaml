@@ -213,6 +213,7 @@ runs:
           docker pull ${{ steps.hash-meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
+          :bookmark_tabs: Workflow Run: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
     - name: cosign image with key
       id: cosign-sign

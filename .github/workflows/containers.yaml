@@ -35,6 +35,7 @@ jobs:
     uses: ./.github/workflows/pr-and-release-container.yaml
     with:
       job-name: whalesay-container
+      comment-enabled: "true"
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
       registry-repo: github-workflows/whalesay

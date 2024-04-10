@@ -177,7 +177,7 @@ runs:
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :heavy_check_mark: Build Success  
+          :hammer_and_wrench: Build Success  
 
     - name: create step summary on build error
       if: failure()
@@ -211,7 +211,7 @@ runs:
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :whale: Build Success  
+          :hammer_and_wrench: Build Success  
 
     - name: create or update pr comment on build error
       uses: peter-evans/create-or-update-comment@v4
@@ -276,7 +276,7 @@ runs:
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :whale: Build Success  
+          :hammer_and_wrench: Build Success  
           :black_nib: Cosign Success
 
     - name: create or update pr comment on cosign error
@@ -292,7 +292,7 @@ runs:
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :whale: Build Success  
+          :hammer_and_wrench: Build Success  
           :x: Cosign Failure
 
     - name: test
@@ -334,7 +334,7 @@ runs:
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :whale: Build Success  
+          :hammer_and_wrench: Build Success  
           :black_nib: Cosign Success  
           :eyes: Test Success
 
@@ -351,6 +351,6 @@ runs:
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :whale: Build Success  
+          :hammer_and_wrench: Build Success  
           :black_nib: Cosign Success  
           :x: Test Failure

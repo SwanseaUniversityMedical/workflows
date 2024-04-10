@@ -83,8 +83,8 @@ jobs:
             ```
             ${{ steps.commitlint.outputs.lint }}
             ```
-            :open_book: Conventional Commits [Format Docs](https://www.conventionalcommits.org/en/v1.0.0)  
-            :mag: Commitlint [Config File](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ inputs.config }}), [Rule Docs](https://commitlint.js.org/reference/rules)   
+            Conventional Commits :open_book: [Docs](https://www.conventionalcommits.org/en/v1.0.0)  
+            Commitlint :open_book: [Docs](https://commitlint.js.org/reference/rules), :file_cabinet: [Config](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ inputs.config }})   
 
       - name: create step summary on good lint
         if: always() && steps.commitlint.outcome == 'success'

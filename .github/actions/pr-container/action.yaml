@@ -189,6 +189,40 @@ runs:
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
           :x: Build Failure
 
+    - name: find pr comment
+      uses: peter-evans/find-comment@v3
+      if: always()
+      id: find-pr-comment
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        comment-author: "github-actions[bot]"
+
+    - name: create or update pr comment on build success
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        edit-mode: replace
+        body: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+          ```
+          docker pull ${{ steps.meta.outputs.tags }}
+          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+          ```
+          :heavy_check_mark: Build Success  
+
+    - name: create or update pr comment on build error
+      uses: peter-evans/create-or-update-comment@v4
+      if: failure()
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        edit-mode: replace
+        body: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+          :x: Build Failure
+
     - name: cosign image with key
       id: cosign-sign
       if: inputs.cosign-public-key != ''
@@ -227,15 +261,6 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: ":x: Cosign Failure"
-
-#    - name: find pr comment
-#      uses: peter-evans/find-comment@v3
-#      if: always()
-#      id: find-pr-comment
-#      with:
-#        issue-number: ${{ github.event.pull_request.number }}
-#        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-#        comment-author: "github-actions[bot]"
 
 #    - name: create or update pr comment on build error
 #      uses: peter-evans/create-or-update-comment@v4

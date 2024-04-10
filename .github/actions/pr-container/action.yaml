@@ -175,6 +175,7 @@ runs:
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
+          docker pull ${{ steps.hash-meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
           :hammer_and_wrench: Build Success  
@@ -209,20 +210,9 @@ runs:
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
+          docker pull ${{ steps.hash-meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
           ```
-          :hammer_and_wrench: Build Success  
-
-    - name: create or update pr comment on build error
-      uses: peter-evans/create-or-update-comment@v4
-      if: failure()
-      with:
-        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        edit-mode: replace
-        body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}  
-          :x: Build Failure
 
     - name: cosign image with key
       id: cosign-sign
@@ -263,38 +253,6 @@ runs:
       env:
         SUMMARY: ":x: Cosign Failure"
 
-    - name: create or update pr comment on cosign success
-      uses: peter-evans/create-or-update-comment@v4
-      if: success() && (steps.cosign-sign.outcome == 'success' || steps.cosign-verify.outcome == 'success')
-      with:
-        comment-id: ${{ steps.build-pr-comment.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        edit-mode: replace
-        body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
-          ```
-          docker pull ${{ steps.meta.outputs.tags }}
-          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
-          ```
-          :hammer_and_wrench: Build Success  
-          :black_nib: Cosign Success
-
-    - name: create or update pr comment on cosign error
-      uses: peter-evans/create-or-update-comment@v4
-      if: failure() && (steps.cosign-sign.outcome == 'failure' || steps.cosign-verify.outcome == 'failure')
-      with:
-        comment-id: ${{ steps.build-pr-comment.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        edit-mode: replace
-        body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
-          ```
-          docker pull ${{ steps.meta.outputs.tags }}
-          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
-          ```
-          :hammer_and_wrench: Build Success  
-          :x: Cosign Failure
-
     - name: test
       id: test
       if: inputs.test-flags != '' || inputs.test-args != ''
@@ -320,37 +278,3 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: ":x: Test Failure"
-
-    - name: create or update pr comment on test success
-      uses: peter-evans/create-or-update-comment@v4
-      if: success() && steps.test.outcome == 'success'
-      with:
-        comment-id: ${{ steps.build-pr-comment.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        edit-mode: replace
-        body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
-          ```
-          docker pull ${{ steps.meta.outputs.tags }}
-          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
-          ```
-          :hammer_and_wrench: Build Success  
-          :black_nib: Cosign Success  
-          :eyes: Test Success
-
-    - name: create or update pr comment on test error
-      uses: peter-evans/create-or-update-comment@v4
-      if: failure() && steps.test.outcome == 'failure'
-      with:
-        comment-id: ${{ steps.build-pr-comment.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        edit-mode: replace
-        body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
-          ```
-          docker pull ${{ steps.meta.outputs.tags }}
-          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
-          ```
-          :hammer_and_wrench: Build Success  
-          :black_nib: Cosign Success  
-          :x: Test Failure

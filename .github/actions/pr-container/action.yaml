@@ -177,7 +177,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ steps.hash-meta.outputs.tags }}
@@ -192,7 +192,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}  
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
           :x: Build Failure
 
     - name: find pr comment
@@ -212,13 +212,12 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - ${{ github.event.pull_request.head.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ steps.hash-meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
-          ```
-          :bookmark_tabs: Workflow Run: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          ``` 
 
     - name: cosign image with key
       id: cosign-sign

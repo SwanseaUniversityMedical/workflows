@@ -166,7 +166,31 @@ runs:
           type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
           type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
 
+    - name: create step summary on build success
+      shell: bash
+      run: |
+        printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+          ```
+          docker pull ${{ steps.meta.outputs.tags }}
+          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+          ```
+          :heavy_check_mark: Build Success  
+
+    - name: create step summary on build error
+      if: failure()
+      shell: bash
+      run: |
+        printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+          :x: Build Failure
+
     - name: cosign image with key
+      id: cosign-sign
       if: inputs.cosign-public-key != ''
       shell: bash
       run: |
@@ -178,6 +202,7 @@ runs:
         DIGEST: ${{ steps.build.outputs.digest }}
 
     - name: cosign verify image
+      id: cosign-verify
       if: inputs.cosign-public-key != ''
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
@@ -187,64 +212,57 @@ runs:
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
-    - name: find pr comment
-      uses: peter-evans/find-comment@v3
-      if: always()
-      id: find-pr-comment
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-        comment-author: "github-actions[bot]"
-
-    - name: create or update pr comment on build error
-      uses: peter-evans/create-or-update-comment@v4
-      if: failure()
-      with:
-        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        edit-mode: replace
-        body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          :x: Build Failure
-
-    - name: create step summary on build error
-      if: always() && steps.build.outcome == 'failure'
+    - name: append to step summary on cosign success
       shell: bash
       run: |
         printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          :x: Build Failure
+          :heavy_check_mark: Cosign Success
 
-    - name: create or update pr comment on build success
-      uses: peter-evans/create-or-update-comment@v4
-      if: always() && steps.build.outcome == 'success'
-      with:
-        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        edit-mode: replace
-        body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ```
-          docker pull ${{ steps.meta.outputs.tags }}
-          docker pull ${{ steps.build.outputs.digest }}
-          ```
-          :heavy_check_mark: Build Success
-
-    - name: create step summary on build success
-      if: always() && steps.build.outcome == 'success'
+    - name: append to step summary on cosign error
+      if: failure() && (steps.cosign-sign.outcome == 'failure' || steps.cosign-verify.outcome == 'failure')
       shell: bash
       run: |
         printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ```
-          docker pull ${{ steps.meta.outputs.tags }}
-          docker pull ${{ steps.build.outputs.digest }}
-          ```
-          :heavy_check_mark: Build Success  
+          :x: Cosign Failure
+
+#    - name: find pr comment
+#      uses: peter-evans/find-comment@v3
+#      if: always()
+#      id: find-pr-comment
+#      with:
+#        issue-number: ${{ github.event.pull_request.number }}
+#        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+#        comment-author: "github-actions[bot]"
+
+#    - name: create or update pr comment on build error
+#      uses: peter-evans/create-or-update-comment@v4
+#      if: always() && (steps.build.outcome == 'failure' || steps.build.outcome == 'skipped')
+#      with:
+#        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+#        issue-number: ${{ github.event.pull_request.number }}
+#        edit-mode: replace
+#        body: |
+#          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+#          :x: Build Failure
+
+#    - name: create or update pr comment on build success
+#      uses: peter-evans/create-or-update-comment@v4
+#      if: always() && steps.build.outcome == 'success'
+#      with:
+#        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+#        issue-number: ${{ github.event.pull_request.number }}
+#        edit-mode: replace
+#        body: |
+#          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+#          ```
+#          docker pull ${{ steps.meta.outputs.tags }}
+#          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+#          ```
+#          :heavy_check_mark: Build Success
 
     - name: test
       id: test
@@ -256,52 +274,51 @@ runs:
           ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }} \
           ${{ inputs.test-args }}
 
-    - name: create or update pr comment on test success
-      uses: peter-evans/create-or-update-comment@v4
-      if: always() && steps.test.outcome == 'success'
-      with:
-        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        edit-mode: replace
-        body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ```
-          docker pull ${{ steps.meta.outputs.tags }}
-          docker pull ${{ steps.build.outputs.digest }}
-          ```
-          :heavy_check_mark: Build Success  
-          :heavy_check_mark: Test Success
-
     - name: append to step summary on test success
-      if: always() && steps.test.outcome == 'success'
       shell: bash
       run: |
         printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
           :heavy_check_mark: Test Success
-
-    - name: create or update pr comment on test error
-      uses: peter-evans/create-or-update-comment@v4
-      if: always() && steps.test.outcome == 'failure'
-      with:
-        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
-        issue-number: ${{ github.event.pull_request.number }}
-        edit-mode: replace
-        body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ```
-          docker pull ${{ steps.meta.outputs.tags }}
-          docker pull ${{ steps.build.outputs.digest }}
-          ```
-          :heavy_check_mark: Build Success  
-          :x: Test Failure
 
     - name: append to step summary on test error
-      if: always() && steps.test.outcome == 'failure'
+      if: failure() && steps.test.outcome == 'failure'
       shell: bash
       run: |
         printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
           :x: Test Failure
+
+#    - name: create or update pr comment on test success
+#      uses: peter-evans/create-or-update-comment@v4
+#      if: always() && steps.test.outcome == 'success'
+#      with:
+#        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+#        issue-number: ${{ github.event.pull_request.number }}
+#        edit-mode: replace
+#        body: |
+#          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+#          ```
+#          docker pull ${{ steps.meta.outputs.tags }}
+#          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+#          ```
+#          :heavy_check_mark: Build Success
+#          :heavy_check_mark: Test Success
+
+#    - name: create or update pr comment on test error
+#      uses: peter-evans/create-or-update-comment@v4
+#      if: always() && steps.test.outcome == 'failure'
+#      with:
+#        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+#        issue-number: ${{ github.event.pull_request.number }}
+#        edit-mode: replace
+#        body: |
+#          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+#          ```
+#          docker pull ${{ steps.meta.outputs.tags }}
+#          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+#          ```
+#          :heavy_check_mark: Build Success
+#          :x: Test Failure

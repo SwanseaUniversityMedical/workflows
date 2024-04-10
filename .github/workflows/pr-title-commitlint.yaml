@@ -82,12 +82,9 @@ jobs:
             ```
             ${{ steps.commitlint.outputs.lint }}
             ```
-            
-            :blue_book: Conventional Commits Docs: https://www.conventionalcommits.org/en/v1.0.0
-            
-            :green_book: Commitlint Docs: https://commitlint.js.org/reference/rules
-            
-            Check the Commitlint config file to review which rules are being applied.
+            :open_book: [Conventional Commits Format Docs](https://www.conventionalcommits.org/en/v1.0.0)  
+            :mag: [Commitlint Config Docs](https://commitlint.js.org/reference/rules)  
+            :desktop_computer: Check the Commitlint config file to review which rules are being applied.
 
       - name: create step summary on good lint
         if: always() && steps.commitlint.outcome == 'success'

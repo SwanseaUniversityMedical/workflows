@@ -9,7 +9,7 @@ on:
       - '.github/actions/pr-container/action.yaml'
       - '.github/actions/release-container/action.yaml'
       - 'containers/whalesay/**'
-      - 'containers/whalesay2/**'
+      - 'containers/aspnet/**'
   push:
     branches:
       - main
@@ -19,7 +19,7 @@ on:
       - '.github/actions/pr-container/action.yaml'
       - '.github/actions/release-container/action.yaml'
       - 'containers/whalesay/**'
-      - 'containers/whalesay2/**'
+      - 'containers/aspnet/**'
 
 permissions:
   actions: read
@@ -31,10 +31,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  container-whalesay:
+  whalesay-container:
     uses: ./.github/workflows/pr-and-release-container.yaml
     with:
-      job-name: container-whalesay
+      job-name: whalesay-container
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
       registry-repo: github-workflows/whalesay
@@ -50,19 +50,19 @@ jobs:
       registry-token: ${{ secrets.HARBOR_TOKEN }}
       slack-token: ${{ secrets.SLACK_TOKEN }}
 
-  container-whalesay2:
-    # Build the whalesay2 container
+  aspnet-container:
+    # Build the aspnet container
     uses: ./.github/workflows/pr-and-release-container.yaml
     with:
-      job-name: container-whalesay2
+      job-name: aspnet-container
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
-      registry-repo: github-workflows/whalesay2
+      registry-repo: github-workflows/aspnet
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
-      release-tag-format: 'whalesay2-${version}'
+      release-tag-format: 'aspnet-${version}'
       slack-channel: ${{ vars.SLACK_CHANNEL }}
-      build-file: containers/whalesay2/Dockerfile
-      build-context: containers/whalesay2
+      build-file: containers/aspnet/Dockerfile
+      build-context: containers/aspnet
     secrets:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -72,8 +72,8 @@ jobs:
   workflows:
       # Release the workflows repo
       needs:
-        - container-whalesay
-        - container-whalesay2
+        - whalesay-container
+        - aspnet-container
       if:  ${{ success() && github.event_name == 'push' }}
 
       uses: ./.github/workflows/on-release-repo.yaml

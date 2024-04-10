@@ -169,7 +169,7 @@ runs:
     - name: create step summary on build success
       shell: bash
       run: |
-        printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
@@ -183,7 +183,7 @@ runs:
       if: failure()
       shell: bash
       run: |
-        printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
@@ -215,19 +215,17 @@ runs:
     - name: append to step summary on cosign success
       shell: bash
       run: |
-        printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: |
-          :heavy_check_mark: Cosign Success
+        SUMMARY: ":heavy_check_mark: Cosign Success  "
 
     - name: append to step summary on cosign error
       if: failure() && (steps.cosign-sign.outcome == 'failure' || steps.cosign-verify.outcome == 'failure')
       shell: bash
       run: |
-        printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: |
-          :x: Cosign Failure
+        SUMMARY: ":x: Cosign Failure"
 
 #    - name: find pr comment
 #      uses: peter-evans/find-comment@v3
@@ -277,19 +275,17 @@ runs:
     - name: append to step summary on test success
       shell: bash
       run: |
-        printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: |
-          :heavy_check_mark: Test Success
+        SUMMARY: ":heavy_check_mark: Test Success"
 
     - name: append to step summary on test error
       if: failure() && steps.test.outcome == 'failure'
       shell: bash
       run: |
-        printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: |
-          :x: Test Failure
+        SUMMARY: ":x: Test Failure"
 
 #    - name: create or update pr comment on test success
 #      uses: peter-evans/create-or-update-comment@v4

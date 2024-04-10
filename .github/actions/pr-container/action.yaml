@@ -213,6 +213,7 @@ runs:
         cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
     - name: append to step summary on cosign success
+      if: success() && (steps.cosign-sign.outcome == 'success' || steps.cosign-verify.outcome == 'success')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -264,7 +265,7 @@ runs:
 
     - name: test
       id: test
-      if: ${{ inputs.test-flags != '' || inputs.test-args != '' }}
+      if: inputs.test-flags != '' || inputs.test-args != ''
       shell: bash
       run: |
         docker run \
@@ -273,6 +274,7 @@ runs:
           ${{ inputs.test-args }}
 
     - name: append to step summary on test success
+      if: success() && steps.test.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"

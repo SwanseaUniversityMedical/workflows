@@ -76,15 +76,15 @@ jobs:
           printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
           printf "COMMENT_BODY<<EOF\n%s\nEOF" "${SUMMARY}" >> "$GITHUB_ENV"
         env:
+          # Note the intentional double spaces at the end of some lines. This is markdown.
           SUMMARY: |
             #### ${{ inputs.comment-header }} - ${{ inputs.comment-error }}
             Expected PR title to be conventional commit format: ie. `type(scope): summary`
             ```
             ${{ steps.commitlint.outputs.lint }}
             ```
-            :open_book: [Conventional Commits Format Docs](https://www.conventionalcommits.org/en/v1.0.0)  
-            :mag: [Commitlint Config Docs](https://commitlint.js.org/reference/rules)  
-            :desktop_computer: Check the Commitlint config file to review which rules are being applied.
+            :open_book: Conventional Commits [Format Docs](https://www.conventionalcommits.org/en/v1.0.0)  
+            :mag: Commitlint [Config File](https://github.com/${{ github.repository }}/blob/${{ github.event.sha }}/${{ inputs.config }}), [Rule Docs](https://commitlint.js.org/reference/rules)   
 
       - name: create step summary on good lint
         if: always() && steps.commitlint.outcome == 'success'

@@ -173,7 +173,7 @@ runs:
       env:
         SUMMARY: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.sha }}
+          ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
@@ -188,7 +188,7 @@ runs:
       env:
         SUMMARY: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.sha }}  
+          ${{ github.event.pull_request.head.sha }}  
           :x: Build Failure
 
     - name: find pr comment
@@ -209,7 +209,7 @@ runs:
         edit-mode: replace
         body: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.sha }}
+          ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
@@ -225,7 +225,7 @@ runs:
         edit-mode: replace
         body: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.sha }}  
+          ${{ github.event.pull_request.head.sha }}  
           :x: Build Failure
 
     - name: cosign image with key
@@ -276,7 +276,7 @@ runs:
         edit-mode: replace
         body: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.sha }}
+          ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
@@ -293,7 +293,7 @@ runs:
         edit-mode: replace
         body: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.sha }}
+          ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
@@ -336,7 +336,7 @@ runs:
         edit-mode: replace
         body: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.sha }}
+          ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
@@ -354,7 +354,7 @@ runs:
         edit-mode: replace
         body: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }}
-          ${{ github.sha }}
+          ${{ github.event.pull_request.head.sha }}
           ```
           docker pull ${{ steps.meta.outputs.tags }}
           docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}

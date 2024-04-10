@@ -10,6 +10,11 @@ inputs:
     default: ":whale: Build PR Container"
     type: string
 
+  comment-enabled:
+    description: "PR comment creation and update."
+    default: "true"
+    type: string
+
   build-file:
       description: "Path to the container file."
       required: true
@@ -197,7 +202,7 @@ runs:
 
     - name: find pr comment
       uses: peter-evans/find-comment@v3
-      if: always()
+      if: inputs.comment-enabled == 'true'
       id: find-pr-comment
       with:
         issue-number: ${{ github.event.pull_request.number }}
@@ -206,6 +211,7 @@ runs:
 
     - name: create or update pr comment on build success
       id: build-pr-comment
+      if: inputs.comment-enabled == 'true'
       uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}

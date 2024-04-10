@@ -55,6 +55,7 @@ jobs:
     uses: ./.github/workflows/pr-and-release-container.yaml
     with:
       job-name: aspnet-container
+      comment-enabled: "false"
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
       registry-repo: github-workflows/aspnet

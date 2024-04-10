@@ -179,9 +179,9 @@ runs:
         SUMMARY: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
           ```
-          docker pull ${{ steps.meta.outputs.tags }}
-          docker pull ${{ steps.hash-meta.outputs.tags }}
-          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+          ${{ steps.meta.outputs.tags }}
+          ${{ steps.hash-meta.outputs.tags }}
+          ${{ steps.build.outputs.digest }}
           ```
           :hammer_and_wrench: Build Success  
 
@@ -214,9 +214,9 @@ runs:
         body: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           ```
-          docker pull ${{ steps.meta.outputs.tags }}
-          docker pull ${{ steps.hash-meta.outputs.tags }}
-          docker pull ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }}
+          ${{ steps.meta.outputs.tags }}
+          ${{ steps.hash-meta.outputs.tags }}
+          ${{ steps.build.outputs.digest }}
           ``` 
 
     - name: cosign image with key

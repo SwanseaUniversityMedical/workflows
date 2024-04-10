@@ -12,7 +12,7 @@ inputs:
 
   comment-enabled:
     description: "PR comment creation and update."
-    default: "true"
+    default: "false"
     type: string
 
   build-file:

@@ -258,16 +258,6 @@ runs:
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RC_TAG }}"
 
-    - name: annotate the ci run with chart tags
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: >-
-        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-        Pushed release candidate chart assets!%0A
-        - %0A
-        helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
-        helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}"
-
     - name: cosign verify chart
       id: cosign-verify-RC-chart
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
@@ -437,16 +427,6 @@ runs:
             body: process.env.RELEASE_NOTES,
             name: "${{ steps.semantic.outputs.git-tag }}${{ inputs.tag-suffix }}"
           });
-
-    - name: annotate the ci run with chart tags
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: >-
-        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-        Pushed release chart version ${{ steps.semantic.outputs.release-version }}!%0A
-        - %0A
-        helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
-        helm pull --version ${{ env.RELEASE_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}"
 
     - name: update slack thread failure
       uses: archive/github-actions-slack@v2.7.0

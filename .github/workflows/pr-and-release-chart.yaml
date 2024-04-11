@@ -12,6 +12,11 @@ on:
         required: true
         type: string
 
+      comment-enabled:
+        description: "PR comment creation and update."
+        default: "false"
+        type: string
+
       test-command:
         description: "Command to test the chart named $CHART."
         default: ''
@@ -140,6 +145,7 @@ jobs:
         uses: ./.tmp/.github/actions/pr-chart
         with:
           job-name: ${{ inputs.job-name }}
+          comment-enabled: ${{ inputs.comment-enabled }}
           registry: ${{ inputs.registry }}
           registry-user: ${{ inputs.registry-user }}
           registry-project: ${{ inputs.registry-project }}

@@ -10,6 +10,11 @@ inputs:
     required: true
     type: string
 
+  comment-header:
+    description: "Header line for the Release summary."
+    default: ":whale: Build Release Container"
+    type: string
+
   test-command:
     description: "Command to test the chart named $CHART."
     default: ''

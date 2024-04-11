@@ -10,6 +10,16 @@ inputs:
     required: true
     type: string
 
+  comment-header:
+    description: "Header line for the PR comment."
+    default: ":whale: Build PR Chart"
+    type: string
+
+  comment-enabled:
+    description: "PR comment creation and update."
+    default: "false"
+    type: string
+
   test-command:
     description: "Command to test the chart named $CHART."
     default: ''

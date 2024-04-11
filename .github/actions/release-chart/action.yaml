@@ -427,22 +427,3 @@ runs:
             body: process.env.RELEASE_NOTES,
             name: "${{ steps.semantic.outputs.git-tag }}${{ inputs.tag-suffix }}"
           });
-
-    - name: update slack thread failure
-      uses: archive/github-actions-slack@v2.7.0
-      if: failure()
-      continue-on-error: true
-      with:
-        slack-bot-user-oauth-access-token: ${{ inputs.slack-token }}
-        slack-channel: ${{ inputs.slack-channel }}
-        slack-text: |
-          *${{ github.repository }}*\n
-          *Release ${{ github.ref }}*\n
-          :no_entry: job: ${{ github.job }} / ${{ inputs.job-name }}\n
-          <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
-          ```
-          Ref:      ${{ github.ref }}\n
-          Sha:      ${{ github.sha }}\n
-          Workflow: ${{ github.workflow }}\n
-          Run:      ${{ github.run_id }}
-          ```

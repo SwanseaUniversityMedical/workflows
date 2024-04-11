@@ -166,6 +166,27 @@ runs:
               "failTitle": false
             }]
           ]
+
+    - name: create step summary on new release
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}
+          :label: New version will be ${{ steps.semantic.outputs.release-version }}  
+
+    - name: create step summary on skipped release
+      if: success() && steps.semantic.outputs.new-release-published != 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}  
+          :desert_island: Skipping release!
+
     - name: create release tag
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash

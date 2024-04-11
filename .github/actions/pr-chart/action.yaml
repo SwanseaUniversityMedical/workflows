@@ -189,11 +189,13 @@ runs:
         SUMMARY: ":x: Cosign Failure"
 
     - name: package chart with pr commit tag
+      id: helm-package-pr-commit
       shell: bash
       run: |
         helm package ${{ inputs.chart }} --version ${{ env.PR_COMMIT_TAG }} --app-version ${{ env.PR_COMMIT_TAG }}
 
     - name: push chart with pr commit tag
+      id: helm-push-pr-commit
       shell: bash
       run: |
         helm push ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_REPO }}
@@ -210,7 +212,7 @@ runs:
           :hammer_and_wrench: Push Success  
 
     - name: create step summary on failure
-      if: failure()
+      if: failure() && (steps.helm-package-pr-commit.outcome == 'failure' || steps.helm-push-pr-commit.outcome == 'failure')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"

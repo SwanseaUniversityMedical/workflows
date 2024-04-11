@@ -298,6 +298,22 @@ runs:
       shell: bash
       run: ${{ inputs.test-command }}
 
+    - name: append to step summary on test success
+      if: success() && steps.test.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":eyes: Test Success"
+
+    - name: append to step summary on test error
+      if: failure() && steps.test.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Test Failure"
+
     - name: update slack thread failure
       uses: archive/github-actions-slack@v2.7.0
       continue-on-error: true

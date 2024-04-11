@@ -223,7 +223,6 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
           ```
           helm pull --version ${{ steps.semantic.outputs.release-version }}-rc${{ inputs.tag-suffix }}
           ```
@@ -235,8 +234,7 @@ runs:
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
+        SUMMARY: |  
           :x: Push Failure
 
     - name: cosign tag
@@ -358,8 +356,7 @@ runs:
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
+        SUMMARY: |  
           :x: Push Failure
 
     - name: cosign tag
@@ -433,7 +430,6 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
           :hammer_and_wrench: Release successful  
 
     - name: create step summary on failure
@@ -442,6 +438,5 @@ runs:
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
+        SUMMARY: |  
           :x: Release Failure

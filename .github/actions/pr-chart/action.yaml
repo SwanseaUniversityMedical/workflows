@@ -215,8 +215,7 @@ runs:
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
+        SUMMARY: |  
           :x: Push Failure
 
     - name: find pr comment

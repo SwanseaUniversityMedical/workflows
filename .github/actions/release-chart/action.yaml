@@ -178,7 +178,7 @@ runs:
           :label: New version will be ${{ steps.semantic.outputs.release-version }}  
 
     - name: create step summary on skipped release
-      if: success() && steps.semantic.outputs.new-release-published != 'true'
+      if: steps.semantic.outputs.new-release-published != 'true'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -187,38 +187,24 @@ runs:
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}  
           :desert_island: Skipping release!
 
-    - name: create release tag
+    - name: create tags
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         echo "RELEASE_TAG=${{ steps.semantic.outputs.release-version }}${{ inputs.tag-suffix }}" >> $GITHUB_ENV
-
-    - name: create RC tags
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: |
         echo "RC_TAG=${{ steps.semantic.outputs.release-version }}-rc${{ inputs.tag-suffix }}" >> $GITHUB_ENV
 
-    - name: update chart dependencies
+    - name: package rc chart
+      id: helm-rc
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         helm dependency update ${{ inputs.chart }}
-
-    - name: package chart
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: |
         helm package ${{ inputs.chart }} --version ${{ env.RC_TAG }} --app-version ${{ env.RC_TAG }}
-
-    - name: push chart
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: |
         helm push ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
     - name: create step summary on push success
-      if: steps.semantic.outputs.new-release-published == 'true'
+      if: steps.helm-rc.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -227,85 +213,62 @@ runs:
           ```
           ${{ inputs.registry }}/${{ inputs.registry-project }}/chart/${{ inputs.registry-repo }}:${{ steps.semantic.outputs.release-version }}-rc${{ inputs.tag-suffix }}
           ```
-          :hammer_and_wrench: RC pushed  
+          :hammer_and_wrench: Build Success  
 
     - name: create step summary on failure
-      if: failure()
+      if: failure() && steps.helm-rc.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: |  
-          :x: Push Failure
+        SUMMARY: ":x: Build Failure"
 
-    - name: cosign tag
-      id: cosign-sign-rc-tag
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+    - name: cosign rc tag
+      id: cosign-rc
+      if: inputs.cosign-public-key != '' && steps.helm-rc.outcome == 'success'
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-      shell: bash
-      run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RC_TAG }}"
-
-    - name: cosign verify tag
-      id: cosign-verify-rc-tag
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
-      env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        TAG: ${{ env.RC_TAG }}
       shell: bash
       run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RC_TAG }}"
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG//\+/_}"
 
-    - name: cosign verify chart
-      id: cosign-verify-rc-chart
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
-      env:
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        DIGEST: ${{ env.RC_TAG }}
-      shell: bash
-      run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${DIGEST//\+/_}"
-
-    - name: append to step summary on cosign success
-      if: success() && (steps.cosign-sign-rc-tag.outcome == 'success' || steps.cosign-verify-rc-tag.outcome == 'success' || steps.cosign-verify-rc-chart.outcome == 'success')
+    - name: cosign success
+      if: steps.cosign-rc.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: ":black_nib: Cosign Success  "
 
-    - name: append to step summary on cosign error
-      if: failure() && (steps.cosign-sign-rc-tag.outcome == 'failure' || steps.cosign-verify-rc-tag.outcome == 'failure' || steps.cosign-verify-rc-chart.outcome == 'failure')
+    - name: cosign error
+      if: failure() && steps.cosign-rc.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: ":x: Cosign Failure"
-    - name: pull chart
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: |
-        helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}
-
-    - name: build chart install name
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: |
-        echo "CHART=$(echo ${{ inputs.registry-repo }}-${{ env.RC_TAG}}.tgz)" >> $GITHUB_ENV
 
     - name: test chart
-      if: ${{ inputs.test-command != '' && steps.semantic.outputs.new-release-published == 'true' }}
+      id: test
+      if: inputs.test-command != '' && steps.helm-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure'
       shell: bash
-      run: ${{ inputs.command }}
+      run: |
+        set -x
+        CHART="${{ inputs.registry-repo }}-${{ env.RC_TAG}}.tgz"
+        ${{ inputs.command }}
 
     - name: append to step summary on test success
-      if: success() && steps.test.outcome == 'success'
+      if: steps.test.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":eyes: Test Success"
+        SUMMARY: ":eyes: Test Success  "
 
     - name: append to step summary on test error
       if: failure() && steps.test.outcome == 'failure'
@@ -315,35 +278,20 @@ runs:
       env:
         SUMMARY: ":x: Test Failure"
 
-    - name: pull chart
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: package release chart
+      id: helm-release
+      if: steps.helm-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
       shell: bash
       run: |
+        set -x
         helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}
-
-    - name: unpack chart
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: |
         mkdir -p ./repackage/
         tar -zxvf ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz -C ./repackage/
-
-    - name: repackage chart
-      id: helm-package-release-tag
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: |
         helm package ./repackage/${{ inputs.registry-repo }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }}
-
-    - name: push chart
-      id: helm-push-release-tag
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: |
         helm push ${{ inputs.registry-repo }}-${{ env.RELEASE_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
     - name: create step summary on push success
-      if: steps.semantic.outputs.new-release-published == 'true'
+      if: steps.helm-release.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -352,56 +300,40 @@ runs:
           ```
           ${{ inputs.registry }}/${{ inputs.registry-project }}/chart/${{ inputs.registry-repo }}:${{ steps.semantic.outputs.release-version }}${{ inputs.tag-suffix }}
           ```
-          :hammer_and_wrench: Release pushed  
+          :hammer_and_wrench: Release Build Success  
 
     - name: create step summary on failure
-      if: failure() && (steps.helm-package-release-tag.outcome == 'failure' || steps.helm-push-release-tag.outcome == 'failure')
+      if: failure() && steps.helm-release.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: |  
-          :x: Push Failure
+        SUMMARY: ":x: Release Build Failure"
 
-    - name: cosign tag
-      id: cosign-sign-release-tag
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+    - name: cosign release tag
+      id: cosign-release
+      if: inputs.cosign-public-key != '' && steps.helm-release.outcome == 'success'
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-      shell: bash
-      run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RELEASE_TAG }}"
-
-    - name: cosign verify tag
-      id: cosign-verify-release-tag
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
-      env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        TAG: ${{ env.RELEASE_TAG }}
       shell: bash
       run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RELEASE_TAG }}"
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG//\+/_}"
 
-    - name: cosign verify chart
-      id: cosign-verify-release-chart
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
-      env:
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        DIGEST: ${{ env.RELEASE_TAG }}
-      shell: bash
-      run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${DIGEST//\+/_}"
-
-    - name: append to step summary on cosign success
-      if: success() && (steps.cosign-sign-release-tag.outcome == 'success' || steps.cosign-verify-release-tag.outcome == 'success' || steps.cosign-verify-release-chart.outcome == 'success')
+    - name: cosign success
+      if: steps.cosign-release.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: ":black_nib: Cosign Success  "
 
-    - name: append to step summary on cosign error
-      if: failure() && (steps.cosign-sign-release-tag.outcome == 'failure' || steps.cosign-verify-release-tag.outcome == 'failure' || steps.cosign-verify-release-chart.outcome == 'failure')
+    - name: cosign error
+      if: failure() && steps.cosign-release.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -409,9 +341,9 @@ runs:
         SUMMARY: ":x: Cosign Failure"
 
     - name: release
-      if: steps.semantic.outputs.new-release-published == 'true'
-      uses: actions/github-script@v7
       id: release
+      if: steps.helm-release.outcome == 'success' && steps.cosign-release.outcome != 'failure'
+      uses: actions/github-script@v7
       env:
         RELEASE_NOTES: |
           ${{ steps.semantic.outputs.release-notes }}

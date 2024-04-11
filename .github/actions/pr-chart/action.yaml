@@ -264,16 +264,6 @@ runs:
       env:
         SUMMARY: ":x: Cosign Failure"
 
-    - name: annotate the ci run with chart tags
-      shell: bash
-      run: >-
-        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-        Pushed PR chart assets!%0A
-        - %0A
-        helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
-        helm pull --version ${{ env.PR_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}%0A
-        helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}"
-
     - name: cosign verify chart
       if: inputs.cosign-public-key != ''
       env:

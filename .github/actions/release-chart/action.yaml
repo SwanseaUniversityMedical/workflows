@@ -238,7 +238,7 @@ runs:
           :x: Push Failure
 
     - name: cosign tag
-      id: cosign-sign-RC-tag
+      id: cosign-sign-rc-tag
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
@@ -248,7 +248,7 @@ runs:
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RC_TAG }}"
 
     - name: cosign verify tag
-      id: cosign-verify-RC-tag
+      id: cosign-verify-rc-tag
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
@@ -257,7 +257,7 @@ runs:
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RC_TAG }}"
 
     - name: cosign verify chart
-      id: cosign-verify-RC-chart
+      id: cosign-verify-rc-chart
       if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
@@ -267,7 +267,7 @@ runs:
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${DIGEST//\+/_}"
 
     - name: append to step summary on cosign success
-      if: success() && (steps.cosign-sign-RC-tag.outcome == 'success' || steps.cosign-verify-RC-tag.outcome == 'success' || steps.cosign-verify-RC-chart.outcome == 'success')
+      if: success() && (steps.cosign-sign-rc-tag.outcome == 'success' || steps.cosign-verify-rc-tag.outcome == 'success' || steps.cosign-verify-rc-chart.outcome == 'success')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -275,7 +275,7 @@ runs:
         SUMMARY: ":black_nib: Cosign Success  "
 
     - name: append to step summary on cosign error
-      if: failure() && (steps.cosign-sign-RC-tag.outcome == 'failure' || steps.cosign-verify-RC-tag.outcome == 'failure' || steps.cosign-verify-RC-chart.outcome == 'failure')
+      if: failure() && (steps.cosign-sign-rc-tag.outcome == 'failure' || steps.cosign-verify-rc-tag.outcome == 'failure' || steps.cosign-verify-rc-chart.outcome == 'failure')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -399,7 +399,7 @@ runs:
         SUMMARY: ":black_nib: Cosign Success  "
 
     - name: append to step summary on cosign error
-      if: failure() && (steps.cosign-sign-commit-tag.outcome == 'failure' || steps.cosign-verify-commit-tag.outcome == 'failure' || steps.cosign-verify-release-chart.outcome == 'failure')
+      if: failure() && (steps.cosign-sign-release-tag.outcome == 'failure' || steps.cosign-verify-release-tag.outcome == 'failure' || steps.cosign-verify-release-chart.outcome == 'failure')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -435,7 +435,7 @@ runs:
           :hammer_and_wrench: Release successful  
 
     - name: create step summary on failure
-      if: failure()
+      if: failure() && steps.release.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"

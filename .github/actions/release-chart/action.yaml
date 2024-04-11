@@ -427,3 +427,22 @@ runs:
             body: process.env.RELEASE_NOTES,
             name: "${{ steps.semantic.outputs.git-tag }}${{ inputs.tag-suffix }}"
           });
+
+    - name: create step summary on release success
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
+          :hammer_and_wrench: Release successful  
+
+    - name: create step summary on failure
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
+          :x: Release Failure

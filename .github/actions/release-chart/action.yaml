@@ -218,6 +218,7 @@ runs:
         helm push ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
     - name: create step summary on push success
+      if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -342,6 +343,7 @@ runs:
         helm push ${{ inputs.registry-repo }}-${{ env.RELEASE_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
     - name: create step summary on push success
+      if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"

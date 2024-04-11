@@ -182,6 +182,29 @@ runs:
       run: |
         helm push ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
+    - name: create step summary on build success
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
+          ```
+          PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}
+          PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}
+          ```
+          :hammer_and_wrench: Build Success  
+
+    - name: create step summary on failure
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
+          :x: Build Failure
+
     - name: find pr comment
       uses: peter-evans/find-comment@v3
       if: inputs.comment-enabled == 'true'

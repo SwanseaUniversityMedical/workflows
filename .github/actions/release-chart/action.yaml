@@ -224,8 +224,7 @@ runs:
       env:
         SUMMARY: |
           ```
-          helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
-          helm pull --version ${{ steps.semantic.outputs.release-version }}-rc${{ inputs.tag-suffix }}
+          ${{ inputs.registry }}/${{ inputs.registry-project }}/charts/${{ inputs.registry-repo }}:${{ steps.semantic.outputs.release-version }}-rc${{ inputs.tag-suffix }}
           ```
           :hammer_and_wrench: RC pushed  
 
@@ -347,8 +346,7 @@ runs:
       env:
         SUMMARY: |
           ```
-          helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
-          helm pull --version ${{ steps.semantic.outputs.release-version }}${{ inputs.tag-suffix }}
+          ${{ inputs.registry }}/${{ inputs.registry-project }}/charts/${{ inputs.registry-repo }}:${{ steps.semantic.outputs.release-version }}${{ inputs.tag-suffix }}
           ```
           :hammer_and_wrench: Release pushed  
 

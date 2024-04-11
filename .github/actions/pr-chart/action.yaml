@@ -181,7 +181,7 @@ runs:
         SUMMARY: ":black_nib: Cosign Success  "
 
     - name: append to step summary on cosign error
-      if: failure() && (steps.cosign-sign-pr-tag.outcome == 'success' || steps.cosign-verify-pr-tag.outcome == 'success')
+      if: failure() && (steps.cosign-sign-pr-tag.outcome == 'failure' || steps.cosign-verify-pr-tag.outcome == 'failure')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -272,7 +272,7 @@ runs:
         SUMMARY: ":black_nib: Cosign Success  "
 
     - name: append to step summary on cosign error
-      if: failure() && (steps.cosign-sign-commit-tag.outcome == 'success' || steps.cosign-verify-commit-tag.outcome == 'success')
+      if: failure() && (steps.cosign-sign-commit-tag.outcome == 'failure' || steps.cosign-verify-commit-tag.outcome == 'failure')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"

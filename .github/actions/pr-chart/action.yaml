@@ -155,6 +155,7 @@ runs:
 
     - name: cosign pr tag
       if: inputs.cosign-public-key != ''
+      id: cosign-sign-pr-tag
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
@@ -164,6 +165,7 @@ runs:
 
     - name: cosign verify pr tag
       if: inputs.cosign-public-key != ''
+      id: cosign-verify-pr-tag
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
       shell: bash
@@ -229,6 +231,7 @@ runs:
 
     - name: cosign pr commit tag
       if: inputs.cosign-public-key != ''
+      id: cosign-sign-commit-tag
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
@@ -237,12 +240,29 @@ runs:
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${PR_COMMIT_TAG//\+/_}"
 
     - name: cosign verify pr commit tag
+      id: cosign-verify-commit-tag
       if: inputs.cosign-public-key != ''
       env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
       shell: bash
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${PR_COMMIT_TAG//\+/_}"
+
+    - name: append to step summary on cosign success
+      if: success() && (steps.cosign-sign-commit-tag.outcome == 'success' || steps.cosign-verify-commit-tag.outcome == 'success' || steps.cosign-sign-pr-tag.outcome == 'success' || steps.cosign-verify-pr-tag.outcome == 'success')
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: append to step summary on cosign error
+      if: failure() && (steps.cosign-sign-commit-tag.outcome == 'success' || steps.cosign-verify-commit-tag.outcome == 'success' || steps.cosign-sign-pr-tag.outcome == 'success' || steps.cosign-verify-pr-tag.outcome == 'success')
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
 
     - name: annotate the ci run with chart tags
       shell: bash

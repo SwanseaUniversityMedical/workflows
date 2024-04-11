@@ -139,7 +139,7 @@ runs:
         SUMMARY: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
           ```
-          PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}
+          helm pull --version 0.0.0-pr.${{ github.event.pull_request.number }}
           ```
           :hammer_and_wrench: Push Success  
 
@@ -205,7 +205,7 @@ runs:
       env:
         SUMMARY: |
           ```
-          PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}
+          helm pull --version 0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}
           ```
           :hammer_and_wrench: Push Success  
 
@@ -240,7 +240,10 @@ runs:
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           ```
           PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}
+          helm pull --version 0.0.0-pr.${{ github.event.pull_request.number }}
+          
           PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}
+          helm pull --version 0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}
           ``` 
 
     - name: cosign pr commit tag

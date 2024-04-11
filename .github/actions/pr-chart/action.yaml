@@ -131,6 +131,28 @@ runs:
       run: |
         helm push ${{ inputs.registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_REPO }}
 
+    - name: create step summary on push success
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
+          ```
+          PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}
+          ```
+          :hammer_and_wrench: Push Success  
+
+    - name: create step summary on failure
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
+          :x: Push Failure
+
     - name: cosign pr tag
       if: inputs.cosign-public-key != ''
       id: cosign-sign-pr-tag
@@ -150,6 +172,22 @@ runs:
       run: |
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.PR_TAG }}"
 
+    - name: append to step summary on cosign success
+      if: success() && (steps.cosign-sign-pr-tag.outcome == 'success' || steps.cosign-verify-pr-tag.outcome == 'success')
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: append to step summary on cosign error
+      if: failure() && (steps.cosign-sign-pr-tag.outcome == 'success' || steps.cosign-verify-pr-tag.outcome == 'success')
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
+
     - name: package chart with pr commit tag
       shell: bash
       run: |
@@ -168,7 +206,6 @@ runs:
         SUMMARY: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
           ```
-          PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}
           PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}
           ```
           :hammer_and_wrench: Push Success  
@@ -227,7 +264,7 @@ runs:
         cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${PR_COMMIT_TAG//\+/_}"
 
     - name: append to step summary on cosign success
-      if: success() && (steps.cosign-sign-commit-tag.outcome == 'success' || steps.cosign-verify-commit-tag.outcome == 'success' || steps.cosign-sign-pr-tag.outcome == 'success' || steps.cosign-verify-pr-tag.outcome == 'success')
+      if: success() && (steps.cosign-sign-commit-tag.outcome == 'success' || steps.cosign-verify-commit-tag.outcome == 'success')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -235,7 +272,7 @@ runs:
         SUMMARY: ":black_nib: Cosign Success  "
 
     - name: append to step summary on cosign error
-      if: failure() && (steps.cosign-sign-commit-tag.outcome == 'success' || steps.cosign-verify-commit-tag.outcome == 'success' || steps.cosign-sign-pr-tag.outcome == 'success' || steps.cosign-verify-pr-tag.outcome == 'success')
+      if: failure() && (steps.cosign-sign-commit-tag.outcome == 'success' || steps.cosign-verify-commit-tag.outcome == 'success')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"

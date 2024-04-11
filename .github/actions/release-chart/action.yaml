@@ -347,7 +347,6 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
           ```
           RELEASE_TAG=${{ steps.semantic.outputs.release-version }}${{ inputs.tag-suffix }}
           ```

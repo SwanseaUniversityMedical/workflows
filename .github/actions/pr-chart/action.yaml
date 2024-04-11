@@ -204,7 +204,6 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
           ```
           PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}
           ```

@@ -231,11 +231,12 @@ runs:
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         TAG: ${{ env.RC_TAG }}
+        REPO: ${{ env.CHART_REPO }}/${{ inputs.registry-repo }}
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG//\+/_}"
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${REPO}:${TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${REPO}:${TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${REPO}:${TAG//\+/_}"
 
     - name: cosign success
       if: steps.cosign-rc.outcome == 'success'
@@ -298,7 +299,7 @@ runs:
       env:
         SUMMARY: |
           ```
-          ${{ inputs.registry }}/${{ inputs.registry-project }}/chart/${{ inputs.registry-repo }}:${{ steps.semantic.outputs.release-version }}${{ inputs.tag-suffix }}
+          ${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ steps.semantic.outputs.release-version }}${{ inputs.tag-suffix }}
           ```
           :hammer_and_wrench: Release Build Success  
 
@@ -318,11 +319,12 @@ runs:
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         TAG: ${{ env.RELEASE_TAG }}
+        REPO: ${{ env.CHART_REPO }}/${{ inputs.registry-repo }}
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${TAG//\+/_}"
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${REPO}:${TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${REPO}:${TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${REPO}:${TAG//\+/_}"
 
     - name: cosign success
       if: steps.cosign-release.outcome == 'success'

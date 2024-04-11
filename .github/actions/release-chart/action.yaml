@@ -12,7 +12,7 @@ inputs:
 
   comment-header:
     description: "Header line for the Release summary."
-    default: ":whale: Push Release Chart"
+    default: ":anchor: Push Release Chart"
     type: string
 
   test-command:

@@ -12,7 +12,7 @@ inputs:
 
   comment-header:
     description: "Header line for the PR comment."
-    default: ":whale: Push PR Chart"
+    default: ":anchor: Push PR Chart"
     type: string
 
   comment-enabled:

@@ -120,6 +120,8 @@ runs:
         helm dependency update ${{ inputs.chart }}
         helm package ${{ inputs.chart }} --version ${{ env.PR_TAG }}
         helm push ${{ inputs.registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
+        helm package ${{ inputs.chart }} --version ${{ env.PR_COMMIT_TAG }}
+        helm push ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
 
     - name: build success
       if: steps.helm.outcome == 'success'
@@ -131,6 +133,7 @@ runs:
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}
           ```
           ${{ env.CHART_REPO }}:${{ env.PR_TAG }}
+          ${{ env.CHART_REPO }}:${{ env.PR_COMMIT_TAG }}
           ```
           :hammer_and_wrench: Build Success  
 
@@ -163,6 +166,7 @@ runs:
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           ```
           ${{ env.CHART_REPO }}:${{ env.PR_TAG }}
+          ${{ env.CHART_REPO }}:${{ env.PR_COMMIT_TAG }}
           ``` 
 
     - name: cosign chart
@@ -177,6 +181,9 @@ runs:
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${PR_TAG}"
         cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${PR_TAG}"
         cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${PR_TAG//\+/_}"
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${PR_COMMIT_TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${PR_COMMIT_TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${PR_COMMIT_TAG//\+/_}"
 
     - name: cosign success
       if: steps.cosign.outcome == 'success'
@@ -200,7 +207,7 @@ runs:
       shell: bash
       run: |
         set -x
-        CHART="${{ inputs.registry-repo }}-${{ env.PRs_TAG }}.tgz"
+        CHART="${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz"
         ${{ inputs.command }}
 
     - name: test success

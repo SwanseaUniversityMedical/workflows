@@ -128,6 +128,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}
           ```
           ${{ env.CHART_REPO }}:${{ env.PR_TAG }}
           ```

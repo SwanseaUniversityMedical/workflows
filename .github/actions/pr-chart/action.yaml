@@ -147,7 +147,7 @@ runs:
 
     - name: find pr comment
       uses: peter-evans/find-comment@v3
-      if: inputs.comment-enabled == 'true'
+      if: inputs.comment-enabled == 'true' && steps.helm.outcome == 'success'
       id: find-pr-comment
       with:
         issue-number: ${{ github.event.pull_request.number }}
@@ -156,7 +156,7 @@ runs:
 
     - name: comment on build success
       id: build-pr-comment
-      if: inputs.comment-enabled == 'true'
+      if: inputs.comment-enabled == 'true' && steps.helm.outcome == 'success'
       uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}

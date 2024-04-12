@@ -36,6 +36,7 @@ jobs:
     uses: ./.github/workflows/pr-and-release-chart.yaml
     with:
       job-name: chart-helloworld
+      comment-enabled: 'true'
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
       registry-project: ${{ vars.HARBOR_PROJECT }}

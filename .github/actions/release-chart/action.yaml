@@ -295,7 +295,7 @@ runs:
           ```
           ${{ env.CHART_REPO }}:${{ env.RELEASE_TAG }}
           ```
-          :hammer_and_wrench: Release Build Success  
+          :hammer_and_wrench: Build Success  
 
     - name: build failure
       if: failure() && steps.helm-release.outcome == 'failure'
@@ -303,7 +303,7 @@ runs:
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":x: Release Build Failure"
+        SUMMARY: ":x: Build Failure"
 
     - name: cosign release
       id: cosign-release

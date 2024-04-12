@@ -10,6 +10,11 @@ inputs:
     required: true
     type: string
 
+  comment-header:
+    description: "Header line for the Release summary."
+    default: ":anchor: Build Release Chart"
+    type: string
+
   test-command:
     description: "Command to test the chart named $CHART."
     default: ''
@@ -130,16 +135,17 @@ runs:
     - name: login to chart registry
       shell: bash
       run: |
-        set -x
         helm registry login \
           --username '${{ inputs.registry-user }}' \
           --password '${{ inputs.registry-token }}' \
           ${{ inputs.registry }}
 
-    - name: build chart uri
+    - name: create chart repo url
       shell: bash
       run: |
-        echo "CHART_REPO=${{ inputs.registry }}/${{ inputs.registry-project }}/chart" >> $GITHUB_ENV    
+        CHART_PROJECT="${{ inputs.registry }}/${{ inputs.registry-project }}/chart"
+        echo "CHART_PROJECT=$CHART_PROJECT" >> $GITHUB_ENV
+        echo "CHART_REPO=$CHART_PROJECT/${{ inputs.registry-repo }}" >> $GITHUB_ENV
 
     - name: determine release
       uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
@@ -161,144 +167,176 @@ runs:
               "failTitle": false
             }]
           ]
-    - name: create release tag
+
+    - name: new release
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}
+          :label: New version will be ${{ steps.semantic.outputs.release-version }}  
+
+    - name: skipped release
+      if: steps.semantic.outputs.new-release-published != 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}  
+          :desert_island: Skipping release!
+
+    - name: create tags
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         echo "RELEASE_TAG=${{ steps.semantic.outputs.release-version }}${{ inputs.tag-suffix }}" >> $GITHUB_ENV
-
-    - name: create RC tags
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: |
         echo "RC_TAG=${{ steps.semantic.outputs.release-version }}-rc${{ inputs.tag-suffix }}" >> $GITHUB_ENV
 
-    - name: update chart dependencies
+    - name: build release candidate chart
+      id: helm-rc
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         helm dependency update ${{ inputs.chart }}
+        helm package ${{ inputs.chart }} --version ${{ env.RC_TAG }}
+        helm push ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
 
-    - name: package chart
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: build success
+      if: steps.helm-rc.outcome == 'success'
       shell: bash
       run: |
-        helm package ${{ inputs.chart }} --version ${{ env.RC_TAG }} --app-version ${{ env.RC_TAG }}
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ```
+          ${{ env.CHART_REPO }}:${{ env.RC_TAG }}
+          ```
+          :hammer_and_wrench: Build Success  
 
-    - name: push chart
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: build failure
+      if: failure() && steps.helm-rc.outcome == 'failure'
       shell: bash
       run: |
-        helm push ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz oci://${{ env.CHART_REPO }}
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Build Failure"
 
-    - name: cosign tag
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+    - name: cosign release candidate
+      id: cosign-rc
+      if: inputs.cosign-public-key != '' && steps.helm-rc.outcome == 'success'
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-      shell: bash
-      run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RC_TAG }}"
-
-    - name: cosign verify tag
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
-      env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
       shell: bash
       run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RC_TAG }}"
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${RC_TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RC_TAG}"
 
-    - name: annotate the ci run with chart tags
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: cosign success
+      if: steps.cosign-rc.outcome == 'success'
       shell: bash
-      run: >-
-        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-        Pushed release candidate chart assets!%0A
-        - %0A
-        helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
-        helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}"
-
-    - name: cosign verify chart
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        DIGEST: ${{ env.RC_TAG }}
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: cosign error
+      if: failure() && steps.cosign-rc.outcome == 'failure'
       shell: bash
       run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${DIGEST//\+/_}"
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
 
-    - name: pull chart
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: test release candidate
+      id: test
+      if: inputs.test-command != '' && steps.helm-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure'
       shell: bash
       run: |
-        helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}
+        set -x
+        CHART="${{ inputs.registry-repo }}-${{ env.RC_TAG}}.tgz"
+        ${{ inputs.command }}
 
-    - name: build chart install name
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: test success
+      if: steps.test.outcome == 'success'
       shell: bash
       run: |
-        echo "CHART=$(echo ${{ inputs.registry-repo }}-${{ env.RC_TAG}}.tgz)" >> $GITHUB_ENV
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":eyes: Test Success  "
 
-    - name: test chart
-      if: ${{ inputs.test-command != '' && steps.semantic.outputs.new-release-published == 'true' }}
-      shell: bash
-      run: ${{ inputs.command }}
-
-    - name: pull chart
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: test error
+      if: failure() && steps.test.outcome == 'failure'
       shell: bash
       run: |
-        helm pull --version ${{ env.RC_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Test Failure"
 
-    - name: unpack chart
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: build release chart
+      id: helm-release
+      if: steps.helm-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
       shell: bash
       run: |
-        mkdir -p ./repackage/
-        tar -zxvf ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz -C ./repackage/
+        helm package ${{ inputs.chart }} --version ${{ env.RELEASE_TAG }}
+        helm push ${{ inputs.registry-repo }}-${{ env.RELEASE_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
 
-    - name: repackage chart
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: build success
+      if: steps.helm-release.outcome == 'success'
       shell: bash
       run: |
-        helm package ./repackage/${{ inputs.registry-repo }} --version ${{ env.RELEASE_TAG }} --app-version ${{ env.RELEASE_TAG }}
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ```
+          ${{ env.CHART_REPO }}:${{ env.RELEASE_TAG }}
+          ```
+          :hammer_and_wrench: Build Success  
 
-    - name: push chart
-      if: steps.semantic.outputs.new-release-published == 'true'
+    - name: build failure
+      if: failure() && steps.helm-release.outcome == 'failure'
       shell: bash
       run: |
-        helm push ${{ inputs.registry-repo }}-${{ env.RELEASE_TAG }}.tgz oci://${{ env.CHART_REPO }}
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Build Failure"
 
-    - name: cosign tag
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
+    - name: cosign release
+      id: cosign-release
+      if: inputs.cosign-public-key != '' && steps.helm-release.outcome == 'success'
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-      shell: bash
-      run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RELEASE_TAG }}"
-
-    - name: cosign verify tag
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
-      env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
       shell: bash
       run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.RELEASE_TAG }}"
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${RELEASE_TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RELEASE_TAG}"
 
-    - name: cosign verify chart
-      if: inputs.cosign-public-key != '' && steps.semantic.outputs.new-release-published == 'true'
-      env:
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        DIGEST: ${{ env.RELEASE_TAG }}
+    - name: cosign success
+      if: steps.cosign-release.outcome == 'success'
       shell: bash
       run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${DIGEST//\+/_}"
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
 
-    - name: release
-      if: steps.semantic.outputs.new-release-published == 'true'
-      uses: actions/github-script@v7
+    - name: cosign error
+      if: failure() && steps.cosign-release.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
+
+    - name: github release
       id: release
+      if: steps.helm-release.outcome == 'success' && steps.cosign-release.outcome != 'failure'
+      uses: actions/github-script@v7
       env:
         RELEASE_NOTES: |
           ${{ steps.semantic.outputs.release-notes }}
@@ -315,31 +353,12 @@ runs:
             name: "${{ steps.semantic.outputs.git-tag }}${{ inputs.tag-suffix }}"
           });
 
-    - name: annotate the ci run with chart tags
-      if: steps.semantic.outputs.new-release-published == 'true'
-      shell: bash
-      run: >-
-        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-        Pushed release chart version ${{ steps.semantic.outputs.release-version }}!%0A
-        - %0A
-        helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
-        helm pull --version ${{ env.RELEASE_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}"
-
-    - name: update slack thread failure
-      uses: archive/github-actions-slack@v2.7.0
+    - name: error
       if: failure()
-      continue-on-error: true
-      with:
-        slack-bot-user-oauth-access-token: ${{ inputs.slack-token }}
-        slack-channel: ${{ inputs.slack-channel }}
-        slack-text: |
-          *${{ github.repository }}*\n
-          *Release ${{ github.ref }}*\n
-          :no_entry: job: ${{ github.job }} / ${{ inputs.job-name }}\n
-          <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
-          ```
-          Ref:      ${{ github.ref }}\n
-          Sha:      ${{ github.sha }}\n
-          Workflow: ${{ github.workflow }}\n
-          Run:      ${{ github.run_id }}
-          ```
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during execution! Check the workflow run logs for details!

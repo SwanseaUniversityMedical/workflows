@@ -10,6 +10,16 @@ inputs:
     required: true
     type: string
 
+  comment-header:
+    description: "Header line for the PR comment."
+    default: ":anchor: Build PR Chart"
+    type: string
+
+  comment-enabled:
+    description: "PR comment creation and update."
+    default: "false"
+    type: string
+
   test-command:
     description: "Command to test the chart named $CHART."
     default: ''
@@ -64,22 +74,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: build chart uri
-      shell: bash
-      run: |
-        echo "CHART_REPO=${{ inputs.registry }}/${{ inputs.registry-project }}/chart" >> $GITHUB_ENV
-
-    - name: get short commit sha
-      shell: bash
-      run: |
-        echo "GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`" >> $GITHUB_ENV
-
-    - name: create tags
-      shell: bash
-      run: |
-        echo "PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
-        echo "PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${{ env.GITHUB_SHORT_SHA }}" >> $GITHUB_ENV
-
     - name: install cosign
       if: inputs.cosign-public-key != ''
       uses: sigstore/cosign-installer@v3.1.2
@@ -105,118 +99,137 @@ runs:
           --username '${{ inputs.registry-user }}' \
           --password '${{ inputs.registry-token }}' \
           ${{ inputs.registry }}
+        
+    - name: create tags
+      shell: bash
+      run: |
+        GITHUB_SHORT_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-7`
+        echo "GITHUB_SHORT_SHA=$GITHUB_SHORT_SHA" >> $GITHUB_ENV
+        
+        CHART_PROJECT="${{ inputs.registry }}/${{ inputs.registry-project }}/chart"
+        echo "CHART_PROJECT=$CHART_PROJECT" >> $GITHUB_ENV
+        echo "CHART_REPO=$CHART_PROJECT/${{ inputs.registry-repo }}" >> $GITHUB_ENV
+        
+        echo "PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
+        echo "PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${GITHUB_SHORT_SHA}" >> $GITHUB_ENV
 
-    - name: update chart dependencies
+    - name: build chart
+      id: helm
       shell: bash
       run: |
         helm dependency update ${{ inputs.chart }}
+        helm package ${{ inputs.chart }} --version ${{ env.PR_TAG }}
+        helm push ${{ inputs.registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
+        helm package ${{ inputs.chart }} --version ${{ env.PR_COMMIT_TAG }}
+        helm push ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
 
-    - name: package chart with pr tag
+    - name: build success
+      if: steps.helm.outcome == 'success'
       shell: bash
       run: |
-        helm package ${{ inputs.chart }} --version ${{ env.PR_TAG }} --app-version ${{ env.PR_TAG }}
-
-    - name: push chart with pr tag
-      shell: bash
-      run: |
-        helm push ${{ inputs.registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_REPO }}
-
-    - name: cosign pr tag
-      if: inputs.cosign-public-key != ''
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
+          ```
+          ${{ env.CHART_REPO }}:${{ env.PR_TAG }}
+          ${{ env.CHART_REPO }}:${{ env.PR_COMMIT_TAG }}
+          ```
+          :hammer_and_wrench: Build Success  
+
+    - name: build failure
+      if: failure() && steps.helm.outcome == 'failure'
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.PR_TAG }}"
-
-    - name: cosign verify pr tag
-      if: inputs.cosign-public-key != ''
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-      shell: bash
-      run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${{ env.PR_TAG }}"
+        SUMMARY: ":x: Build Failure"
 
-    - name: package chart with pr commit tag
-      shell: bash
-      run: |
-        helm package ${{ inputs.chart }} --version ${{ env.PR_COMMIT_TAG }} --app-version ${{ env.PR_COMMIT_TAG }}
-
-    - name: push chart with pr commit tag
-      shell: bash
-      run: |
-        helm push ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_REPO }}
-
-    - name: cosign pr commit tag
-      if: inputs.cosign-public-key != ''
-      env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-      shell: bash
-      run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${PR_COMMIT_TAG//\+/_}"
-
-    - name: cosign verify pr commit tag
-      if: inputs.cosign-public-key != ''
-      env:
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-      shell: bash
-      run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${PR_COMMIT_TAG//\+/_}"
-
-    - name: annotate the ci run with chart tags
-      shell: bash
-      run: >-
-        echo "::notice title=Job: ${{ github.job }} / ${{ inputs.job-name }}::%0A
-        Pushed PR chart assets!%0A
-        - %0A
-        helm registry login --username <user> --password <token> oci://${{ inputs.registry }}%0A
-        helm pull --version ${{ env.PR_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}%0A
-        helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}"
-
-    - name: cosign verify chart
-      if: inputs.cosign-public-key != ''
-      env:
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-        DIGEST: ${{ env.PR_COMMIT_TAG }}
-      shell: bash
-      run: |
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${{ env.CHART_REPO }}/${{ inputs.registry-repo }}:${DIGEST//\+/_}"
-
-    - name: pull chart
-      shell: bash
-      run: |
-        helm pull --version ${{ env.PR_COMMIT_TAG }} oci://${{ env.CHART_REPO }}/${{ inputs.registry-repo }}
-
-    - name: build chart install name
-      shell: bash
-      run: |
-        echo "CHART=$(echo ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz)" >> $GITHUB_ENV
-
-    - name: test chart
-      if: ${{ inputs.test-command != '' }}
-      shell: bash
-      run: ${{ inputs.test-command }}
-
-    - name: update slack thread failure
-      uses: archive/github-actions-slack@v2.7.0
-      continue-on-error: true
-      if: failure()
+    - name: find pr comment
+      uses: peter-evans/find-comment@v3
+      if: inputs.comment-enabled == 'true' && steps.helm.outcome == 'success'
+      id: find-pr-comment
       with:
-        slack-bot-user-oauth-access-token: ${{ inputs.slack-token }}
-        slack-channel: ${{ inputs.slack-channel }}
-        slack-text: |
-          *${{ github.repository }}*\n
-          *PR-${{ github.event.pull_request.number }} Update*\n
-          :no_entry: job: ${{ github.job }} / ${{ inputs.job-name }}\n
-          <https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}|:octocat: Pull Request>\n
-          <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|:book: CI Logs>\n
+        issue-number: ${{ github.event.pull_request.number }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        comment-author: "github-actions[bot]"
+
+    - name: comment on build success
+      id: build-pr-comment
+      if: inputs.comment-enabled == 'true' && steps.helm.outcome == 'success'
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        edit-mode: replace
+        body: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           ```
-          PR:       ${{ github.event.pull_request.title }}
-          Branch:   ${{ github.head_ref }}
-          Ref:      ${{ github.ref }}
-          Sha:      ${{ github.event.pull_request.head.sha }}
-          Workflow: ${{ github.workflow }}
-          Run:      ${{ github.run_id }}
-          ```
+          ${{ env.CHART_REPO }}:${{ env.PR_TAG }}
+          ${{ env.CHART_REPO }}:${{ env.PR_COMMIT_TAG }}
+          ``` 
+
+    - name: cosign chart
+      id: cosign
+      if: inputs.cosign-public-key != '' && steps.helm.outcome == 'success'
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+      shell: bash
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${PR_TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${PR_TAG}"
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${PR_COMMIT_TAG//\+/_}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${PR_COMMIT_TAG//\+/_}"
+
+    - name: cosign success
+      if: steps.cosign.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: cosign error
+      if: failure() && steps.cosign.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
+
+    - name: test
+      id: test
+      if: inputs.test-command != '' && steps.helm.outcome == 'success' && steps.cosign.outcome != 'failure'
+      shell: bash
+      run: |
+        set -x
+        CHART="${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz"
+        ${{ inputs.command }}
+
+    - name: test success
+      if: steps.test.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":eyes: Test Success  "
+
+    - name: test error
+      if: failure() && steps.test.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Test Failure"
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during execution! Check the workflow run logs for details!

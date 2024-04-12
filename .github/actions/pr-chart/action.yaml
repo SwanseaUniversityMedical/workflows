@@ -199,7 +199,7 @@ runs:
       shell: bash
       run: |
         set -x
-        CHART="${{ inputs.registry-repo }}-${{ env.PRsimplify _TAG }}.tgz"
+        CHART="${{ inputs.registry-repo }}-${{ env.PRs_TAG }}.tgz"
         ${{ inputs.command }}
 
     - name: test success

@@ -235,7 +235,6 @@ runs:
       run: |
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${RC_TAG}"
         cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RC_TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RC_TAG//\+/_}"
 
     - name: cosign success
       if: steps.cosign-rc.outcome == 'success'
@@ -317,7 +316,6 @@ runs:
       run: |
         cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${RELEASE_TAG}"
         cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RELEASE_TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RELEASE_TAG//\+/_}"
 
     - name: cosign success
       if: steps.cosign-release.outcome == 'success'

@@ -352,3 +352,13 @@ runs:
             body: process.env.RELEASE_NOTES,
             name: "${{ steps.semantic.outputs.git-tag }}${{ inputs.tag-suffix }}"
           });
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during execution! Check the workflow run logs for details!

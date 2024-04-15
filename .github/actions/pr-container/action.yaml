@@ -156,7 +156,7 @@ runs:
         tags: |
           type=raw,value=rc-recent
 
-    - name: build and push
+    - name: build container
       uses: docker/build-push-action@v5
       id: build
       with:
@@ -176,7 +176,8 @@ runs:
           type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
           type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
 
-    - name: create step summary on build success
+    - name: build success
+      if: steps.build.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -190,8 +191,8 @@ runs:
           ```
           :hammer_and_wrench: Build Success  
 
-    - name: create step summary on build error
-      if: failure()
+    - name: build error
+      if: failure() && steps.build.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -202,16 +203,16 @@ runs:
 
     - name: find pr comment
       uses: peter-evans/find-comment@v3
-      if: inputs.comment-enabled == 'true'
+      if: inputs.comment-enabled == 'true' && steps.build.outcome == 'success'
       id: find-pr-comment
       with:
         issue-number: ${{ github.event.pull_request.number }}
         body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
         comment-author: "github-actions[bot]"
 
-    - name: create or update pr comment on build success
+    - name: comment on build success
       id: build-pr-comment
-      if: inputs.comment-enabled == 'true'
+      if: inputs.comment-enabled == 'true' && steps.build.outcome == 'success'
       uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
@@ -226,38 +227,29 @@ runs:
           ``` 
 
     - name: cosign image with key
-      id: cosign-sign
-      if: inputs.cosign-public-key != ''
-      shell: bash
-      run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
+      id: cosign
+      if: inputs.cosign-public-key != '' && steps.build.outcome == 'success'
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        TAGS: ${{ steps.meta.outputs.tags }}
-        DIGEST: ${{ steps.build.outputs.digest }}
-
-    - name: cosign verify image
-      id: cosign-verify
-      if: inputs.cosign-public-key != ''
-      env:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         TAGS: ${{ steps.meta.outputs.tags }}
         DIGEST: ${{ steps.build.outputs.digest }}
       shell: bash
       run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
         cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
-    - name: append to step summary on cosign success
-      if: success() && (steps.cosign-sign.outcome == 'success' || steps.cosign-verify.outcome == 'success')
+    - name: cosign success
+      if: steps.cosign.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: ":black_nib: Cosign Success  "
 
-    - name: append to step summary on cosign error
-      if: failure() && (steps.cosign-sign.outcome == 'failure' || steps.cosign-verify.outcome == 'failure')
+    - name: cosign error
+      if: failure() && steps.cosign.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -266,7 +258,7 @@ runs:
 
     - name: test
       id: test
-      if: inputs.test-flags != '' || inputs.test-args != ''
+      if: (inputs.test-flags != '' || inputs.test-args != '') && steps.build.outcome == 'success' && steps.cosign.outcome != 'failure'
       shell: bash
       run: |
         docker run \
@@ -274,18 +266,28 @@ runs:
           ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }} \
           ${{ inputs.test-args }}
 
-    - name: append to step summary on test success
-      if: success() && steps.test.outcome == 'success'
+    - name: test success
+      if: steps.test.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: ":eyes: Test Success"
 
-    - name: append to step summary on test error
+    - name: test error
       if: failure() && steps.test.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: ":x: Test Failure"
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during execution! Check the workflow run logs for details!

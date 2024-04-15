@@ -96,6 +96,7 @@ jobs:
       needs:
         - whalesay-container
         - aspnet-container
+        - trino-container
       if:  ${{ success() && github.event_name == 'push' }}
 
       uses: ./.github/workflows/on-release-repo.yaml

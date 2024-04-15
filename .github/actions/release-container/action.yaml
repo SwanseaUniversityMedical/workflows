@@ -280,7 +280,7 @@ runs:
         SUMMARY: |
           ```
           ${{ steps.rc-meta.outputs.tags }}
-          ${{ steps.build.outputs.digest }}
+          ${{ steps.build-rc.outputs.digest }}
           ```
           :hammer_and_wrench: Build Success  
 
@@ -329,7 +329,7 @@ runs:
       run: |
         docker run \
           ${{ inputs.test-flags }} \
-          ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }} \
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build-rc.outputs.digest }} \
           ${{ inputs.test-args }}
 
     - name: test success

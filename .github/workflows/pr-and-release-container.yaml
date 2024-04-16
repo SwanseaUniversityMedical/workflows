@@ -57,6 +57,11 @@ on:
         default: ''
         type: string
 
+      registry-extra-tag-command:
+        description: "Extra tag to push release container."
+        default: ''
+        type: string
+
       release-rules:
         description: "JSON list of rule dicts for what commit types trigger releases."
         default: |
@@ -197,4 +202,5 @@ jobs:
           release-rules: ${{ inputs.release-rules }}
           registry-tag-prefix: ${{ inputs.registry-tag-prefix }}
           registry-tag-suffix: ${{ inputs.registry-tag-suffix }}
+          registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
           release-tag-format: ${{ inputs.release-tag-format }}

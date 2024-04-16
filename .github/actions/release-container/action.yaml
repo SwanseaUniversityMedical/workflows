@@ -55,6 +55,11 @@ inputs:
     default: ''
     type: string
 
+  registry-extra-tag-command:
+    description: "Extra tag to push release container."
+    default: ''
+    type: string
+
   release-rules:
     description: "JSON list of rule dicts for what commit types trigger releases."
     default: |
@@ -348,8 +353,41 @@ runs:
       env:
         SUMMARY: ":x: Test Failure"
 
+    - name: create null extra tag
+      if: inputs.registry-extra-tag-command == '' && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      shell: bash
+      run: |
+        echo "EXTRA_TAG=" >> $GITHUB_ENV
+        echo "EXTRA_META=" >> $GITHUB_ENV
+
+    - name: create extra tag
+      id: extra-tag
+      if: inputs.registry-extra-tag-command != '' && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      shell: bash
+      run: |
+        EXTRA_TAG=$(${{ inputs.registry-extra-tag-command }})
+        echo "EXTRA_TAG=$EXTRA_TAG" >> $GITHUB_ENV
+        EXTRA_META="${{ inputs.registry }}/${{ inputs.registry-repo }}:${EXTRA_TAG}"
+        echo "EXTRA_META=$EXTRA_META" >> $GITHUB_ENV
+
+    - name: extra tag success
+      if: steps.extra-tag.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":label: New version will also be tagged as ${{ env.EXTRA_TAG }}  "
+
+    - name: extra tag error
+      if: failure() && steps.extra-tag.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Extra Tag Command Failure"
+
     - name: build release container
-      if: steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      if: steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure' && steps.extra-tag.outcome != 'failure'
       uses: docker/build-push-action@v5
       id: build-release
       with:
@@ -357,6 +395,7 @@ runs:
         context: ${{ inputs.build-context }}
         tags: |
           ${{ steps.meta.outputs.tags }}
+          ${{ env.EXTRA_META }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
@@ -374,6 +413,7 @@ runs:
         SUMMARY: |
           ```
           ${{ steps.meta.outputs.tags }}
+          ${{ env.EXTRA_META }}
           ${{ steps.build-release.outputs.digest }}
           ```
           :hammer_and_wrench: Release Build Success  

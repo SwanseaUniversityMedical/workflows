@@ -206,7 +206,7 @@ runs:
       run: |
         set -x
         CHART="${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz"
-        ${{ inputs.command }}
+        ${{ inputs.test-command }}
 
     - name: test success
       if: steps.test.outcome == 'success'

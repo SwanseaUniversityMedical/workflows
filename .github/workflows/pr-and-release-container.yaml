@@ -141,6 +141,34 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
+      - name: add release labels to repo
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            var inputs = ${{ toJSON(inputs) }};
+            var asset_name = inputs['job-name'].trim();
+
+            github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "major-release-" + asset_name,
+              color: "B60205"
+            });
+
+            github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "minor-release-" + asset_name,
+              color: "8BD931"
+            });
+
+            github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "patch-release-" + asset_name,
+              color: "FBCA04"
+            });
+
       - name: get workflow reference
         id: workflows-ref
         run: |

@@ -125,7 +125,7 @@ runs:
         script: |
           var inputs = ${{ toJSON(inputs) }};
           
-          var pr = github.rest.repos.listPullRequestsAssociatedWithCommit({
+          var pr = await github.rest.repos.listPullRequestsAssociatedWithCommit({
             owner: context.repo.owner,
             repo: context.repo.repo,  
             commit_sha: context.sha,

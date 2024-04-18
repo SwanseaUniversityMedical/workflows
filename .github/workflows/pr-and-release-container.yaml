@@ -149,7 +149,7 @@ jobs:
             var asset_name = inputs['job-name'].trim();
 
             try {
-              github.rest.issues.createLabel({
+              await github.rest.issues.createLabel({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 name: "major-release-" + asset_name,
@@ -160,7 +160,7 @@ jobs:
             }
 
             try {
-              github.rest.issues.createLabel({
+              await github.rest.issues.createLabel({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 name: "minor-release-" + asset_name,
@@ -171,7 +171,7 @@ jobs:
             }
 
             try {
-              github.rest.issues.createLabel({
+              await github.rest.issues.createLabel({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 name: "patch-release-" + asset_name,

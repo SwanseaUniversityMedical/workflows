@@ -136,7 +136,7 @@ jobs:
                 color: "B60205"
               });
             } catch (error) {
-              console.error(error);
+              console.log(error);
             }
             
             try {
@@ -147,7 +147,7 @@ jobs:
                 color: "8BD931"
               });
             } catch (error) {
-              console.error(error);
+              console.log(error);
             }
             
             try {
@@ -158,7 +158,7 @@ jobs:
                 color: "FBCA04"
               });
             } catch (error) {
-              console.error(error);
+              console.log(error);
             }
 
       - name: get workflow reference

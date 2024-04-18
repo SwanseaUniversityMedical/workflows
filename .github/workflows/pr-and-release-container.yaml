@@ -148,26 +148,38 @@ jobs:
             var inputs = ${{ toJSON(inputs) }};
             var asset_name = inputs['job-name'].trim();
 
-            github.rest.issues.createLabel({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: "major-release-" + asset_name,
-              color: "B60205"
-            });
+            try {
+              github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: "major-release-" + asset_name,
+                color: "B60205"
+              });
+            } catch (error) {
+              console.error(error);
+            }
 
-            github.rest.issues.createLabel({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: "minor-release-" + asset_name,
-              color: "8BD931"
-            });
+            try {
+              github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: "minor-release-" + asset_name,
+                color: "8BD931"
+              });
+            } catch (error) {
+              console.error(error);
+            }
 
-            github.rest.issues.createLabel({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: "patch-release-" + asset_name,
-              color: "FBCA04"
-            });
+            try {
+              github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: "patch-release-" + asset_name,
+                color: "FBCA04"
+              });
+            } catch (error) {
+              console.error(error);
+            }
 
       - name: get workflow reference
         id: workflows-ref

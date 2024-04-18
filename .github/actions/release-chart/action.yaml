@@ -140,12 +140,11 @@ runs:
           }
           
           result.data.forEach(pr => {
+            core.info(JSON.stringify(pr));
+          
             if (pr.state === 'closed') {
               if (pr.merge_commit_sha === context.sha) {
                 core.info("Found pull request that created the current commit!");
-          
-                core.info(pr.head);
-                core.info(pr.base);
               }
             } 
           });

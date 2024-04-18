@@ -166,27 +166,6 @@ runs:
         echo "CHART_PROJECT=$CHART_PROJECT" >> $GITHUB_ENV
         echo "CHART_REPO=$CHART_PROJECT/${{ inputs.registry-repo }}" >> $GITHUB_ENV
 
-    - name: determine release
-      uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
-      id: semantic
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      with:
-        dry-run: true
-        branches: ${{ inputs.release-branches }}
-        tag-format: ${{ inputs.release-tag-format }}
-        plugins: |-
-          [
-            ['@semantic-release/commit-analyzer', {
-              "releaseRules": ${{ inputs.release-rules }},
-            }], 
-            '@semantic-release/release-notes-generator',
-            ['@semantic-release/github', {
-              "successComment": false,
-              "failTitle": false
-            }]
-          ]
-
     - name: new release
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash

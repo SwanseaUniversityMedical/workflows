@@ -139,7 +139,7 @@ runs:
             core.warning("Found multiple pull requests associated with the current commit!");
           }
           
-          result.data.forEach(element => {
+          result.data.forEach(pr => {
             if (pr.state === 'closed') {
               if (pr.merge_commit_sha === context.sha) {
                 core.info("Found pull request that created the current commit!");

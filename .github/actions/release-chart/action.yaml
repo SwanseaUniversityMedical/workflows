@@ -125,11 +125,32 @@ runs:
         script: |
           var inputs = ${{ toJSON(inputs) }};
           
-          var pr = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+          var result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
             owner: context.repo.owner,
             repo: context.repo.repo,  
             commit_sha: context.sha,
           });
+          
+          if (result.data.length === 0) {
+            core.setFailed("Could not find a pull request which produced the current commit when it was merged.");
+          }
+          
+          if (result.data.length > 1) {
+            core.warning("Found multiple pull requests associated with the current commit!");
+          }
+          
+          for (var pr : result.data) {
+            if (pr.state === 'closed') {
+              if (pr.merge_commit_sha === context.sha) {
+                core.info("Found pull request that created the current commit!");
+          
+                core.info(pr.head);
+                core.info(pr.base);
+              }
+            }
+          
+            
+          }
           
           console.log(pr);
 

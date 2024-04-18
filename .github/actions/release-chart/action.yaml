@@ -114,6 +114,25 @@ inputs:
 runs:
   using: "composite"
   steps:
+#    - name: install node
+#      uses: actions/setup-node@v4
+#      with:
+#        node-version: 20
+
+    - name: get merged pr number
+      uses: actions/github-script@v7.0.1
+      with:
+        script: |
+          var inputs = ${{ toJSON(inputs) }};
+          
+          var pr = github.rest.repos.listPullRequestsAssociatedWithCommit({
+            owner: context.repo.owner,
+            repo: context.repo.repo,  
+            commit_sha: context.sha,
+          });
+          
+          console.log(pr);
+
     - name: install cosign
       if: inputs.cosign-public-key != ''
       uses: sigstore/cosign-installer@v3.1.2

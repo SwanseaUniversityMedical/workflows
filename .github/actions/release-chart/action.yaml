@@ -130,35 +130,21 @@ runs:
               var pr = result.data[i];
               core.debug(JSON.stringify(pr));
           
-              //pr = github.rest.pulls.get({
-              //  owner: context.repo.owner,
-              //  repo: context.repo.repo,
-              //  pull_number: pr.number,
-              //});
-              //core.debug(JSON.stringify(pr));
-            
-              //if ((pr.base.ref === context.ref) && (pr.state === 'closed') && (pr.merge_commit_sha === context.sha)) {
               core.info("Found pull request " + pr.number + " which created the current commit " + context.sha);
               core.setOutput("number", pr.number);
         
-              var labels = await github.rest.issues.listLabelsOnIssue({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-              });
+              core.debug(JSON.stringify(pr.labels));
+              core.setOutput("labels", JSON.stringify(pr.labels));
         
-              core.debug(JSON.stringify(labels));
-              core.setOutput("labels", JSON.stringify(labels));
-        
-              if (labels.includes(major)) {
+              if (pr.labels.includes(major)) {
                 core.info("next release will be major");
                 core.setOutput("release", "major");
               }
-              else if (labels.includes(minor)) {
+              else if (pr.labels.includes(minor)) {
                 core.info("next release will be minor");
                 core.setOutput("release", "minor");
               }
-              else if (labels.includes(patch)) {
+              else if (pr.labels.includes(patch)) {
                 core.info("next release will be patch");
                 core.setOutput("release", "patch");
               }

@@ -128,7 +128,7 @@ runs:
             
             for (let i = 0; i < result.data.length; i++) {
               var pr = result.data[i];
-              //core.debug(JSON.stringify(pr));
+              core.debug(JSON.stringify(pr));
             
               if ((pr.base.ref === context.ref) && (pr.state === 'closed') && (pr.merge_commit_sha === context.sha)) {
                 core.info("Found pull request " + pr.number + " which created the current commit " + context.sha);
@@ -140,7 +140,7 @@ runs:
                   issue_number: pr.number,
                 });
           
-                //core.debug(JSON.stringify(labels));
+                core.debug(JSON.stringify(labels));
                 core.setOutput("labels", JSON.stringify(labels));
           
                 if (labels.includes(major)) {
@@ -160,10 +160,12 @@ runs:
                   core.setOutput("release", "");
                 }
           
-                break;
+                return;
               } 
             }
           }
+          
+          core.setFailed("Could not find pr to extract labels from.");
           
     - name: semantic release
       uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3

@@ -82,16 +82,16 @@ runs:
         script: |
           var inputs = ${{ toJSON(inputs) }};
           var asset = inputs['job-name'].trim();
-
+          
           var major = `major: ${asset}`;
           core.setOutput("major", major);
-
+          
           var minor = `minor: ${asset}`;
           core.setOutput("minor", minor);
-
+          
           var patch = `patch: ${asset}`;
           core.setOutput("patch", patch);
-
+          
           try {
             await github.rest.issues.createLabel({
               owner: context.repo.owner,
@@ -100,9 +100,9 @@ runs:
               color: "B60205"
             });
           } catch (error) {
-            console.log(error);
+            //console.log(error);
           }
-
+          
           try {
             await github.rest.issues.createLabel({
               owner: context.repo.owner,
@@ -111,9 +111,9 @@ runs:
               color: "8BD931"
             });
           } catch (error) {
-            console.log(error);
+            //console.log(error);
           }
-
+          
           try {
             await github.rest.issues.createLabel({
               owner: context.repo.owner,
@@ -122,7 +122,7 @@ runs:
               color: "FBCA04"
             });
           } catch (error) {
-            console.log(error);
+            //console.log(error);
           }
 
           var result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
@@ -130,48 +130,40 @@ runs:
             repo: context.repo.repo,  
             commit_sha: context.sha,
           });
-
+          
           if (result.data.length > 0) {
             if (result.data.length > 1) {
               core.warning("Found multiple pull requests associated with the current commit!");
             }
-
+            
             for (let i = 0; i < result.data.length; i++) {
               var pr = result.data[i];
               core.debug(JSON.stringify(pr));
-
-              if ((pr.base.ref === context.ref) && (pr.state === 'closed') && (pr.merge_commit_sha === context.sha)) {
-                core.info("Found pull request " + pr.number + " which created the current commit " + context.sha);
-                core.setOutput("number", pr.number);
-
-                var labels = await github.rest.issues.listLabelsOnIssue({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: pr.number,
-                });
-
-                core.debug(JSON.stringify(labels));
-                core.setOutput("labels", JSON.stringify(labels));
-
-                if (labels.includes(major)) {
-                  core.info("next release will be major");
-                  core.setOutput("release", "major");
-                }
-                else if (labels.includes(minor)) {
-                  core.info("next release will be minor");
-                  core.setOutput("release", "minor");
-                }
-                else if (labels.includes(patch)) {
-                  core.info("next release will be patch");
-                  core.setOutput("release", "patch");
-                }
-                else {
-                  core.info("next release will be skipped");
-                  core.setOutput("release", "");
-                }
-
-                return;
-              } 
+              
+              core.info("Found pull request " + pr.number + " which created the current commit " + context.sha);
+              core.setOutput("number", pr.number);
+              
+              core.debug(JSON.stringify(pr.labels));
+              core.setOutput("labels", JSON.stringify(pr.labels));
+              
+              if (pr.labels.find((label) => (label.name === major))) {
+                core.info("next release will be major");
+                core.setOutput("release", "major");
+              }
+              else if (pr.labels.find((label) => (label.name === minor))) {
+                core.info("next release will be minor");
+                core.setOutput("release", "minor");
+              }
+              else if (pr.labels.find((label) => (label.name === patch))) {
+                core.info("next release will be patch");
+                core.setOutput("release", "patch");
+              }
+              else {
+                core.info("next release will be skipped");
+                core.setOutput("release", "");
+              }
+              
+              return;
             }
           }
           

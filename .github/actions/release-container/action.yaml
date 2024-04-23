@@ -520,6 +520,26 @@ runs:
             name: "${{ steps.semantic.outputs.git-tag }}"
           });
 
+    - name: release success
+      if: steps.release.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ```
+          ${{ steps.semantic.outputs.git-tag }}
+          ```
+          :hammer_and_wrench: Github Release Success  
+
+    - name: release error
+      if: failure() && steps.release.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Github Release Failure"
+
     - name: find pr comment
       uses: peter-evans/find-comment@v3
       if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'

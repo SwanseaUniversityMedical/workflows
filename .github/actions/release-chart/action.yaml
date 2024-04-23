@@ -165,6 +165,7 @@ runs:
           core.setFailed("Could not find pr to extract labels from.");
           
     - name: semantic release
+      if: steps.determine-release.outputs.release != ''
       uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
       id: semantic
       env:

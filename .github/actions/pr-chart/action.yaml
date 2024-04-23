@@ -12,7 +12,7 @@ inputs:
 
   comment-header:
     description: "Header line for the PR comment."
-    default: ":anchor: Build PR Chart"
+    default: ":hammer_and_wrench: :anchor: Build PR Chart"
     type: string
 
   comment-enabled:

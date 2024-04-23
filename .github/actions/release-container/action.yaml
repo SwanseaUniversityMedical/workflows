@@ -7,7 +7,12 @@ inputs:
 
   comment-header:
     description: "Header line for the Release summary."
-    default: ":whale: Build Release Container"
+    default: ":rocket: :whale: Build Release Container"
+    type: string
+
+  comment-enabled:
+    description: "Release comment creation and update."
+    default: "true"
     type: string
 
   build-file:
@@ -513,6 +518,32 @@ runs:
             body: "",
             name: "${{ steps.semantic.outputs.git-tag }}"
           });
+
+    - name: find pr comment
+      uses: peter-evans/find-comment@v3
+      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      id: find-pr-comment
+      with:
+        issue-number: ${{ steps.determine-release.outputs.number }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        comment-author: "github-actions[bot]"
+
+    - name: comment on release success
+      id: release-pr-comment
+      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ steps.determine-release.outputs.number }}
+        edit-mode: replace
+        body: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          ```
+          ${{ steps.semantic.outputs.git-tag }}
+          ${{ steps.meta.outputs.tags }}
+          ${{ steps.hash-meta.outputs.tags }}
+          ${{ steps.build.outputs.digest }}
+          ```
 
     - name: error
       if: failure()

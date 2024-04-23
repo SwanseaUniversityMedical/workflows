@@ -12,9 +12,14 @@ on:
         required: true
         type: string
 
-      comment-enabled:
+      comment-pr:
         description: "PR comment creation and update."
         default: "false"
+        type: string
+
+      comment-release:
+        description: "Release comment creation and update."
+        default: "true"
         type: string
 
       test-command:
@@ -96,7 +101,7 @@ jobs:
         uses: ./.tmp/.github/actions/pr-chart
         with:
           job-name: ${{ inputs.job-name }}
-          comment-enabled: ${{ inputs.comment-enabled }}
+          comment-enabled: ${{ inputs.comment-pr }}
           registry: ${{ inputs.registry }}
           registry-user: ${{ inputs.registry-user }}
           registry-project: ${{ inputs.registry-project }}
@@ -113,6 +118,7 @@ jobs:
         uses: ./.tmp/.github/actions/release-chart
         with:
           job-name: ${{ inputs.job-name }}
+          comment-enabled: ${{ inputs.comment-release }}
           registry: ${{ inputs.registry }}
           registry-user: ${{ inputs.registry-user }}
           registry-project: ${{ inputs.registry-project }}

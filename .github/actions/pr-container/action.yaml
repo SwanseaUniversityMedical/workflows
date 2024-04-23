@@ -7,7 +7,7 @@ inputs:
 
   comment-header:
     description: "Header line for the PR comment."
-    default: ":whale: Build PR Container"
+    default: ":hammer_and_wrench: :whale: Build PR Container"
     type: string
 
   comment-enabled:

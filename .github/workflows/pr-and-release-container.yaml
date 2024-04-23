@@ -7,9 +7,14 @@ on:
         required: true
         type: string
 
-      comment-enabled:
+      comment-pr:
         description: "PR comment creation and update."
         default: "false"
+        type: string
+
+      comment-release:
+        description: "Release comment creation and update."
+        default: "true"
         type: string
 
       build-file:
@@ -106,7 +111,7 @@ jobs:
         uses: ./.tmp/.github/actions/pr-container
         with:
           job-name: ${{ inputs.job-name }}
-          comment-enabled: ${{ inputs.comment-enabled }}
+          comment-enabled: ${{ inputs.comment-pr }}
           registry: ${{ inputs.registry }}
           registry-user: ${{ inputs.registry-user }}
           registry-repo: ${{ inputs.registry-repo }}
@@ -124,6 +129,7 @@ jobs:
         uses: ./.tmp/.github/actions/release-container
         with:
           job-name: ${{ inputs.job-name }}
+          comment-enabled: ${{ inputs.comment-release }}
           registry: ${{ inputs.registry }}
           registry-user: ${{ inputs.registry-user }}
           registry-repo: ${{ inputs.registry-repo }}

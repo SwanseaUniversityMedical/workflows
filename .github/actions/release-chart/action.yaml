@@ -40,64 +40,15 @@ inputs:
     required: true
     type: string
 
-  tag-suffix:
-    description: "Suffix to use when tagging chart"
-    default: ''
-    type: string
-
-  release-rules:
-    description: "JSON list of rule dicts for what commit types trigger releases."
-    default: |
-      [
-        {"type": "major", "release": "major"},
-        {"type": "minor", "release": "minor"},
-        {"type": "patch", "release": "patch"},
-        {"type": "no-release", "release": false},
-
-        {"type": "chore", "release": "patch"},
-        {"type": "refactor", "release": "patch"},
-        {"type": "style", "release": "patch"},
-
-        {"type": "docs", "release": false},
-        {"type": "test", "release": false},
-        {"type": "ci", "release": false},
-
-        {"type": "feat", "release": "minor"},
-
-        {"type": "revert", "release": "patch"},
-        {"type": "perf", "release": "patch"},
-        {"type": "fix", "release": "patch"},
-        {"type": "build", "release": "patch"},
-      ]
-    type: string
-
-  release-branches:
-    description: "JSON list of regex branch filters."
-    default: |
-      [
-        '+([0-9])?(.{+([0-9]),x}).x',
-        'main'
-      ]
-    type: string
-
   release-tag-format:
     description: "Semantic-release Github release tag format."
     default: '${version}'
-    type: string
-
-  slack-channel:
-    description: "ID of the Slack channel to post updates to."
-    required: true
     type: string
 
   cosign-public-key:
     description: "Public key for cosigning images."
     required: false
     type: string
-
-  slack-token:
-    description: "Authentication token for Slack."
-    required: true
 
   registry-token:
     description: "Authentication token for the chart registry."
@@ -114,49 +65,128 @@ inputs:
 runs:
   using: "composite"
   steps:
-#    - name: install node
-#      uses: actions/setup-node@v4
-#      with:
-#        node-version: 20
-
-    - name: get merged pr number
+    - name: determine release
+      id: determine-release
       uses: actions/github-script@v7.0.1
       with:
         script: |
           var inputs = ${{ toJSON(inputs) }};
+          var asset = inputs['job-name'].trim();
           
+          var major = `major: ${asset}`;
+          core.setOutput("major", major);
+          
+          var minor = `minor: ${asset}`;
+          core.setOutput("minor", minor);
+          
+          var patch = `patch: ${asset}`;
+          core.setOutput("patch", patch);
+          
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: major,
+              color: "B60205"
+            });
+          } catch (error) {
+            console.log(error);
+          }
+          
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: minor,
+              color: "8BD931"
+            });
+          } catch (error) {
+            console.log(error);
+          }
+          
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: patch,
+              color: "FBCA04"
+            });
+          } catch (error) {
+            console.log(error);
+          }
+
           var result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
             owner: context.repo.owner,
             repo: context.repo.repo,  
             commit_sha: context.sha,
           });
           
-          if (result.data.length === 0) {
-            core.setFailed("Could not find a pull request which produced the current commit when it was merged.");
+          if (result.data.length > 0) {
+            if (result.data.length > 1) {
+              core.warning("Found multiple pull requests associated with the current commit!");
+            }
+            
+            for (let i = 0; i < result.data.length; i++) {
+              var pr = result.data[i];
+              //core.debug(JSON.stringify(pr));
+            
+              if ((pr.base.ref === context.ref) && (pr.state === 'closed') && (pr.merge_commit_sha === context.sha)) {
+                core.info("Found pull request " + pr.number + " which created the current commit " + context.sha);
+                core.setOutput("number", pr.number);
+          
+                var labels = await github.rest.issues.listLabelsOnIssue({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                });
+          
+                //core.debug(JSON.stringify(labels));
+                core.setOutput("labels", JSON.stringify(labels));
+          
+                if (labels.includes(major)) {
+                  core.info("next release will be major");
+                  core.setOutput("release", "major");
+                }
+                else if (labels.includes(minor)) {
+                  core.info("next release will be minor");
+                  core.setOutput("release", "minor");
+                }
+                else if (labels.includes(patch)) {
+                  core.info("next release will be patch");
+                  core.setOutput("release", "patch");
+                }
+                else {
+                  core.info("next release will be skipped");
+                  core.setOutput("release", "");
+                }
+          
+                break;
+              } 
+            }
           }
           
-          if (result.data.length > 1) {
-            core.warning("Found multiple pull requests associated with the current commit!");
-          }
-          
-          result.data.forEach(pr => {
-            core.info(JSON.stringify(pr));
-          
-            if (pr.state === 'closed') {
-              if (pr.merge_commit_sha === context.sha) {
-                core.info("Found pull request that created the current commit!");
-              }
-            } 
-          });
-          
-          console.log(pr);
+    - name: semantic release
+      uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
+      id: semantic
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        dry-run: true
+        branches: ${{ github.ref }}
+        tag-format: ${{ inputs.release-tag-format }}
+        plugins: |-
+          [
+            ['@semantic-release/exec', {
+              "analyzeCommitsCmd": "printf \"%s\" \"${{ steps.determine-release.outputs.release }}\"",
+            }]
+          ]
 
     - name: install cosign
-      if: inputs.cosign-public-key != ''
+      if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       uses: sigstore/cosign-installer@v3.1.2
 
     - name: login to container registry for cosign
-      if: inputs.cosign-public-key != ''
+      if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       uses: docker/login-action@v3
       with:
         registry: ${{ inputs.registry }}
@@ -164,12 +194,14 @@ runs:
         password: ${{ inputs.registry-token }}
 
     - name: install helm
+      if: steps.semantic.outputs.new-release-published == 'true'
       uses: azure/setup-helm@v4.0.0
       with:
         version: 'v3.9.0'
         token: ${{ github.token }}
 
     - name: login to chart registry
+      if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         helm registry login \
@@ -178,6 +210,7 @@ runs:
           ${{ inputs.registry }}
 
     - name: create chart repo url
+      if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         CHART_PROJECT="${{ inputs.registry }}/${{ inputs.registry-project }}/chart"
@@ -208,8 +241,8 @@ runs:
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
-        echo "RELEASE_TAG=${{ steps.semantic.outputs.release-version }}${{ inputs.tag-suffix }}" >> $GITHUB_ENV
-        echo "RC_TAG=${{ steps.semantic.outputs.release-version }}-rc${{ inputs.tag-suffix }}" >> $GITHUB_ENV
+        echo "RELEASE_TAG=${{ steps.semantic.outputs.release-version }}" >> $GITHUB_ENV
+        echo "RC_TAG=${{ steps.semantic.outputs.release-version }}-rc" >> $GITHUB_ENV
 
     - name: build release candidate chart
       id: helm-rc
@@ -353,9 +386,6 @@ runs:
       id: release
       if: steps.helm-release.outcome == 'success' && steps.cosign-release.outcome != 'failure'
       uses: actions/github-script@v7
-      env:
-        RELEASE_NOTES: |
-          ${{ steps.semantic.outputs.release-notes }}
       with:
         retries: 3
         github-token: ${{ github.token }}
@@ -363,10 +393,10 @@ runs:
           github.rest.repos.createRelease({
             owner: "${{ github.repository_owner }}",
             repo: "${{ github.event.repository.name }}",
-            tag_name: "${{ steps.semantic.outputs.git-tag }}${{ inputs.tag-suffix }}",
+            tag_name: "${{ steps.semantic.outputs.git-tag }}",
             target_commitish: "${{ github.sha }}",
-            body: process.env.RELEASE_NOTES,
-            name: "${{ steps.semantic.outputs.git-tag }}${{ inputs.tag-suffix }}"
+            body: "",
+            name: "${{ steps.semantic.outputs.git-tag }}"
           });
 
     - name: error

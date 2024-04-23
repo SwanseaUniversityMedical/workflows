@@ -45,19 +45,10 @@ inputs:
     required: true
     type: string
 
-  slack-channel:
-    description: "ID of the Slack channel to post updates to."
-    required: true
-    type: string
-
   cosign-public-key:
     description: "Public key for cosigning images."
     required: false
     type: string
-
-  slack-token:
-    description: "Authentication token for Slack."
-    required: true
 
   registry-token:
     description: "Authentication token for the chart registry."
@@ -74,6 +65,55 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: create release labels
+      uses: actions/github-script@v7.0.1
+      with:
+        script: |
+          var inputs = ${{ toJSON(inputs) }};
+          var asset = inputs['job-name'].trim();
+
+          var major = `major: ${asset}`;
+          core.setOutput("major", major);
+
+          var minor = `minor: ${asset}`;
+          core.setOutput("minor", minor);
+
+          var patch = `patch: ${asset}`;
+          core.setOutput("patch", patch);
+
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: major,
+              color: "B60205"
+            });
+          } catch (error) {
+            console.log(error);
+          }
+
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: minor,
+              color: "8BD931"
+            });
+          } catch (error) {
+            console.log(error);
+          }
+
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: patch,
+              color: "FBCA04"
+            });
+          } catch (error) {
+            console.log(error);
+          }
+
     - name: install cosign
       if: inputs.cosign-public-key != ''
       uses: sigstore/cosign-installer@v3.1.2

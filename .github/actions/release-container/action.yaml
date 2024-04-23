@@ -45,54 +45,9 @@ inputs:
     required: true
     type: string
 
-  registry-tag-prefix:
-    description: "Prefix to use when tagging container"
-    default: ''
-    type: string
-
-  registry-tag-suffix:
-    description: "Suffix to use when tagging container"
-    default: ''
-    type: string
-
   registry-extra-tag-command:
     description: "Extra tag to push release container."
     default: ''
-    type: string
-
-  release-rules:
-    description: "JSON list of rule dicts for what commit types trigger releases."
-    default: |
-      [
-        {"type": "major", "release": "major"},
-        {"type": "minor", "release": "minor"},
-        {"type": "patch", "release": "patch"},
-        {"type": "no-release", "release": false},
-      
-        {"type": "chore", "release": "patch"},
-        {"type": "refactor", "release": "patch"},
-        {"type": "style", "release": "patch"},
-      
-        {"type": "docs", "release": false},
-        {"type": "test", "release": false},
-        {"type": "ci", "release": false},
-      
-        {"type": "feat", "release": "minor"},
-      
-        {"type": "revert", "release": "patch"},
-        {"type": "perf", "release": "patch"},
-        {"type": "fix", "release": "patch"},
-        {"type": "build", "release": "patch"},
-      ]
-    type: string
-
-  release-branches:
-    description: "JSON list of regex branch filters."
-    default: |
-      [
-        '+([0-9])?(.{+([0-9]),x}).x',
-        'main'
-      ]
     type: string
 
   release-tag-format:
@@ -100,19 +55,10 @@ inputs:
     default: '${version}'
     type: string
 
-  slack-channel:
-    description: "ID of the Slack channel to post updates to."
-    required: true
-    type: string
-
   cosign-public-key:
     description: "Public key for cosigning images."
     required: false
     type: string
-
-  slack-token:
-    description: "Authentication token for Slack."
-    required: true
 
   registry-token:
     description: "Authentication token for the container registry."
@@ -129,11 +75,128 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: determine release
+      id: determine-release
+      uses: actions/github-script@v7.0.1
+      with:
+        script: |
+          var inputs = ${{ toJSON(inputs) }};
+          var asset = inputs['job-name'].trim();
+
+          var major = `major: ${asset}`;
+          core.setOutput("major", major);
+
+          var minor = `minor: ${asset}`;
+          core.setOutput("minor", minor);
+
+          var patch = `patch: ${asset}`;
+          core.setOutput("patch", patch);
+
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: major,
+              color: "B60205"
+            });
+          } catch (error) {
+            console.log(error);
+          }
+
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: minor,
+              color: "8BD931"
+            });
+          } catch (error) {
+            console.log(error);
+          }
+
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: patch,
+              color: "FBCA04"
+            });
+          } catch (error) {
+            console.log(error);
+          }
+
+          var result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            owner: context.repo.owner,
+            repo: context.repo.repo,  
+            commit_sha: context.sha,
+          });
+
+          if (result.data.length > 0) {
+            if (result.data.length > 1) {
+              core.warning("Found multiple pull requests associated with the current commit!");
+            }
+
+            for (let i = 0; i < result.data.length; i++) {
+              var pr = result.data[i];
+              //core.debug(JSON.stringify(pr));
+
+              if ((pr.base.ref === context.ref) && (pr.state === 'closed') && (pr.merge_commit_sha === context.sha)) {
+                core.info("Found pull request " + pr.number + " which created the current commit " + context.sha);
+                core.setOutput("number", pr.number);
+
+                var labels = await github.rest.issues.listLabelsOnIssue({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                });
+
+                //core.debug(JSON.stringify(labels));
+                core.setOutput("labels", JSON.stringify(labels));
+
+                if (labels.includes(major)) {
+                  core.info("next release will be major");
+                  core.setOutput("release", "major");
+                }
+                else if (labels.includes(minor)) {
+                  core.info("next release will be minor");
+                  core.setOutput("release", "minor");
+                }
+                else if (labels.includes(patch)) {
+                  core.info("next release will be patch");
+                  core.setOutput("release", "patch");
+                }
+                else {
+                  core.info("next release will be skipped");
+                  core.setOutput("release", "");
+                }
+
+                break;
+              } 
+            }
+          }
+
+    - name: semantic release
+      uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
+      id: semantic
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        dry-run: true
+        branches: ${{ github.ref }}
+        tag-format: ${{ inputs.release-tag-format }}
+        plugins: |-
+          [
+            ['@semantic-release/exec', {
+              "analyzeCommitsCmd": "printf \"%s\" \"${{ steps.determine-release.outputs.release }}\"",
+            }]
+          ]
+
     - name: install cosign
-      if: inputs.cosign-public-key != ''
+      if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       uses: sigstore/cosign-installer@v3.1.2
 
     - name: forward proxy settings
+      if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV
@@ -141,6 +204,7 @@ runs:
         echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
 
     - name: install buildx
+      if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/setup-buildx-action@v3
       with:
         driver-opts: |
@@ -158,6 +222,7 @@ runs:
             mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
 
     - name: login to container registry
+      if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/login-action@v3
       with:
         registry: ${{ inputs.registry }}
@@ -222,7 +287,7 @@ runs:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
-          type=raw,value=rc-${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
+          type=raw,value=rc-${{ steps.semantic.outputs.release-version }}
 
     - name: release container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -232,7 +297,7 @@ runs:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
-          type=raw,value=${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
+          type=raw,value=${{ steps.semantic.outputs.release-version }}
 
     - name: build rc container
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -439,9 +504,6 @@ runs:
       if: steps.build-release.outcome == 'success' && steps.cosign-release.outcome != 'failure'
       uses: actions/github-script@v7
       id: release
-      env:
-        RELEASE_NOTES: |
-          ${{ steps.semantic.outputs.release-notes }}
       with:
         retries: 3
         github-token: ${{ github.token }}
@@ -449,10 +511,10 @@ runs:
           github.rest.repos.createRelease({
             owner: "${{ github.repository_owner }}",
             repo: "${{ github.event.repository.name }}",
-            tag_name: "${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.git-tag }}${{ inputs.registry-tag-suffix }}",
+            tag_name: "${{ steps.semantic.outputs.git-tag }}",
             target_commitish: "${{ github.sha }}",
-            body: process.env.RELEASE_NOTES,
-            name: "${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.git-tag }}${{ inputs.registry-tag-suffix }}"
+            body: "",
+            name: "${{ steps.semantic.outputs.git-tag }}"
           });
 
     - name: error

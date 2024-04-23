@@ -42,54 +42,9 @@ on:
         required: true
         type: string
 
-      tag-suffix:
-        description: "Suffix to use when tagging chart"
-        default: ''
-        type: string
-
-      release-rules:
-        description: "JSON list of rule dicts for what commit types trigger releases."
-        default: |
-          [
-            {"type": "major", "release": "major"},
-            {"type": "minor", "release": "minor"},
-            {"type": "patch", "release": "patch"},
-            {"type": "no-release", "release": false},
-
-            {"type": "chore", "release": "patch"},
-            {"type": "refactor", "release": "patch"},
-            {"type": "style", "release": "patch"},
-
-            {"type": "docs", "release": false},
-            {"type": "test", "release": false},
-            {"type": "ci", "release": false},
-
-            {"type": "feat", "release": "minor"},
-
-            {"type": "revert", "release": "patch"},
-            {"type": "perf", "release": "patch"},
-            {"type": "fix", "release": "patch"},
-            {"type": "build", "release": "patch"},
-          ]
-        type: string
-
-      release-branches:
-        description: "JSON list of regex branch filters."
-        default: |
-          [
-            '+([0-9])?(.{+([0-9]),x}).x',
-            'main'
-          ]
-        type: string
-
       release-tag-format:
         description: "Semantic-release Github release tag format."
         default: '${version}'
-        type: string
-
-      slack-channel:
-        description: "ID of the Slack channel to post updates to."
-        required: true
         type: string
 
       cosign-public-key:
@@ -98,10 +53,6 @@ on:
         type: string
 
     secrets:
-
-      slack-token:
-        description: "Authentication token for Slack."
-        required: true
 
       registry-token:
         description: "Authentication token for the chart registry."
@@ -121,46 +72,6 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - name: add release labels to repo
-        uses: actions/github-script@v7.0.1
-        with:
-          script: |
-            var inputs = ${{ toJSON(inputs) }};
-            var asset_name = inputs['job-name'].trim();
-            
-            try {
-              await github.rest.issues.createLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: "major-release-" + asset_name,
-                color: "B60205"
-              });
-            } catch (error) {
-              console.log(error);
-            }
-            
-            try {
-              await github.rest.issues.createLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: "minor-release-" + asset_name,
-                color: "8BD931"
-              });
-            } catch (error) {
-              console.log(error);
-            }
-            
-            try {
-              await github.rest.issues.createLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: "patch-release-" + asset_name,
-                color: "FBCA04"
-              });
-            } catch (error) {
-              console.log(error);
-            }
-
       - name: get workflow reference
         id: workflows-ref
         run: |
@@ -191,13 +102,11 @@ jobs:
           registry-project: ${{ inputs.registry-project }}
           registry-repo: ${{ inputs.registry-repo }}
           cosign-public-key: ${{ inputs.cosign-public-key }}
-          slack-channel: ${{ inputs.slack-channel }}
           chart: ${{ inputs.chart }}
           test-command: ${{ inputs.test-command }}
           cosign-private-key: ${{ secrets.cosign-private-key }}
           cosign-password: ${{ secrets.cosign-password }}
           registry-token: ${{ secrets.registry-token }}
-          slack-token: ${{ secrets.slack-token }}
 
       - name: release
         if: github.event_name == 'push'
@@ -209,14 +118,9 @@ jobs:
           registry-project: ${{ inputs.registry-project }}
           registry-repo: ${{ inputs.registry-repo }}
           cosign-public-key: ${{ inputs.cosign-public-key }}
-          slack-channel: ${{ inputs.slack-channel }}
           chart: ${{ inputs.chart }}
           test-command: ${{ inputs.test-command }}
-          release-branches: ${{ inputs.release-branches }}
-          release-rules: ${{ inputs.release-rules }}
-          tag-suffix: ${{ inputs.tag-suffix }}
           release-tag-format: ${{ inputs.release-tag-format }}
           cosign-private-key: ${{ secrets.cosign-private-key }}
           cosign-password: ${{ secrets.cosign-password }}
           registry-token: ${{ secrets.registry-token }}
-          slack-token: ${{ secrets.slack-token }}

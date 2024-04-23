@@ -136,15 +136,15 @@ runs:
               core.debug(JSON.stringify(pr.labels));
               core.setOutput("labels", JSON.stringify(pr.labels));
         
-              if (pr.labels.includes(major)) {
+              if (pr.labels.find((label) => (label.name === major))) {
                 core.info("next release will be major");
                 core.setOutput("release", "major");
               }
-              else if (pr.labels.includes(minor)) {
+              else if (pr.labels.find((label) => (label.name === minor))) {
                 core.info("next release will be minor");
                 core.setOutput("release", "minor");
               }
-              else if (pr.labels.includes(patch)) {
+              else if (pr.labels.find((label) => (label.name === patch))) {
                 core.info("next release will be patch");
                 core.setOutput("release", "patch");
               }

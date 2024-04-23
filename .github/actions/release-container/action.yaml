@@ -542,8 +542,8 @@ runs:
           ```
           ${{ steps.semantic.outputs.git-tag }}
           ${{ steps.meta.outputs.tags }}
-          ${{ steps.hash-meta.outputs.tags }}
-          ${{ steps.build.outputs.digest }}
+          ${{ env.EXTRA_META }}
+          ${{ steps.build-release.outputs.digest }}
           ```
 
     - name: error

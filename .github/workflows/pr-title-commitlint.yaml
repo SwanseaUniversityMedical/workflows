@@ -74,11 +74,7 @@ jobs:
         shell: bash
         run: |
           echo test
-          lint=$(echo "$TITLE" | docker run commitlint/commitlint:19.3.0 --config="$CONFIG" --help-url="$CONFIG")
-          status=$?
-          echo "$lint"
-          printf "lint<<EOF\n%s\nEOF" "${lint}" >> "$GITHUB_OUTPUT"
-          exit $status
+          echo "$TITLE" | docker run commitlint/commitlint:19.3.0 --config="$CONFIG" --help-url="$CONFIG"
         env:
           TITLE: ${{ github.event.pull_request.title }}
           CONFIG: ${{ inputs.config }}

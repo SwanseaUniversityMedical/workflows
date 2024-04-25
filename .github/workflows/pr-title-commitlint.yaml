@@ -75,6 +75,9 @@ jobs:
         run: |
           docker run commitlint/commitlint:19.3.0 --config="$CONFIG" --help-url="$CONFIG"
           echo "done"
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          CONFIG: ${{ inputs.config }}
 
       - name: create step summary on bad lint
         if: always() && steps.commitlint.outcome != 'success'

@@ -73,7 +73,7 @@ jobs:
         id: dockerlint
         shell: bash
         run: |
-          docker run commitlint:19.3.0  --config="$CONFIG" --help-url="$CONFIG"
+          docker run commitlint/commitlint:19.3.0  --config="$CONFIG" --help-url="$CONFIG"
           echo "done"
 
       - name: create step summary on bad lint

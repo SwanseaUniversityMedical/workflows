@@ -12,11 +12,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release-pr-labeler:
-    uses: ./.github/workflows/on-release-repo.yaml
+  pr-labeler:
+    uses: ./.github/workflows/pr-and-release-repo.yaml
     with:
-      job-name: release-pr-labeler
+      job-name: pr-labeler
+      comment-release: true
       release-tag-format: 'v${version}-pr-labeler'
-      slack-channel: ${{ vars.SLACK_CHANNEL }}
-    secrets:
-      slack-token: ${{ secrets.SLACK_TOKEN }}

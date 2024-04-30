@@ -52,6 +52,21 @@ on:
         default: '${version}'
         type: string
 
+      major-colour:
+        description: "Colour for the major release label."
+        default: 'B60205'
+        type: string
+
+      minor-colour:
+        description: "Colour for the minor release label."
+        default: '8BD931'
+        type: string
+
+      patch-colour:
+        description: "Colour for the patch release label."
+        default: 'FBCA04'
+        type: string
+
       cosign-public-key:
         description: "Public key for cosigning images."
         required: false
@@ -95,6 +110,17 @@ jobs:
           sparse-checkout: |
             .github/actions/pr-chart
             .github/actions/release-chart
+            .github/actions/release-create-labels
+            .github/actions/release-determine-bump
+
+      - name: create release labels
+        id: create-release-labels
+        uses: ./.tmp/.github/actions/release-create-labels
+        with:
+          job-name: ${{ inputs.job-name }}
+          major-colour: ${{ inputs.major-colour }}
+          minor-colour: ${{ inputs.minor-colour }}
+          patch-colour: ${{ inputs.patch-colour }}
 
       - name: pr
         if: github.event_name == 'pull_request'
@@ -117,6 +143,9 @@ jobs:
         if: github.event_name == 'push'
         uses: ./.tmp/.github/actions/release-chart
         with:
+          major-label: ${{ steps.create-release-labels.outputs.major }}
+          minor-label: ${{ steps.create-release-labels.outputs.minor }}
+          patch-label: ${{ steps.create-release-labels.outputs.patch }}
           job-name: ${{ inputs.job-name }}
           comment-enabled: ${{ inputs.comment-release }}
           registry: ${{ inputs.registry }}

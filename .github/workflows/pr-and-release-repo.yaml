@@ -33,7 +33,7 @@ on:
         type: string
 
 jobs:
-  chart:
+  repo:
     runs-on:
       labels: [ self-hosted, linux, x64 ]
       group: heavy

@@ -1,4 +1,4 @@
-name: Release PR Labeler
+name: Release PR Labeler Workflow
 
 on:
   pull_request:

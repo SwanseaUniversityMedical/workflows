@@ -1,4 +1,4 @@
-name: Release Commit Lint PR Title
+name: Release Commit Lint PR Title Workflow
 
 on:
   pull_request:

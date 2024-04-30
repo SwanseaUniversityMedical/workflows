@@ -1,4 +1,4 @@
-name: Charts
+name: Release Charts Workflow
 
 on:
   pull_request:

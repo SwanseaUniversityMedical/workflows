@@ -323,7 +323,7 @@ runs:
       if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
       id: find-pr-comment
       with:
-        issue-number: ${{ steps.determine-release.outputs.number }}
+        issue-number: ${{ steps.semantic.outputs.pr-number }}
         body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
         comment-author: "github-actions[bot]"
 
@@ -333,7 +333,7 @@ runs:
       uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
-        issue-number: ${{ steps.determine-release.outputs.number }}
+        issue-number: ${{ steps.semantic.outputs.pr-number }}
         edit-mode: replace
         body: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})

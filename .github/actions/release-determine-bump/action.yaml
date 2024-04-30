@@ -29,6 +29,10 @@ outputs:
     description: "Semantic release output."
     value: ${{ steps.semantic.outputs.git-tag }}
 
+  pr-number:
+    description: "Release PR number."
+    value: ${{ steps.determine-release.outputs.pr-number }}
+
 runs:
   using: "composite"
   steps:
@@ -58,7 +62,7 @@ runs:
               core.debug(JSON.stringify(pr));
               
               core.info("Found pull request " + pr.number + " which created the current commit " + context.sha);
-              core.setOutput("number", pr.number);
+              core.setOutput("pr-number", pr.number);
               
               core.debug(JSON.stringify(pr.labels));
               core.setOutput("labels", JSON.stringify(pr.labels));

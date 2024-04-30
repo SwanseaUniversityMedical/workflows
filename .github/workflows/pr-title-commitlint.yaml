@@ -44,12 +44,23 @@ jobs:
         with:
           node-version: 20
 
+      - name: cache node modules
+        uses: actions/cache@v4.0.2
+        with:
+          path: ~/.npm
+          key: ${{ github.workflow }}-commitlint
+
+      - name: install commitlint
+        shell: bash
+        run: |
+          npm install @commitlint/config-conventional @commitlint/cli
+
       - name: lint pr title
         id: commitlint
         shell: bash
         run: |
           set +e
-          lint=$(echo "$TITLE" | npx --package=@commitlint/types --package=@commitlint/config-conventional --package=@commitlint/cli commitlint --config="$CONFIG" --help-url="$CONFIG")
+          lint=$(echo "$TITLE" | npx commitlint --config="$CONFIG" --help-url="$CONFIG")
           status=$?
           echo "$lint"
           printf "lint<<EOF\n%s\nEOF" "${lint}" >> "$GITHUB_OUTPUT"

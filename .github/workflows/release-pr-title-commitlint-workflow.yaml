@@ -1,4 +1,4 @@
-name: Release Commit Lint PR Title Workflow
+name: Release PR Title Commitlint Workflow
 
 on:
   pull_request:
@@ -23,7 +23,9 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  # Cancel early on pull requests if new commits are added,
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   pr-title-commitlint:

@@ -105,7 +105,7 @@ runs:
         plugins: |-
           [
             ['@semantic-release/exec', {
-              "analyzeCommitsCmd": "printf \"%s\" \"${{ steps.determine-release.outputs.release }}\"",
+              "analyzeCommitsCmd": "[ \"${commits.length}\" -gt 0 ] && printf \"%s\" \"${{ steps.determine-release.outputs.release }}\"",
             }]
           ]
 

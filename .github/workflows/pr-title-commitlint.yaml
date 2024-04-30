@@ -49,7 +49,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          lint=$(echo "$TITLE" | npx --package=@commitlint/config-conventional --package=@commitlint/cli commitlint --config="$CONFIG" --help-url="$CONFIG")
+          lint=$(echo "$TITLE" | npx --package=@commitlint/types --package=@commitlint/config-conventional --package=@commitlint/cli commitlint --config="$CONFIG" --help-url="$CONFIG")
           status=$?
           echo "$lint"
           printf "lint<<EOF\n%s\nEOF" "${lint}" >> "$GITHUB_OUTPUT"

@@ -3,52 +3,42 @@ inputs:
   job-name:
     description: "Job name to display on Slack messages."
     required: true
-    type: string
 
   chart:
     description: "Path to the helm chart."
     required: true
-    type: string
 
   comment-header:
     description: "Header line for the PR comment."
     default: ":hammer_and_wrench: :anchor: Build PR Chart"
-    type: string
 
   comment-enabled:
     description: "PR comment creation and update."
     default: "false"
-    type: string
 
   test-command:
     description: "Command to test the chart named $CHART."
     default: ''
-    type: string
 
   registry:
     description: "URL of the chart registry."
     required: true
-    type: string
 
   registry-user:
     description: "Username for the chart registry."
     required: true
-    type: string
 
   registry-project:
     description: "Project within chart registry."
     required: true
-    type: string
 
   registry-repo:
     description: "Repo within chart registry project."
     required: true
-    type: string
 
   cosign-public-key:
     description: "Public key for cosigning images."
     required: false
-    type: string
 
   registry-token:
     description: "Authentication token for the chart registry."

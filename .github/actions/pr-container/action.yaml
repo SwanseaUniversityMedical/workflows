@@ -3,57 +3,46 @@ inputs:
   job-name:
     description: "Job name to display on Slack messages."
     required: true
-    type: string
 
   comment-header:
     description: "Header line for the PR comment."
     default: ":hammer_and_wrench: :whale: Build PR Container"
-    type: string
 
   comment-enabled:
     description: "PR comment creation and update."
     default: "false"
-    type: string
 
   build-file:
       description: "Path to the container file."
       required: true
-      type: string
 
   build-context:
     description: "Path to the build root dir."
     default: '.'
-    type: string
 
   test-flags:
     description: "Arguments passed to docker run."
     default: ''
-    type: string
 
   test-args:
     description: "Arguments passed to the container."
     default: ''
-    type: string
 
   registry:
     description: "URL of the container registry."
     required: true
-    type: string
 
   registry-user:
     description: "Username for the container registry."
     required: true
-    type: string
 
   registry-repo:
     description: "Repo within container registry project."
     required: true
-    type: string
 
   cosign-public-key:
     description: "Public key for cosigning images."
     required: false
-    type: string
 
   registry-token:
     description: "Authentication token for the container registry."

@@ -3,57 +3,58 @@ inputs:
   job-name:
     description: "Job name to display on Slack messages."
     required: true
-    type: string
 
-  chart:
-    description: "Path to the helm chart."
+  major-label:
+    description: "Label text for major releases."
     required: true
-    type: string
+
+  minor-label:
+    description: "Label text for minor releases."
+    required: true
+
+  patch-label:
+    description: "Label text for patch releases."
+    required: true
 
   comment-header:
     description: "Header line for the Release summary."
     default: ":rocket: :anchor: Build Release Chart"
-    type: string
 
   comment-enabled:
     description: "Release comment creation and update."
     default: "true"
-    type: string
+
+  chart:
+    description: "Path to the helm chart."
+    required: true
 
   test-command:
     description: "Command to test the chart named $CHART."
     default: ''
-    type: string
 
   registry:
     description: "URL of the chart registry."
     required: true
-    type: string
 
   registry-user:
     description: "Username for the chart registry."
     required: true
-    type: string
 
   registry-project:
     description: "Project within chart registry."
     required: true
-    type: string
 
   registry-repo:
     description: "Repo within chart registry project."
     required: true
-    type: string
 
   release-tag-format:
     description: "Semantic-release Github release tag format."
     default: '${version}'
-    type: string
 
   cosign-public-key:
     description: "Public key for cosigning images."
     required: false
-    type: string
 
   registry-token:
     description: "Authentication token for the chart registry."

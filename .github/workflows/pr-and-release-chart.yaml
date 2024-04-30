@@ -7,6 +7,21 @@ on:
         required: true
         type: string
 
+      major-colour:
+        description: "Colour for the major release label."
+        default: 'B60205'
+        type: string
+
+      minor-colour:
+        description: "Colour for the minor release label."
+        default: '8BD931'
+        type: string
+
+      patch-colour:
+        description: "Colour for the patch release label."
+        default: 'FBCA04'
+        type: string
+
       chart:
         description: "Path to the helm chart."
         required: true
@@ -50,21 +65,6 @@ on:
       release-tag-format:
         description: "Semantic-release Github release tag format."
         default: '${version}'
-        type: string
-
-      major-colour:
-        description: "Colour for the major release label."
-        default: 'B60205'
-        type: string
-
-      minor-colour:
-        description: "Colour for the minor release label."
-        default: '8BD931'
-        type: string
-
-      patch-colour:
-        description: "Colour for the patch release label."
-        default: 'FBCA04'
         type: string
 
       cosign-public-key:

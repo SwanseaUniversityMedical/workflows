@@ -7,6 +7,21 @@ on:
         required: true
         type: string
 
+      major-colour:
+        description: "Colour for the major release label."
+        default: 'B60205'
+        type: string
+
+      minor-colour:
+        description: "Colour for the minor release label."
+        default: '8BD931'
+        type: string
+
+      patch-colour:
+        description: "Colour for the patch release label."
+        default: 'FBCA04'
+        type: string
+
       comment-pr:
         description: "PR comment creation and update."
         default: "false"
@@ -60,21 +75,6 @@ on:
       registry-extra-tag-command:
         description: "Extra tag to push release container."
         default: ''
-        type: string
-
-      major-colour:
-        description: "Colour for the major release label."
-        default: 'B60205'
-        type: string
-
-      minor-colour:
-        description: "Colour for the minor release label."
-        default: '8BD931'
-        type: string
-
-      patch-colour:
-        description: "Colour for the patch release label."
-        default: 'FBCA04'
         type: string
 
       cosign-public-key:

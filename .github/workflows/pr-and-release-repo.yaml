@@ -32,20 +32,6 @@ on:
         default: 'FBCA04'
         type: string
 
-    secrets:
-
-      registry-token:
-        description: "Authentication token for the chart registry."
-        required: true
-
-      cosign-private-key:
-        description: "Private key for cosigning charts."
-        required: false
-
-      cosign-password:
-        description: "Private key password for cosigning charts."
-        required: false
-
 jobs:
   chart:
     runs-on:

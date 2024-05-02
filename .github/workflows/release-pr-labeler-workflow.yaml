@@ -6,18 +6,24 @@ on:
       - opened
       - synchronize
     paths:
+      - '.github/workflows/release-pr-labeler-workflow.yaml'
+
       - '.github/workflows/pr-labeler.yaml'
 
       - '.github/workflows/pr-and-release-repo.yaml'
+      - '.github/actions/release-repo/action.yaml'
       - '.github/actions/release-create-labels/action.yaml'
       - '.github/actions/release-determine-bump/action.yaml'
   push:
     branches:
       - main
     paths:
+      - '.github/workflows/release-pr-labeler-workflow.yaml'
+
       - '.github/workflows/pr-labeler.yaml'
 
       - '.github/workflows/pr-and-release-repo.yaml'
+      - '.github/actions/release-repo/action.yaml'
       - '.github/actions/release-create-labels/action.yaml'
       - '.github/actions/release-determine-bump/action.yaml'
 

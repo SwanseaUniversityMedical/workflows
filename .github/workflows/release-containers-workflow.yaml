@@ -6,26 +6,28 @@ on:
       - opened
       - synchronize
     paths:
-      - '.github/workflows/release-containers.yaml'
+      - '.github/workflows/release-containers-workflow.yaml'
 
       - '.github/workflows/pr-and-release-containers.yaml'
       - '.github/actions/pr-containers/action.yaml'
       - '.github/actions/release-containers/action.yaml'
 
       - '.github/workflows/pr-and-release-repo.yaml'
+      - '.github/actions/release-repo/action.yaml'
       - '.github/actions/release-create-labels/action.yaml'
       - '.github/actions/release-determine-bump/action.yaml'
   push:
     branches:
       - main
     paths:
-      - '.github/workflows/release-containers.yaml'
+      - '.github/workflows/release-containers-workflow.yaml'
 
       - '.github/workflows/pr-and-release-containers.yaml'
       - '.github/actions/pr-containers/action.yaml'
       - '.github/actions/release-containers/action.yaml'
 
       - '.github/workflows/pr-and-release-repo.yaml'
+      - '.github/actions/release-repo/action.yaml'
       - '.github/actions/release-create-labels/action.yaml'
       - '.github/actions/release-determine-bump/action.yaml'
 

@@ -1,0 +1,95 @@
+name: 'Create PR release labels'
+inputs:
+  job-name:
+    description: "Job name to display on Slack messages."
+    required: true
+
+  major-colour:
+    description: "Colour for the major release label."
+    default: 'B60205'
+
+  minor-colour:
+    description: "Colour for the minor release label."
+    default: '8BD931'
+
+  patch-colour:
+    description: "Colour for the patch release label."
+    default: 'FBCA04'
+
+outputs:
+  major:
+    description: "PR label for major releases."
+    value: ${{ steps.create-labels.outputs.major }}
+  minor:
+    description: "PR label for minor releases."
+    value: ${{ steps.create-labels.outputs.minor }}
+  patch:
+    description: "PR label for patch releases."
+    value: ${{ steps.create-labels.outputs.patch }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: determine release
+      id: create-labels
+      uses: actions/github-script@v7.0.1
+      with:
+        script: |
+          var inputs = ${{ toJSON(inputs) }};
+          var asset = inputs['job-name'].trim();
+          
+          var major = `major: ${asset}`;
+          core.setOutput("major", major);
+          
+          var minor = `minor: ${asset}`;
+          core.setOutput("minor", minor);
+          
+          var patch = `patch: ${asset}`;
+          core.setOutput("patch", patch);
+          
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: major,
+              color: inputs['major-colour'].trim()
+            });
+          } catch (error) {
+            //console.log(error);
+          }
+          
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: minor,
+              color: inputs['minor-colour'].trim()
+            });
+          } catch (error) {
+            //console.log(error);
+          }
+          
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: patch,
+              color: inputs['patch-colour'].trim()
+            });
+          } catch (error) {
+            //console.log(error);
+          }
+          
+          core.setOutput("major", major);
+          core.setOutput("minor", minor);
+          core.setOutput("patch", patch);
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during release-labels action execution! Check the workflow run logs for details!

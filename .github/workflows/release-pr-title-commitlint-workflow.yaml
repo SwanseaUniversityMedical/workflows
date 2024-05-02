@@ -1,0 +1,36 @@
+name: Release PR Title Commitlint Workflow
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/pr-title-commitlint.yaml'
+
+      - '.github/workflows/pr-and-release-repo.yaml'
+      - '.github/actions/release-create-labels/action.yaml'
+      - '.github/actions/release-determine-bump/action.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/pr-title-commitlint.yaml'
+
+      - '.github/workflows/pr-and-release-repo.yaml'
+      - '.github/actions/release-create-labels/action.yaml'
+      - '.github/actions/release-determine-bump/action.yaml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added,
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pr-title-commitlint:
+    uses: ./.github/workflows/pr-and-release-repo.yaml
+    with:
+      job-name: pr-title-commitlint
+      comment-release: true
+      release-tag-format: 'v${version}-pr-title-commitlint'

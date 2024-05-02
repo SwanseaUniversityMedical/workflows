@@ -39,21 +39,21 @@ jobs:
           sparse-checkout: |
             ${{ inputs.config }}
 
+      - name: install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: cache node modules
         uses: actions/cache@v4.0.2
         with:
           path: ~/.npm
           key: ${{ github.workflow }}-commitlint
 
-      - name: install node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
       - name: install commitlint
         shell: bash
         run: |
-          npm install --save-dev @commitlint/config-conventional @commitlint/cli
+          npm install @commitlint/config-conventional @commitlint/cli
 
       - name: lint pr title
         id: commitlint

@@ -69,6 +69,16 @@ jobs:
           TITLE: ${{ github.event.pull_request.title }}
           CONFIG: ${{ inputs.config }}
 
+      - name: lint title docker
+        id: dockerlint
+        shell: bash
+        run: |
+          echo test
+          echo ${{ github.event.pull_request.title }} | docker run commitlint/commitlint:19.3.0 --config=${{ inputs.config }} --help-url=${{ inputs.config }}
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          CONFIG: ${{ inputs.config }}
+
       - name: create step summary on bad lint
         if: always() && steps.commitlint.outcome != 'success'
         shell: bash
@@ -130,102 +140,6 @@ jobs:
       - name: remove error label on successful lint
         uses: actions/github-script@v7.0.1
         if: always() && steps.commitlint.outcome == 'success'
-        continue-on-error: true
-        with:
-          script: |
-            github.rest.issues.removeLabel({
-              issue_number: ${{ github.event.pull_request.number }},
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: "${{ inputs.error-label }}"
-            })
-
-  lint-docker:
-    runs-on:
-      labels: [self-hosted, linux, x64]
-      group: light
-    container:
-      image: commitlint/commitlint:19.3.0
-      env:
-        TITLE: ${{ github.event.pull_request.title }}
-        CONFIG: ${{ inputs.config }}
-    steps:
-      - name: clone config from repo
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            ${{ inputs.config }}
-
-      - name: lint title
-        id: dockerlint
-        run: |
-          echo test
-          echo ${{ github.event.pull_request.title }} | commitlint --config=${{ inputs.config }} --help-url=${{ inputs.config }}
-        env:
-          TITLE: ${{ github.event.pull_request.title }}
-          CONFIG: ${{ inputs.config }}
-
-      - name: create step summary on bad lint
-        if: always() && steps.dockerlint.outcome != 'success'
-        shell: bash
-        run: |
-          printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-          printf "COMMENT_BODY<<EOF\n%s\nEOF" "${SUMMARY}" >> "$GITHUB_ENV"
-        env:
-          # Note the intentional double spaces at the end of some lines. This is markdown.
-          SUMMARY: |
-            #### ${{ inputs.comment-header }} - ${{ inputs.comment-error }}
-            Expected PR title to be conventional commit format: ie. `type(scope): summary`
-            ```
-            ${{ steps.dockerlint.outputs.lint }}
-            ```
-            Conventional Commits :open_book: [Docs](https://www.conventionalcommits.org/en/v1.0.0)  
-            Commitlint :file_cabinet: [Config](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/${{ inputs.config }}) :open_book: [Docs](https://commitlint.js.org/reference/rules)   
-
-      - name: create step summary on good lint
-        if: always() && steps.dockerlint.outcome == 'success'
-        shell: bash
-        run: |
-          printf "%s" "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-          printf "COMMENT_BODY<<EOF\n%s\nEOF" "${SUMMARY}" >> "$GITHUB_ENV"
-        env:
-          SUMMARY: |
-            #### ${{ inputs.comment-header }} - ${{ inputs.comment-success }}
-
-      - name: find pr comment
-        uses: peter-evans/find-comment@v3
-        if: always()
-        id: find-pr-comment
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body-includes: ${{ inputs.comment-header }}
-          comment-author: "github-actions[bot]"
-
-      - name: create or update pr comment
-        uses: peter-evans/create-or-update-comment@v4
-        if: always() && (steps.dockerlint.outcome == 'success' || steps.dockerlint.outcome == 'failure')
-        with:
-          comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            ${{ env.COMMENT_BODY }}
-
-      - name: add error label on bad lint
-        uses: actions/github-script@v7.0.1
-        if: always() && steps.commitlint.outcome == 'failure'
-        with:
-          script: |
-            github.rest.issues.addLabels({
-              issue_number: ${{ github.event.pull_request.number }},
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: ["${{ inputs.error-label }}"]
-            })
-
-      - name: remove error label on successful lint
-        uses: actions/github-script@v7.0.1
-        if: always() && steps.dockerlint.outcome == 'success'
         continue-on-error: true
         with:
           script: |

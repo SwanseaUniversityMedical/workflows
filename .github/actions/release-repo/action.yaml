@@ -61,7 +61,7 @@ runs:
           :desert_island: Skipping release!
 
     - name: github release
-      if: steps.build-release.outcome == 'success' && steps.cosign-release.outcome != 'failure'
+      if: steps.semantic.outputs.new-release-published == 'true'
       uses: actions/github-script@v7
       id: release
       with:

@@ -74,7 +74,7 @@ jobs:
         shell: bash
         run: |
           echo test
-          echo ${{ github.event.pull_request.title }} | docker run commitlint/commitlint:19.3.0 --config=${{ inputs.config }} --help-url=${{ inputs.config }}
+          echo ${{ github.event.pull_request.title }} | docker run ./containers/commitlint/ --config=${{ inputs.config }} --help-url=${{ inputs.config }}
         env:
           TITLE: ${{ github.event.pull_request.title }}
           CONFIG: ${{ inputs.config }}

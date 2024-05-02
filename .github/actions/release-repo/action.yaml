@@ -1,0 +1,131 @@
+name: 'Build and Release Repo'
+inputs:
+  job-name:
+    description: "Job name to display on Slack messages."
+    required: true
+
+  major-label:
+    description: "Label text for major releases."
+    required: true
+
+  minor-label:
+    description: "Label text for minor releases."
+    required: true
+
+  patch-label:
+    description: "Label text for patch releases."
+    required: true
+
+  comment-header:
+    description: "Header line for the Release summary."
+    default: ":rocket: :alembic: Build Release Repo"
+
+  comment-enabled:
+    description: "Release comment creation and update."
+    default: "true"
+
+  release-tag-format:
+    description: "Semantic-release Github release tag format."
+    default: '${version}'
+
+runs:
+  using: "composite"
+  steps:
+    - name: determine release
+      id: semantic
+      uses: ./.tmp/.github/actions/release-determine-bump
+      with:
+        release-tag-format: ${{ inputs.release-tag-format }}
+        major-label: ${{ inputs.major-label }}
+        minor-label: ${{ inputs.minor-label }}
+        patch-label: ${{ inputs.patch-label }}
+
+    - name: new release
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}
+          :label: New version will be ${{ steps.semantic.outputs.release-version }}  
+
+    - name: skipped release
+      if: steps.semantic.outputs.new-release-published != 'true'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}  
+          :desert_island: Skipping release!
+
+    - name: github release
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: actions/github-script@v7
+      id: release
+      with:
+        retries: 3
+        github-token: ${{ github.token }}
+        script: |
+          github.rest.repos.createRelease({
+            owner: "${{ github.repository_owner }}",
+            repo: "${{ github.event.repository.name }}",
+            tag_name: "${{ steps.semantic.outputs.git-tag }}",
+            target_commitish: "${{ github.sha }}",
+            body: "",
+            name: "${{ steps.semantic.outputs.git-tag }}"
+          });
+
+    - name: release success
+      if: steps.release.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ```
+          ${{ steps.semantic.outputs.git-tag }}
+          ```
+          :hammer_and_wrench: Github Release Success  
+
+    - name: release error
+      if: failure() && steps.release.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Github Release Failure"
+
+    - name: find pr comment
+      uses: peter-evans/find-comment@v3
+      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      id: find-pr-comment
+      with:
+        issue-number: ${{ steps.semantic.outputs.pr-number }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        comment-author: "github-actions[bot]"
+
+    - name: comment on release success
+      id: release-pr-comment
+      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ steps.semantic.outputs.pr-number }}
+        edit-mode: replace
+        body: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          ```
+          ${{ steps.semantic.outputs.git-tag }}
+          ```
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during execution! Check the workflow run logs for details!

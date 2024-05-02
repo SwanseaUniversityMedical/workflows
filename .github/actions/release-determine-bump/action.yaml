@@ -1,0 +1,120 @@
+name: 'Determine a Release Bump'
+inputs:
+  major-label:
+    description: "Label text for major releases."
+    required: true
+
+  minor-label:
+    description: "Label text for minor releases."
+    required: true
+
+  patch-label:
+    description: "Label text for patch releases."
+    required: true
+
+  release-tag-format:
+    description: "Semantic-release Github release tag format."
+    default: '${version}'
+
+outputs:
+  new-release-published:
+    description: "Semantic release output."
+    value: ${{ steps.semantic.outputs.new-release-published }}
+
+  release-version:
+    description: "Semantic release output."
+    value: ${{ steps.semantic.outputs.release-version }}
+
+  git-tag:
+    description: "Semantic release output."
+    value: ${{ steps.semantic.outputs.git-tag }}
+
+  pr-number:
+    description: "Release PR number."
+    value: ${{ steps.determine-release.outputs.pr-number }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: determine release
+      id: determine-release
+      uses: actions/github-script@v7.0.1
+      with:
+        script: |
+          var inputs = ${{ toJSON(inputs) }};
+          var major = inputs['major-label'].trim();
+          var minor = inputs['minor-label'].trim();
+          var patch = inputs['patch-label'].trim();
+
+          var result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            owner: context.repo.owner,
+            repo: context.repo.repo,  
+            commit_sha: context.sha,
+          });
+          
+          if (result.data.length > 0) {
+            if (result.data.length > 1) {
+              core.warning("Found multiple pull requests associated with the current commit!");
+            }
+            
+            for (let i = 0; i < result.data.length; i++) {
+              var pr = result.data[i];
+              core.debug(JSON.stringify(pr));
+              
+              core.info("Found pull request " + pr.number + " which created the current commit " + context.sha);
+              core.setOutput("pr-number", pr.number);
+              
+              core.debug(JSON.stringify(pr.labels));
+              core.setOutput("labels", JSON.stringify(pr.labels));
+              
+              if (pr.labels.find((label) => (label.name === major))) {
+                core.info("next release will be major");
+                core.setOutput("release", "major");
+              }
+              else if (pr.labels.find((label) => (label.name === minor))) {
+                core.info("next release will be minor");
+                core.setOutput("release", "minor");
+              }
+              else if (pr.labels.find((label) => (label.name === patch))) {
+                core.info("next release will be patch");
+                core.setOutput("release", "patch");
+              }
+              else {
+                core.info("next release will be skipped");
+                core.setOutput("release", "");
+              }
+              
+              return;
+            }
+          }
+          
+          core.setFailed("Could not find pr to extract labels from.");
+
+    - name: semantic release
+      if: steps.determine-release.outputs.release != ''
+      uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
+      id: semantic
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        dry-run: true
+        branches: ${{ github.ref }}
+        tag-format: ${{ inputs.release-tag-format }}
+        additional-packages: |
+          ['@semantic-release/exec']
+        plugins: |-
+          [
+            ['@semantic-release/exec', {
+              "analyzeCommitsCmd": "([ \"${commits.length}\" -gt 0 ] && printf \"%s\" \"${{ steps.determine-release.outputs.release }}\") || true",
+            }]
+          ]
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during release action execution! Check the workflow run logs for details!

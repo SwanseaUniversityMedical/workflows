@@ -3,116 +3,66 @@ inputs:
   job-name:
     description: "Job name to display on Slack messages."
     required: true
-    type: string
+
+  major-label:
+    description: "Label text for major releases."
+    required: true
+
+  minor-label:
+    description: "Label text for minor releases."
+    required: true
+
+  patch-label:
+    description: "Label text for patch releases."
+    required: true
 
   comment-header:
     description: "Header line for the Release summary."
-    default: ":whale: Build Release Container"
-    type: string
+    default: ":rocket: :whale: Build Release Container"
+
+  comment-enabled:
+    description: "Release comment creation and update."
+    default: "true"
 
   build-file:
     description: "Path to the container file."
     required: true
-    type: string
 
   build-context:
     description: "Path to the build root dir."
     default: '.'
-    type: string
 
   test-flags:
     description: "Arguments passed to docker run."
     default: ''
-    type: string
 
   test-args:
     description: "Arguments passed to the container."
     default: ''
-    type: string
 
   registry:
     description: "URL of the container registry."
     required: true
-    type: string
 
   registry-user:
     description: "Username for the container registry."
     required: true
-    type: string
 
   registry-repo:
     description: "Repo within container registry project."
     required: true
-    type: string
-
-  registry-tag-prefix:
-    description: "Prefix to use when tagging container"
-    default: ''
-    type: string
-
-  registry-tag-suffix:
-    description: "Suffix to use when tagging container"
-    default: ''
-    type: string
 
   registry-extra-tag-command:
     description: "Extra tag to push release container."
     default: ''
-    type: string
-
-  release-rules:
-    description: "JSON list of rule dicts for what commit types trigger releases."
-    default: |
-      [
-        {"type": "major", "release": "major"},
-        {"type": "minor", "release": "minor"},
-        {"type": "patch", "release": "patch"},
-        {"type": "no-release", "release": false},
-      
-        {"type": "chore", "release": "patch"},
-        {"type": "refactor", "release": "patch"},
-        {"type": "style", "release": "patch"},
-      
-        {"type": "docs", "release": false},
-        {"type": "test", "release": false},
-        {"type": "ci", "release": false},
-      
-        {"type": "feat", "release": "minor"},
-      
-        {"type": "revert", "release": "patch"},
-        {"type": "perf", "release": "patch"},
-        {"type": "fix", "release": "patch"},
-        {"type": "build", "release": "patch"},
-      ]
-    type: string
-
-  release-branches:
-    description: "JSON list of regex branch filters."
-    default: |
-      [
-        '+([0-9])?(.{+([0-9]),x}).x',
-        'main'
-      ]
-    type: string
 
   release-tag-format:
     description: "Semantic-release Github release tag format."
     default: '${version}'
-    type: string
-
-  slack-channel:
-    description: "ID of the Slack channel to post updates to."
-    required: true
-    type: string
 
   cosign-public-key:
     description: "Public key for cosigning images."
     required: false
-    type: string
-
-  slack-token:
-    description: "Authentication token for Slack."
-    required: true
 
   registry-token:
     description: "Authentication token for the container registry."
@@ -129,11 +79,21 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: determine release
+      id: semantic
+      uses: ./.tmp/.github/actions/release-determine-bump
+      with:
+        release-tag-format: ${{ inputs.release-tag-format }}
+        major-label: ${{ inputs.major-label }}
+        minor-label: ${{ inputs.minor-label }}
+        patch-label: ${{ inputs.patch-label }}
+
     - name: install cosign
-      if: inputs.cosign-public-key != ''
+      if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       uses: sigstore/cosign-installer@v3.1.2
 
     - name: forward proxy settings
+      if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV
@@ -141,6 +101,7 @@ runs:
         echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
 
     - name: install buildx
+      if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/setup-buildx-action@v3
       with:
         driver-opts: |
@@ -158,32 +119,12 @@ runs:
             mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
 
     - name: login to container registry
+      if: steps.semantic.outputs.new-release-published == 'true'
       uses: docker/login-action@v3
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}
         password: ${{ inputs.registry-token }}
-
-    - name: determine release
-      uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
-      id: semantic
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      with:
-        dry-run: true
-        branches: ${{ inputs.release-branches }}
-        tag-format: ${{ inputs.release-tag-format }}
-        plugins: |-
-          [
-            ['@semantic-release/commit-analyzer', {
-              "releaseRules": ${{ inputs.release-rules }},
-            }], 
-            '@semantic-release/release-notes-generator',
-            ['@semantic-release/github', {
-              "successComment": false,
-              "failTitle": false
-            }]
-          ]
 
     - name: new release
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -243,7 +184,7 @@ runs:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
-          type=raw,value=rc-${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
+          type=raw,value=rc-${{ steps.semantic.outputs.release-version }}
 
     - name: release container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -253,7 +194,7 @@ runs:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
-          type=raw,value=${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.release-version }}${{ inputs.registry-tag-suffix }}
+          type=raw,value=${{ steps.semantic.outputs.release-version }}
 
     - name: build rc container
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -460,9 +401,6 @@ runs:
       if: steps.build-release.outcome == 'success' && steps.cosign-release.outcome != 'failure'
       uses: actions/github-script@v7
       id: release
-      env:
-        RELEASE_NOTES: |
-          ${{ steps.semantic.outputs.release-notes }}
       with:
         retries: 3
         github-token: ${{ github.token }}
@@ -470,11 +408,57 @@ runs:
           github.rest.repos.createRelease({
             owner: "${{ github.repository_owner }}",
             repo: "${{ github.event.repository.name }}",
-            tag_name: "${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.git-tag }}${{ inputs.registry-tag-suffix }}",
+            tag_name: "${{ steps.semantic.outputs.git-tag }}",
             target_commitish: "${{ github.sha }}",
-            body: process.env.RELEASE_NOTES,
-            name: "${{ inputs.registry-tag-prefix }}${{ steps.semantic.outputs.git-tag }}${{ inputs.registry-tag-suffix }}"
+            body: "",
+            name: "${{ steps.semantic.outputs.git-tag }}"
           });
+
+    - name: release success
+      if: steps.release.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ```
+          ${{ steps.semantic.outputs.git-tag }}
+          ```
+          :hammer_and_wrench: Github Release Success  
+
+    - name: release error
+      if: failure() && steps.release.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Github Release Failure"
+
+    - name: find pr comment
+      uses: peter-evans/find-comment@v3
+      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      id: find-pr-comment
+      with:
+        issue-number: ${{ steps.semantic.outputs.pr-number }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        comment-author: "github-actions[bot]"
+
+    - name: comment on release success
+      id: release-pr-comment
+      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ steps.semantic.outputs.pr-number }}
+        edit-mode: replace
+        body: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          ```
+          ${{ steps.semantic.outputs.git-tag }}
+          ${{ steps.meta.outputs.tags }}
+          ${{ env.EXTRA_META }}
+          ${{ steps.build-release.outputs.digest }}
+          ```
 
     - name: error
       if: failure()

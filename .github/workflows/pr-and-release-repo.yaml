@@ -69,10 +69,9 @@ jobs:
 
       - name: release
         if: github.event_name == 'push'
-        id: semantic
         uses: ./.tmp/.github/actions/release-repo
         with:
           release-tag-format: ${{ inputs.release-tag-format }}
-          major-label: ${{ steps.create-release-labels.outputs.major-label }}
-          minor-label: ${{ steps.create-release-labels.outputs.minor-label }}
-          patch-label: ${{ steps.create-release-labels.outputs.patch-label }}
+          major-label: ${{ steps.create-release-labels.outputs.major }}
+          minor-label: ${{ steps.create-release-labels.outputs.minor }}
+          patch-label: ${{ steps.create-release-labels.outputs.patch }}

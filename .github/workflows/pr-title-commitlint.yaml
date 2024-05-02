@@ -73,8 +73,8 @@ jobs:
         id: dockerlint
         shell: bash
         run: |
-          echo test
-          echo ${{ github.event.pull_request.title }} | docker run ./containers/commitlint/ --config=${{ inputs.config }} --help-url=${{ inputs.config }}
+          docker build ./containers/commitlint/ --tag 'commitlint' 
+          echo ${{ github.event.pull_request.title }} | docker run commitlint --config=${{ inputs.config }} --help-url=${{ inputs.config }}
         env:
           TITLE: ${{ github.event.pull_request.title }}
           CONFIG: ${{ inputs.config }}

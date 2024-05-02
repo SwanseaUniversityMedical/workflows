@@ -71,6 +71,7 @@ jobs:
         if: github.event_name == 'push'
         uses: ./.tmp/.github/actions/release-repo
         with:
+          job-name: ${{ inputs.job-name }}
           release-tag-format: ${{ inputs.release-tag-format }}
           major-label: ${{ steps.create-release-labels.outputs.major }}
           minor-label: ${{ steps.create-release-labels.outputs.minor }}

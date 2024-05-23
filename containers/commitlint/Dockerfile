@@ -1,2 +1,2 @@
-FROM commitlint/commitlint:19.3.0
-RUN npm install conventional-changelog-conventionalcommits
+FROM node@lts-alpine
+RUN npm install @commitlint/config-conventional @commitlint/cli conventional-changelog-conventionalcommits

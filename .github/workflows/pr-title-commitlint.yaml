@@ -73,8 +73,9 @@ jobs:
         id: dockerlint
         shell: bash
         run: |
-          docker build . --tag 'commitlint' -f containers/commitlint/Dockerfile
-          echo ${{ github.event.pull_request.title }} | docker run -v "$(pwd)/.github":"/.github" -i commitlint --config=${{ inputs.config }} --help-url=${{ inputs.config }}
+#          docker build . --tag 'commitlint' -f containers/commitlint/Dockerfile
+          docker pull commitlint/commitlint:19.3.0
+          echo ${{ github.event.pull_request.title }} | docker run -v "$(pwd)/.github":"/.github" -i commitlint/commitlint:19.3.0 --config=${{ inputs.config }} --help-url=${{ inputs.config }}
         env:
           TITLE: ${{ github.event.pull_request.title }}
           CONFIG: ${{ inputs.config }}

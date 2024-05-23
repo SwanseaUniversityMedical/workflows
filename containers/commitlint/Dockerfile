@@ -1,5 +1,5 @@
 FROM node:20-alpine
 WORKDIR /usr/app
-RUN npm install conventional-changelog-conventionalcommits
+RUN npm install @commitlint/config-conventional @commitlint/cli conventional-changelog-conventionalcommits
 WORKDIR /
 ENTRYPOINT ["commitlint"]

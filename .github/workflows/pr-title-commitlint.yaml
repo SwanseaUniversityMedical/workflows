@@ -67,16 +67,6 @@ jobs:
           TITLE: ${{ github.event.pull_request.title }}
           CONFIG: ${{ inputs.config }}
 
-      - name: lint title docker
-        id: dockerlint
-        shell: bash
-        run: |
-          docker build . --tag 'commitlint' -f containers/commitlint/Dockerfile
-          echo ${{ github.event.pull_request.title }} | docker run -v "$(pwd)/.github":"/.github" -i commitlint bun run commitlint --config=${{ inputs.config }} --help-url=${{ inputs.config }}
-        env:
-          TITLE: ${{ github.event.pull_request.title }}
-          CONFIG: ${{ inputs.config }}
-
       - name: create step summary on bad lint
         if: always() && steps.commitlint.outcome != 'success'
         shell: bash

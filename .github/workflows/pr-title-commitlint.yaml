@@ -39,20 +39,8 @@ jobs:
 #          sparse-checkout: |
 #            ${{ inputs.config }}
 
-#      - name: install node
-#        uses: actions/setup-node@v4
-#        with:
-#          node-version: 20
       - name: install bun
         uses: oven-sh/setup-bun@v1
-#        with:
-#          bun-version: 1.0.11
-
-      - name: cache node modules
-        uses: actions/cache@v4.0.2
-        with:
-          path: ~/.npm
-          key: ${{ github.workflow }}-commitlint
 
       - name: cache bun
         uses: actions/cache@v4.0.2

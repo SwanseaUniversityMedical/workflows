@@ -35,9 +35,9 @@ jobs:
     steps:
       - name: clone config from repo
         uses: actions/checkout@v4
-#        with:
-#          sparse-checkout: |
-#            ${{ inputs.config }}
+        with:
+          sparse-checkout: |
+            ${{ inputs.config }}
 
       - name: install bun
         uses: oven-sh/setup-bun@v1

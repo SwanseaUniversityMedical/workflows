@@ -1,5 +1,4 @@
-FROM node:20-alpine
+FROM oven/bun:1.1-slim
 WORKDIR /tmp
-RUN npm install -g @commitlint/config-conventional @commitlint/cli conventional-changelog-conventionalcommits
-RUN alias commitlint='commitlint --extends "@commitlint/config-conventional"'
+RUN bun install -g @commitlint/config-conventional @commitlint/cli conventional-changelog-conventionalcommits
 WORKDIR /

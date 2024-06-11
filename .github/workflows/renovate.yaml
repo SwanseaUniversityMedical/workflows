@@ -4,7 +4,7 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    - cron: '@hourly'
+    - cron: '0 * * * *'
 
 permissions:
   contents: write

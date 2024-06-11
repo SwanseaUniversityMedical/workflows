@@ -10,7 +10,8 @@ export default {
         'containers',
         'charts',
         'commitlint',
-        'labeler'
+        'labeler',
+        'renovate'
     ]]
   }
 };

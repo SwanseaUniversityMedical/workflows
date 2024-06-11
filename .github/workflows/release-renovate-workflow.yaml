@@ -1,4 +1,4 @@
-name: Release PR Title Commitlint Workflow
+name: Release Renovate Workflow
 
 on:
   pull_request:

@@ -19,7 +19,7 @@ jobs:
   renovate:
     runs-on:
       labels: [self-hosted, linux, x64]
-      group: renovate
+      group: heavy
 
     steps:
       - name: clone repo

@@ -90,7 +90,7 @@ runs:
 
     - name: install cosign
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
-      uses: sigstore/cosign-installer@v3.1.2
+      uses: sigstore/cosign-installer@v3.5.0
 
     - name: forward proxy settings
       if: steps.semantic.outputs.new-release-published == 'true'

@@ -70,8 +70,7 @@ runs:
     - name: install helm
       uses: azure/setup-helm@v4.2.0
       with:
-        version: 'v3.9.0'
-        token: ${{ github.token }}
+        version: 'v3.15.1'
 
     - name: login to chart registry
       shell: bash

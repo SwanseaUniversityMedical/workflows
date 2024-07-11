@@ -35,7 +35,7 @@ on:
     outputs:
       release-info:
         description: "All release info in one json blob."
-        value: ${{ jobs.repo.steps.release.outputs }}
+        value: 'test'
 
       new-release-published:
         description: "Semantic release output."

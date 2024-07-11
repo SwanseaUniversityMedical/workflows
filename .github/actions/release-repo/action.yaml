@@ -28,6 +28,23 @@ inputs:
     description: "Semantic-release Github release tag format."
     default: '${version}'
 
+outputs:
+  new-release-published:
+    description: "Semantic release output."
+    value: ${{ steps.semantic.outputs.new-release-published }}
+
+  release-version:
+    description: "Semantic release output."
+    value: ${{ steps.semantic.outputs.release-version }}
+
+  git-tag:
+    description: "Semantic release output."
+    value: ${{ steps.semantic.outputs.git-tag }}
+
+  pr-number:
+    description: "Release PR number."
+    value: ${{ steps.semantic.outputs.pr-number }}
+
 runs:
   using: "composite"
   steps:

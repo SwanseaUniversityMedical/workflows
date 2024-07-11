@@ -32,6 +32,23 @@ on:
         default: 'FBCA04'
         type: string
 
+    outputs:
+      new-release-published:
+        description: "Semantic release output."
+        value: ${{ steps.release.outputs.new-release-published }}
+
+      release-version:
+        description: "Semantic release output."
+        value: ${{ steps.release.outputs.release-version }}
+
+      git-tag:
+        description: "Semantic release output."
+        value: ${{ steps.release.outputs.git-tag }}
+
+      pr-number:
+        description: "Release PR number."
+        value: ${{ steps.release.outputs.pr-number }}
+
 jobs:
   repo:
     runs-on:
@@ -68,6 +85,7 @@ jobs:
           patch-colour: ${{ inputs.patch-colour }}
 
       - name: release
+        id: release
         if: github.event_name == 'push'
         uses: ./.tmp/.github/actions/release-repo
         with:

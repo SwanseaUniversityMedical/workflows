@@ -1,0 +1,430 @@
+name: 'Build, Test and Release Container'
+inputs:
+  job-name:
+    description: "Job name to display on Slack messages."
+    required: true
+
+  major-label:
+    description: "Label text for major releases."
+    required: true
+
+  minor-label:
+    description: "Label text for minor releases."
+    required: true
+
+  patch-label:
+    description: "Label text for patch releases."
+    required: true
+
+  comment-header:
+    description: "Header line for the Release summary."
+    default: ":rocket: :whale: Build Release Container"
+
+  comment-enabled:
+    description: "Release comment creation and update."
+    default: "true"
+
+  build-file:
+    description: "Path to the container file."
+    required: true
+
+  build-context:
+    description: "Path to the build root dir."
+    default: '.'
+
+  test-flags:
+    description: "Arguments passed to docker run."
+    default: ''
+
+  test-args:
+    description: "Arguments passed to the container."
+    default: ''
+
+  registry:
+    description: "URL of the container registry."
+    required: true
+
+  registry-user:
+    description: "Username for the container registry."
+    required: true
+
+  registry-repo:
+    description: "Repo within container registry project."
+    required: true
+
+  registry-extra-tag-command:
+    description: "Extra tag to push release container."
+    default: ''
+
+  release-info:
+    description: "Release information json blob."
+    required: true
+
+  release-tag-format:
+    description: "Semantic-release Github release tag format."
+    default: '${version}'
+
+  cosign-public-key:
+    description: "Public key for cosigning images."
+    required: false
+
+  registry-token:
+    description: "Authentication token for the container registry."
+    required: true
+
+  cosign-private-key:
+    description: "Private key for cosigning images."
+    required: false
+
+  cosign-password:
+    description: "Private key password for cosigning images."
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: install cosign
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' && inputs.cosign-public-key != '' }}
+      uses: sigstore/cosign-installer@v3.5.0
+
+    - name: forward proxy settings
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' }}
+      shell: bash
+      run: |
+        echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV
+        echo "HTTPS_PROXY=$HTTPS_PROXY" >> $GITHUB_ENV
+        echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
+
+    - name: install buildx
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' }}
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver-opts: |
+          env.http_proxy=${{ env.HTTP_PROXY }}
+          env.https_proxy=${{ env.HTTPS_PROXY }}
+          "env.no_proxy='${{ env.NO_PROXY }}'"
+        buildkitd-config-inline: |
+          [registry."docker.io"]
+            mirrors = ["https://harbor.ukserp.ac.uk/proxycache"]
+          [registry."quay.io"]
+            mirrors = ["https://harbor.ukserp.ac.uk/quaycache"]
+          [registry."ghcr.io"]
+            mirrors = ["https://harbor.ukserp.ac.uk/ghcrcache"]
+          [registry."mcr.microsoft.com"]
+            mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
+
+    - name: login to container registry
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' }}
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-user }}
+        password: ${{ inputs.registry-token }}
+
+    - name: new release
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' }}
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}
+          :label: New version will be ${{ fromJSON(inputs.release-info.release-version) }}  
+
+    - name: skipped release
+      if: ${{ fromJSON(inputs.release-info.new-release-published) != 'true' }}
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}  
+          :desert_island: Skipping release!
+
+    - name: cache container metadata
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' }}
+      uses: docker/metadata-action@v5
+      id: branch-recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=ref,event=branch,prefix=rc-
+
+    - name: pr cache container metadata
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' }}
+      uses: docker/metadata-action@v5
+      id: pr-recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=pr-recent
+
+    - name: rc cache container metadata
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' }}
+      uses: docker/metadata-action@v5
+      id: rc-recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=rc-recent
+
+    - name: rc container metadata
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' }}
+      uses: docker/metadata-action@v5
+      id: rc-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=rc-${{ fromJSON(inputs.release-info.release-version) }}
+
+    - name: release container metadata
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' }}
+      uses: docker/metadata-action@v5
+      id: meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=${{ fromJSON(inputs.release-info.release-version) }}
+
+    - name: build rc container
+      if: ${{ fromJSON(inputs.release-info.new-release-published) == 'true' }}
+      uses: docker/build-push-action@v5
+      id: build-rc
+      with:
+        file: ${{ inputs.build-file }}
+        context: ${{ inputs.build-context }}
+        tags: |
+          ${{ steps.rc-meta.outputs.tags }}
+          ${{ steps.branch-recent-meta.outputs.tags }}
+          ${{ steps.rc-recent-meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        push: true
+        github-token: ${{ github.token }}
+        provenance: true
+        cache-to: type=inline
+        cache-from: |
+          type=registry,ref=${{ steps.branch-recent-meta.outputs.tags }}
+          type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
+          type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
+
+    - name: build success
+      if: steps.build-rc.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ```
+          ${{ steps.rc-meta.outputs.tags }}
+          ${{ steps.build-rc.outputs.digest }}
+          ```
+          :hammer_and_wrench: Build Success  
+
+    - name: build error
+      if: failure() && steps.build-rc.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Build Failure"
+
+    - name: cosign image with key
+      id: cosign-rc
+      if: inputs.cosign-public-key != '' && steps.build-rc.outcome == 'success'
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        TAGS: ${{ steps.rc-meta.outputs.tags }}
+        DIGEST: ${{ steps.build-rc.outputs.digest }}
+      shell: bash
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
+
+    - name: cosign success
+      if: steps.cosign-rc.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: cosign error
+      if: failure() && steps.cosign-rc.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
+
+    - name: test
+      id: test
+      if: (inputs.test-flags != '' || inputs.test-args != '') && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure'
+      shell: bash
+      run: |
+        docker run \
+          ${{ inputs.test-flags }} \
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build-rc.outputs.digest }} \
+          ${{ inputs.test-args }}
+
+    - name: test success
+      if: steps.test.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":eyes: Test Success  "
+
+    - name: test error
+      if: failure() && steps.test.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Test Failure"
+
+    - name: create null extra tag
+      if: inputs.registry-extra-tag-command == '' && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      shell: bash
+      run: |
+        echo "EXTRA_TAG=" >> $GITHUB_ENV
+        echo "EXTRA_META=" >> $GITHUB_ENV
+
+    - name: create extra tag
+      id: extra-tag
+      if: inputs.registry-extra-tag-command != '' && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      shell: bash
+      run: |
+        EXTRA_TAG=$(${{ inputs.registry-extra-tag-command }})
+        echo "EXTRA_TAG=$EXTRA_TAG" >> $GITHUB_ENV
+        EXTRA_META="${{ inputs.registry }}/${{ inputs.registry-repo }}:${EXTRA_TAG}"
+        echo "EXTRA_META=$EXTRA_META" >> $GITHUB_ENV
+
+    - name: extra tag success
+      if: steps.extra-tag.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":label: New version will also be tagged as ${{ env.EXTRA_TAG }}  "
+
+    - name: extra tag error
+      if: failure() && steps.extra-tag.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Extra Tag Command Failure"
+
+    - name: build release container
+      if: steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure' && steps.extra-tag.outcome != 'failure'
+      uses: docker/build-push-action@v5
+      id: build-release
+      with:
+        file: ${{ inputs.build-file }}
+        context: ${{ inputs.build-context }}
+        tags: |
+          ${{ steps.meta.outputs.tags }}
+          ${{ env.EXTRA_META }}
+        labels: ${{ steps.meta.outputs.labels }}
+        push: true
+        github-token: ${{ github.token }}
+        provenance: true
+        cache-from: |
+          type=registry,ref=${{ steps.rc-meta.outputs.tags }}
+          type=registry,ref=${{ steps.meta.outputs.tags }}
+
+    - name: build success
+      if: steps.build-release.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ```
+          ${{ steps.meta.outputs.tags }}
+          ${{ env.EXTRA_META }}
+          ${{ steps.build-release.outputs.digest }}
+          ```
+          :hammer_and_wrench: Release Build Success  
+
+    - name: build error
+      if: failure() && steps.build-release.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Release Build Failure"
+
+    - name: cosign image with key
+      id: cosign-release
+      if: inputs.cosign-public-key != '' && steps.build-release.outcome == 'success'
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        TAGS: ${{ steps.meta.outputs.tags }}
+        DIGEST: ${{ steps.build-release.outputs.digest }}
+      shell: bash
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
+
+    - name: cosign success
+      if: steps.cosign-release.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: cosign error
+      if: failure() && steps.cosign-release.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
+
+    - name: find pr comment
+      uses: peter-evans/find-comment@v3
+      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      id: find-pr-comment
+      with:
+        issue-number: ${{ steps.semantic.outputs.pr-number }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        comment-author: "github-actions[bot]"
+
+    - name: comment on release success
+      id: release-pr-comment
+      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ steps.semantic.outputs.pr-number }}
+        edit-mode: replace
+        body: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          ```
+          ${{ steps.semantic.outputs.git-tag }}
+          ${{ steps.meta.outputs.tags }}
+          ${{ env.EXTRA_META }}
+          ${{ steps.build-release.outputs.digest }}
+          ```
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during execution! Check the workflow run logs for details!

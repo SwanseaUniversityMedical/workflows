@@ -35,29 +35,49 @@ on:
     outputs:
       release-info:
         description: "All release info in one json blob."
-        value: ${{ jobs.repo.steps.release.outputs }}
+        value: ${{ jobs.repo.outputs.release-info }}
 
       new-release-published:
         description: "Semantic release output."
-        value: ${{ jobs.repo.steps.release.outputs.new-release-published }}
+        value: ${{ jobs.repo.outputs.new-release-published }}
 
       release-version:
         description: "Semantic release output."
-        value: ${{ jobs.repo.steps.release.outputs.release-version }}
+        value: ${{ jobs.repo.outputs.release-version }}
 
       git-tag:
         description: "Semantic release output."
-        value: ${{ jobs.repo.steps.release.outputs.git-tag }}
+        value: ${{ jobs.repo.outputs.git-tag }}
 
       pr-number:
         description: "Release PR number."
-        value: ${{ jobs.repo.steps.release.outputs.pr-number }}
+        value: ${{ jobs.repo.outputs.pr-number }}
 
 jobs:
   repo:
     runs-on:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
+    outputs:
+      release-info:
+        description: "All release info in one json blob."
+        value: ${{ steps.release.outputs.release-info }}
+
+      new-release-published:
+        description: "Semantic release output."
+        value: ${{ steps.release.outputs.new-release-published }}
+
+      release-version:
+        description: "Semantic release output."
+        value: ${{ steps.release.outputs.release-version }}
+
+      git-tag:
+        description: "Semantic release output."
+        value: ${{ steps.release.outputs.git-tag }}
+
+      pr-number:
+        description: "Release PR number."
+        value: ${{ steps.release.outputs.pr-number }}
     steps:
       - name: get workflow reference
         id: workflows-ref

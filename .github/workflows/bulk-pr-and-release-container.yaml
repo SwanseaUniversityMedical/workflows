@@ -124,7 +124,7 @@ jobs:
           path: .tmp
           sparse-checkout: |
             .github/actions/pr-container
-            .github/actions/release-container
+            .github/actions/bulk-release-container
             .github/actions/release-create-labels
             .github/actions/release-determine-bump
 

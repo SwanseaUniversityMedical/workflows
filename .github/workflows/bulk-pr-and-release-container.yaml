@@ -72,6 +72,10 @@ on:
         default: '${version}'
         type: string
 
+      release-info:
+        description: "Release information json blob."
+        required: true
+
       registry-extra-tag-command:
         description: "Extra tag to push release container."
         default: ''
@@ -165,6 +169,7 @@ jobs:
           registry-token: ${{ secrets.registry-token }}
           registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
           release-tag-format: ${{ inputs.release-tag-format }}
+          release-info: ${{ inputs.release-info }}
           build-file: ${{ inputs.build-file }}
           build-context: ${{ inputs.build-context }}
           test-flags: ${{ inputs.test-flags }}

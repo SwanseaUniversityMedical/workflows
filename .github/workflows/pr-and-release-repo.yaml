@@ -35,19 +35,19 @@ on:
     outputs:
       new-release-published:
         description: "Semantic release output."
-        value: ${{ steps.release.outputs.new-release-published }}
+        value: ${{ jobs.repo.steps.release.outputs.new-release-published }}
 
       release-version:
         description: "Semantic release output."
-        value: ${{ steps.release.outputs.release-version }}
+        value: ${{ jobs.repo.steps.release.outputs.release-version }}
 
       git-tag:
         description: "Semantic release output."
-        value: ${{ steps.release.outputs.git-tag }}
+        value: ${{ jobs.repo.steps.release.outputs.git-tag }}
 
       pr-number:
         description: "Release PR number."
-        value: ${{ steps.release.outputs.pr-number }}
+        value: ${{ jobs.repo.steps.release.outputs.pr-number }}
 
 jobs:
   repo:

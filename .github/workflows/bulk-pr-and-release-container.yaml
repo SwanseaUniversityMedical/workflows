@@ -75,6 +75,7 @@ on:
       release-info:
         description: "Release information json blob."
         required: true
+        type: string
 
       registry-extra-tag-command:
         description: "Extra tag to push release container."

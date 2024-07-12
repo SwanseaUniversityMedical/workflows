@@ -58,6 +58,12 @@ jobs:
     runs-on:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
+    outputs:
+      release-info: ${{ steps.release.outputs.release-info }}
+      new-release-published: ${{ steps.release.outputs.new-release-published }}
+      release-version: ${{ steps.release.outputs.release-version }}
+      git-tag: ${{ steps.release.outputs.git-tag }}
+      pr-number: ${{ steps.release.outputs.pr-number }}
     steps:
       - name: get workflow reference
         id: workflows-ref

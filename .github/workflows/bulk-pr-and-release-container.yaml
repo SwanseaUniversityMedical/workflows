@@ -137,11 +137,6 @@ jobs:
           minor-colour: ${{ inputs.minor-colour }}
           patch-colour: ${{ inputs.patch-colour }}
 
-      - name: print input
-        shell: bash
-        run: |
-          echo ${{ inputs.release-info }}
-
       - name: pr
         if: github.event_name == 'pull_request'
         uses: ./.tmp/.github/actions/pr-container

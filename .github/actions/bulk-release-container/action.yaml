@@ -130,7 +130,7 @@ runs:
       env:
         SUMMARY: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}
-          :label: New version will be ${{ fromJSON(inputs.release-info.release-version) }}  
+          :label: New version will be ${{ fromJSON(inputs.release-info).release-version }}  
 
     - name: skipped release
       if: ${{ contains(fromJSON('["true"]'), inputs.release-info.new-release-published) != 'true' }}

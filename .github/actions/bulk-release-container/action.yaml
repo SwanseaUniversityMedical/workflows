@@ -89,7 +89,7 @@ runs:
       uses: sigstore/cosign-installer@v3.5.0
 
     - name: forward proxy settings
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) == 'true' }}
+      if: ${{ inputs.release-info.new-release-published == 'true' }}
       shell: bash
       run: |
         echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV

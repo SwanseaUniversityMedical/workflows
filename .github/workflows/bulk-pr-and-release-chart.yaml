@@ -62,11 +62,6 @@ on:
         required: true
         type: string
 
-      release-tag-format:
-        description: "Semantic-release Github release tag format."
-        default: '${version}'
-        type: string
-
       release-info:
         description: "Release information json blob."
         required: true
@@ -148,9 +143,6 @@ jobs:
         if: github.event_name == 'push'
         uses: ./.tmp/.github/actions/bulk-release-chart
         with:
-          major-label: ${{ steps.create-release-labels.outputs.major }}
-          minor-label: ${{ steps.create-release-labels.outputs.minor }}
-          patch-label: ${{ steps.create-release-labels.outputs.patch }}
           job-name: ${{ inputs.job-name }}
           comment-enabled: ${{ inputs.comment-release }}
           registry: ${{ inputs.registry }}
@@ -160,7 +152,6 @@ jobs:
           cosign-public-key: ${{ inputs.cosign-public-key }}
           chart: ${{ inputs.chart }}
           test-command: ${{ inputs.test-command }}
-          release-tag-format: ${{ inputs.release-tag-format }}
           release-info: ${{ inputs.release-info }}
           cosign-private-key: ${{ secrets.cosign-private-key }}
           cosign-password: ${{ secrets.cosign-password }}

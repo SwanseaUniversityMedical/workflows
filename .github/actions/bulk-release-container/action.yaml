@@ -382,7 +382,7 @@ runs:
       if: inputs.comment-enabled == 'true'
       id: find-pr-comment
       with:
-        issue-number: ${{ steps.semantic.outputs.pr-number }}
+        issue-number: ${{ fromJSON(inputs.release-info).pr-number }}
         body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
         comment-author: "github-actions[bot]"
 

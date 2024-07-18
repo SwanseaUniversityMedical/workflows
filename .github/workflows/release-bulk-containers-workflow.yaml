@@ -44,9 +44,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  containers:
+  bulk-containers:
     uses: ./.github/workflows/pr-and-release-repo.yaml
     with:
-      job-name: containers
+      job-name: bulk-containers
       comment-release: true
       release-tag-format: 'v${version}-bulk-containers'

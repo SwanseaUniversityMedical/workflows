@@ -7,21 +7,6 @@ on:
         required: true
         type: string
 
-      major-colour:
-        description: "Colour for the major release label."
-        default: 'B60205'
-        type: string
-
-      minor-colour:
-        description: "Colour for the minor release label."
-        default: '8BD931'
-        type: string
-
-      patch-colour:
-        description: "Colour for the patch release label."
-        default: 'FBCA04'
-        type: string
-
       comment-pr:
         description: "PR comment creation and update."
         default: "false"
@@ -120,17 +105,6 @@ jobs:
           sparse-checkout: |
             .github/actions/pr-container
             .github/actions/bulk-release-container
-            .github/actions/release-create-labels
-            .github/actions/release-determine-bump
-
-      - name: create release labels
-        id: create-release-labels
-        uses: ./.tmp/.github/actions/release-create-labels
-        with:
-          job-name: ${{ inputs.job-name }}
-          major-colour: ${{ inputs.major-colour }}
-          minor-colour: ${{ inputs.minor-colour }}
-          patch-colour: ${{ inputs.patch-colour }}
 
       - name: pr
         if: github.event_name == 'pull_request'

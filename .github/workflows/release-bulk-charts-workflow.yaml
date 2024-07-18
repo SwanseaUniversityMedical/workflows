@@ -1,0 +1,52 @@
+name: Release Bulk Charts Workflow
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/release-bulk-charts-workflow.yaml'
+
+      - '.github/workflows/bulk-pr-and-release-chart.yaml'
+      - '.github/actions/pr-chart/action.yaml'
+      - '.github/actions/bulk-release-chart/action.yaml'
+
+      - '.github/workflows/bulk-pr-and-release-repo.yaml'
+      - '.github/actions/release-repo/action.yaml'
+      - '.github/actions/release-create-labels/action.yaml'
+      - '.github/actions/release-determine-bump/action.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/release-bulk-charts-workflow.yaml'
+
+      - '.github/workflows/bulk-pr-and-release-chart.yaml'
+      - '.github/actions/pr-chart/action.yaml'
+      - '.github/actions/bulk-release-chart/action.yaml'
+
+      - '.github/workflows/pr-and-release-repo.yaml'
+      - '.github/actions/release-repo/action.yaml'
+      - '.github/actions/release-create-labels/action.yaml'
+      - '.github/actions/release-determine-bump/action.yaml'
+
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added,
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  bulk-charts:
+    uses: ./.github/workflows/pr-and-release-repo.yaml
+    with:
+      job-name: bulk-charts
+      comment-release: true
+      release-tag-format: 'v${version}-bulk-charts'

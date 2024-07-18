@@ -1,0 +1,295 @@
+name: 'Build, Test and Release a Chart'
+inputs:
+  job-name:
+    description: "Job name to display on Slack messages."
+    required: true
+
+  comment-header:
+    description: "Header line for the Release summary."
+    default: ":rocket: :anchor: Build Release Chart"
+
+  comment-enabled:
+    description: "Release comment creation and update."
+    default: "true"
+
+  chart:
+    description: "Path to the helm chart."
+    required: true
+
+  test-command:
+    description: "Command to test the chart named $CHART."
+    default: ''
+
+  registry:
+    description: "URL of the chart registry."
+    required: true
+
+  registry-user:
+    description: "Username for the chart registry."
+    required: true
+
+  registry-project:
+    description: "Project within chart registry."
+    required: true
+
+  registry-repo:
+    description: "Repo within chart registry project."
+    required: true
+
+  release-info:
+    description: "Release information json blob."
+    required: true
+
+  cosign-public-key:
+    description: "Public key for cosigning images."
+    required: false
+
+  registry-token:
+    description: "Authentication token for the chart registry."
+    required: true
+
+  cosign-private-key:
+    description: "Private key for cosigning charts."
+    required: false
+
+  cosign-password:
+    description: "Private key password for cosigning charts."
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: install cosign
+      if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) && inputs.cosign-public-key != ''
+      uses: sigstore/cosign-installer@v3.5.0
+
+    - name: login to container registry for cosign
+      if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) && inputs.cosign-public-key != ''
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-user }}
+        password: ${{ inputs.registry-token }}
+
+    - name: install helm
+      if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)
+      uses: azure/setup-helm@v4.2.0
+      with:
+        version: 'v3.15.1'
+
+    - name: login to chart registry
+      if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)
+      shell: bash
+      run: |
+        helm registry login \
+          --username '${{ inputs.registry-user }}' \
+          --password '${{ inputs.registry-token }}' \
+          ${{ inputs.registry }}
+
+    - name: create chart repo url
+      if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)
+      shell: bash
+      run: |
+        CHART_PROJECT="${{ inputs.registry }}/${{ inputs.registry-project }}/chart"
+        echo "CHART_PROJECT=$CHART_PROJECT" >> $GITHUB_ENV
+        echo "CHART_REPO=$CHART_PROJECT/${{ inputs.registry-repo }}" >> $GITHUB_ENV
+
+    - name: new release
+      if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}
+          :label: New version will be ${{ fromJSON(inputs.release-info).release-version }}  
+
+    - name: skipped release
+      if: ${{ !contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}  
+          :desert_island: Skipping release!
+
+    - name: create tags
+      if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)
+      shell: bash
+      run: |
+        echo "RELEASE_TAG=${{ fromJSON(inputs.release-info).release-version }}" >> $GITHUB_ENV
+        echo "RC_TAG=${{ fromJSON(inputs.release-info).release-version }}-rc" >> $GITHUB_ENV
+
+    - name: build release candidate chart
+      id: helm-rc
+      if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)
+      shell: bash
+      run: |
+        helm dependency update ${{ inputs.chart }}
+        helm package ${{ inputs.chart }} --version ${{ env.RC_TAG }}
+        helm push ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
+
+    - name: build success
+      if: steps.helm-rc.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ```
+          ${{ env.CHART_REPO }}:${{ env.RC_TAG }}
+          ```
+          :hammer_and_wrench: Build Success  
+
+    - name: build failure
+      if: failure() && steps.helm-rc.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Build Failure"
+
+    - name: cosign release candidate
+      id: cosign-rc
+      if: inputs.cosign-public-key != '' && steps.helm-rc.outcome == 'success'
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+      shell: bash
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${RC_TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RC_TAG}"
+
+    - name: cosign success
+      if: steps.cosign-rc.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: cosign error
+      if: failure() && steps.cosign-rc.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
+
+    - name: test release candidate
+      id: test
+      if: inputs.test-command != '' && steps.helm-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure'
+      shell: bash
+      run: |
+        set -x
+        CHART="${{ inputs.registry-repo }}-${{ env.RC_TAG}}.tgz"
+        ${{ inputs.test-command }}
+
+    - name: test success
+      if: steps.test.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":eyes: Test Success  "
+
+    - name: test error
+      if: failure() && steps.test.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Test Failure"
+
+    - name: build release chart
+      id: helm-release
+      if: steps.helm-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      shell: bash
+      run: |
+        helm package ${{ inputs.chart }} --version ${{ env.RELEASE_TAG }}
+        helm push ${{ inputs.registry-repo }}-${{ env.RELEASE_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
+
+    - name: build success
+      if: steps.helm-release.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ```
+          ${{ env.CHART_REPO }}:${{ env.RELEASE_TAG }}
+          ```
+          :hammer_and_wrench: Build Success  
+
+    - name: build failure
+      if: failure() && steps.helm-release.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Build Failure"
+
+    - name: cosign release
+      id: cosign-release
+      if: inputs.cosign-public-key != '' && steps.helm-release.outcome == 'success'
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+      shell: bash
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${RELEASE_TAG}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RELEASE_TAG}"
+
+    - name: cosign success
+      if: steps.cosign-release.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: cosign error
+      if: failure() && steps.cosign-release.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
+
+    - name: find pr comment
+      uses: peter-evans/find-comment@v3
+      if: inputs.comment-enabled == 'true'
+      id: find-pr-comment
+      with:
+        issue-number: ${{ fromJSON(inputs.release-info).pr-number }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        comment-author: "github-actions[bot]"
+
+    - name: comment on release success
+      id: release-pr-comment
+      if: inputs.comment-enabled == 'true'
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ fromJSON(inputs.release-info).pr-number }}
+        edit-mode: replace
+        body: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          ```
+          ${{ fromJSON(inputs.release-info).git-tag }}
+          ${{ env.CHART_REPO }}:${{ env.RELEASE_TAG }}
+          ```
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during execution! Check the workflow run logs for details!

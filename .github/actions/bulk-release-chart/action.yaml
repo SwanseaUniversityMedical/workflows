@@ -260,46 +260,9 @@ runs:
       env:
         SUMMARY: ":x: Cosign Failure"
 
-    - name: github release
-      id: release
-      if: steps.helm-release.outcome == 'success' && steps.cosign-release.outcome != 'failure'
-      uses: actions/github-script@v7
-      with:
-        retries: 3
-        github-token: ${{ github.token }}
-        script: |
-          github.rest.repos.createRelease({
-            owner: "${{ github.repository_owner }}",
-            repo: "${{ github.event.repository.name }}",
-            tag_name: "${{ fromJSON(inputs.release-info).git-tag }}",
-            target_commitish: "${{ github.sha }}",
-            body: "",
-            name: "${{ fromJSON(inputs.release-info).git-tag }}"
-          });
-
-    - name: release success
-      if: steps.release.outcome == 'success'
-      shell: bash
-      run: |
-        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-      env:
-        SUMMARY: |
-          ```
-          ${{ fromJSON(inputs.release-info).git-tag }}
-          ```
-          :hammer_and_wrench: Github Release Success  
-
-    - name: release error
-      if: failure() && steps.release.outcome == 'failure'
-      shell: bash
-      run: |
-        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-      env:
-        SUMMARY: ":x: Github Release Failure"
-
-    - name: find pr comment
+       - name: find pr comment
       uses: peter-evans/find-comment@v3
-      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      if: inputs.comment-enabled == 'true'
       id: find-pr-comment
       with:
         issue-number: ${{ fromJSON(inputs.release-info).pr-number }}
@@ -308,7 +271,7 @@ runs:
 
     - name: comment on release success
       id: release-pr-comment
-      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      if: inputs.comment-enabled == 'true'
       uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}

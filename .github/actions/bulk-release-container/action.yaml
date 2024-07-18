@@ -190,7 +190,7 @@ runs:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
-          type=raw,value=${{ fromJSON(inputs.release-info.release-version) }}
+          type=raw,value=${{ fromJSON(inputs.release-info).release-version }}
 
     - name: build rc container
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}

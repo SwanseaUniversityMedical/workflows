@@ -4,18 +4,6 @@ inputs:
     description: "Job name to display on Slack messages."
     required: true
 
-  major-label:
-    description: "Label text for major releases."
-    required: true
-
-  minor-label:
-    description: "Label text for minor releases."
-    required: true
-
-  patch-label:
-    description: "Label text for patch releases."
-    required: true
-
   comment-header:
     description: "Header line for the Release summary."
     default: ":rocket: :whale: Build Release Container"
@@ -59,10 +47,6 @@ inputs:
   release-info:
     description: "Release information json blob."
     required: true
-
-  release-tag-format:
-    description: "Semantic-release Github release tag format."
-    default: '${version}'
 
   cosign-public-key:
     description: "Public key for cosigning images."

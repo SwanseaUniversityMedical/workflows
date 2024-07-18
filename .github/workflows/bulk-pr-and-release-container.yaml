@@ -67,11 +67,6 @@ on:
         required: true
         type: string
 
-      release-tag-format:
-        description: "Semantic-release Github release tag format."
-        default: '${version}'
-        type: string
-
       release-info:
         description: "Release information json blob."
         required: true
@@ -159,9 +154,6 @@ jobs:
         if: github.event_name == 'push' &&  inputs.release-info != ''
         uses: ./.tmp/.github/actions/bulk-release-container
         with:
-          major-label: ${{ steps.create-release-labels.outputs.major }}
-          minor-label: ${{ steps.create-release-labels.outputs.minor }}
-          patch-label: ${{ steps.create-release-labels.outputs.patch }}
           job-name: ${{ inputs.job-name }}
           comment-enabled: ${{ inputs.comment-release }}
           registry: ${{ inputs.registry }}
@@ -169,7 +161,6 @@ jobs:
           registry-repo: ${{ inputs.registry-repo }}
           registry-token: ${{ secrets.registry-token }}
           registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
-          release-tag-format: ${{ inputs.release-tag-format }}
           release-info: ${{ inputs.release-info }}
           build-file: ${{ inputs.build-file }}
           build-context: ${{ inputs.build-context }}

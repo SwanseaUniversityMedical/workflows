@@ -106,7 +106,7 @@ runs:
           :label: New version will be ${{ fromJSON(inputs.release-info).release-version }}  
 
     - name: skipped release
-      if: !contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)
+      if: ${{ !contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"

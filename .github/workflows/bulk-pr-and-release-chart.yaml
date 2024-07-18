@@ -114,7 +114,7 @@ jobs:
           path: .tmp
           sparse-checkout: |
             .github/actions/pr-chart
-            .github/actions/release-chart
+            .github/actions/bulk-release-chart
             .github/actions/release-create-labels
             .github/actions/release-determine-bump
 

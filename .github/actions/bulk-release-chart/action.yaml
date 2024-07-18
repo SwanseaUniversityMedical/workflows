@@ -260,7 +260,7 @@ runs:
       env:
         SUMMARY: ":x: Cosign Failure"
 
-       - name: find pr comment
+    - name: find pr comment
       uses: peter-evans/find-comment@v3
       if: inputs.comment-enabled == 'true'
       id: find-pr-comment

@@ -193,7 +193,7 @@ runs:
           type=raw,value=${{ fromJSON(inputs.release-info.release-version) }}
 
     - name: build rc container
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) == 'true' }}
+      if: ${{ inputs.release-info.new-release-published == 'true' }}
       uses: docker/build-push-action@v5
       id: build-rc
       with:

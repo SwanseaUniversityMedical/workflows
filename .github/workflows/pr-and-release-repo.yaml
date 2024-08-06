@@ -2,6 +2,11 @@ on:
   workflow_call:
     inputs:
 
+      runs-on:
+        description: "Name of the runner group to execute on."
+        default: "k8s-dev-linux-default"
+        type: string
+
       job-name:
         description: "Job name to display on Slack messages."
         required: true
@@ -55,9 +60,7 @@ on:
 
 jobs:
   repo:
-    runs-on:
-      labels: [ self-hosted, linux, x64 ]
-      group: heavy
+    runs-on: ${{ inputs.runs-on }}
     outputs:
       release-info: ${{ steps.release.outputs.release-info }}
       new-release-published: ${{ steps.release.outputs.new-release-published }}

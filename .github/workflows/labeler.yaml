@@ -13,3 +13,5 @@ concurrency:
 jobs:
   pr-labeler:
     uses: ./.github/workflows/pr-labeler.yaml
+    with:
+      runs-on: "k8s-dev-linux-default"

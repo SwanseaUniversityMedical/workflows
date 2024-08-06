@@ -47,6 +47,7 @@ jobs:
   containers:
     uses: ./.github/workflows/pr-and-release-repo.yaml
     with:
+      runs-on: "k8s-dev-linux-default"
       job-name: containers
       comment-release: true
       release-tag-format: 'v${version}-containers'

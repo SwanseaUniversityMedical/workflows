@@ -11,9 +11,7 @@ concurrency:
 
 jobs:
   renovate:
-    runs-on:
-      labels: [self-hosted, linux, x64]
-      group: heavy
+    runs-on: "k8s-dev-linux-default"
 
     steps:
       - uses: .github/actions/renovate

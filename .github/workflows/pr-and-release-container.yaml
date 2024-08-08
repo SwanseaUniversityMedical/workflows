@@ -4,7 +4,7 @@ on:
 
       runs-on:
         description: "Name of the runner group to execute on."
-        default: "k8s-dev-linux-default"
+        default: "feda-linux-default"
         type: string
 
       job-name:

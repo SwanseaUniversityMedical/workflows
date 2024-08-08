@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   renovate:
-    runs-on: "k8s-dev-linux-default"
+    runs-on: "feda-linux-default"
 
     steps:
       - uses: .github/actions/renovate

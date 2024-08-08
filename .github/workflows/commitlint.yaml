@@ -15,4 +15,4 @@ jobs:
   pr-title-commitlint:
     uses: ./.github/workflows/pr-title-commitlint.yaml
     with:
-      runs-on: "k8s-dev-linux-default"
+      runs-on: "feda-linux-default"

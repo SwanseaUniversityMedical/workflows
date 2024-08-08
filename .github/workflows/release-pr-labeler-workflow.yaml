@@ -37,7 +37,7 @@ jobs:
   pr-labeler:
     uses: ./.github/workflows/pr-and-release-repo.yaml
     with:
-      runs-on: "k8s-dev-linux-default"
+      runs-on: "feda-linux-default"
       job-name: pr-labeler
       comment-release: true
       release-tag-format: 'v${version}-pr-labeler'

@@ -4,9 +4,9 @@ LABEL org.opencontainers.image.source=https://github.com/SwanseaUniversityMedica
 
 # Add missing dependencies compared to the old summerwind runners
 USER root
-RUN apt-get update -qq && \
+RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
-    apt-get -y install -y -qq --no-install-recommends \
+    apt-get install -y --no-install-recommends \
       curl unzip jq wget python3-pip git-all && \
     rm -rf /var/lib/apt/lists/*
 

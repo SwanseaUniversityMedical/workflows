@@ -11,3 +11,4 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 USER runner
+ENV PATH="/home/runner/.local/bin:$PATH"

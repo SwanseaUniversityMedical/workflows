@@ -10,5 +10,9 @@ RUN apt-get update && \
       curl unzip jq wget python3-pip git-all && \
     rm -rf /var/lib/apt/lists/*
 
+RUN echo 'export PATH="/home/runner/.local/bin:$PATH"' >> /etc/profile
+ENV PATH="/home/runner/.local/bin:$PATH"
+
 USER runner
 ENV PATH="/home/runner/.local/bin:$PATH"
+

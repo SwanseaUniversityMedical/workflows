@@ -15,4 +15,4 @@ jobs:
   pr-title-commitlint:
     uses: ./.github/workflows/pr-title-commitlint.yaml
     with:
-      runs-on: "ubuntu"
+      runs-on: "ubuntu-latest"

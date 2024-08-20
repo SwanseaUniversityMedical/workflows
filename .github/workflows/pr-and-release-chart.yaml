@@ -4,7 +4,7 @@ on:
 
       runs-on:
         description: "Name of the runner group to execute on."
-        default: "ubuntu"
+        default: "ubuntu-latest"
         type: string
 
       job-name:

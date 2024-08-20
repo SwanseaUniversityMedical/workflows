@@ -14,4 +14,4 @@ jobs:
   pr-labeler:
     uses: ./.github/workflows/pr-labeler.yaml
     with:
-      runs-on: "feda-linux-default"
+      runs-on: "ubuntu"

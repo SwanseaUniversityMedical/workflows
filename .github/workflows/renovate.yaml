@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   renovate:
-    runs-on: "feda-linux-default"
+    runs-on: "ubuntu"
 
     steps:
       - uses: .github/actions/renovate

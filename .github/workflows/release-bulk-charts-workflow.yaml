@@ -47,7 +47,7 @@ jobs:
   bulk-charts:
     uses: ./.github/workflows/pr-and-release-repo.yaml
     with:
-      runs-on: "feda-linux-default"
+      runs-on: "ubuntu"
       job-name: bulk-charts
       comment-release: true
       release-tag-format: 'v${version}-bulk-charts'

@@ -108,8 +108,6 @@ runs:
       if: steps.helm.outcome == 'success'
       shell: bash
       run: |
-        echo "HELM_SHOW_OUTPUT=$(helm show chart oci://${{ env.CHART_PROJECT }}/${{ inputs.registry-repo }})" >> $GITHUB_ENV
-        echo $HELM_SHOW_OUTPUT
         echo "digest=${$(helm show chart oci://${{ env.CHART_PROJECT }}/${{ inputs.registry-repo }})^[dD]igest:\s(?:sha256:\s)?(.+)$}" >> "$GITHUB_OUTPUT"
 
     - name: build success

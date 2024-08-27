@@ -108,7 +108,7 @@ runs:
       if: steps.helm.outcome == 'success'
       shell: bash
       run: |
-        digest=$(helm show chart oci://${{ env.CHART_PROJECT }}/${{ inputs.registry-repo }} | yq eval -j | jq -r '.digest')
+        digest=$(helm show chart oci://${{ env.CHART_PROJECT }}/${{ inputs.registry-repo }} | yq eval -o=json | jq -r '.digest')
         echo "digest=${digest}" >> "$GITHUB_OUTPUT"
 
 
@@ -117,7 +117,7 @@ runs:
       if: steps.helm.outcome == 'success'
       shell: bash
       run: |
-        echo "${steps.digest.outputs.digest}"
+        echo "${{steps.digest.outputs.digest}}"
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |

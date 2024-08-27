@@ -109,7 +109,7 @@ runs:
       shell: bash
       run: |
         digest=$(helm show chart oci://${{ env.CHART_PROJECT }}/${{ inputs.registry-repo }} | yq eval -o=json | jq -r '.digest')
-        echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+        echo "digest=${{digest}}" >> "$GITHUB_OUTPUT"
 
 
 

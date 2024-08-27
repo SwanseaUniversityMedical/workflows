@@ -11,13 +11,11 @@ concurrency:
 
 jobs:
   renovate:
-    runs-on:
-      labels: [self-hosted, linux, x64]
-      group: heavy
+    runs-on: "ubuntu-latest"
 
     steps:
       - uses: .github/actions/renovate
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:
-          RENOVATE_SOME_TOKEN: "xxxxxx"
+          RENOVATE_SOME_TOKEN: "xxxxxxx"

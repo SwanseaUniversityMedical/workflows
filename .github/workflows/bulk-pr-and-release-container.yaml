@@ -2,6 +2,11 @@ on:
   workflow_call:
     inputs:
 
+      runs-on:
+        description: "Name of the runner group to execute on."
+        default: "ubuntu-latest"
+        type: string
+
       job-name:
         description: "Job name to display on Slack messages."
         required: true
@@ -83,9 +88,7 @@ on:
 
 jobs:
   container:
-    runs-on:
-      labels: [ self-hosted, linux, x64 ]
-      group: heavy
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - name: get workflow reference
         id: workflows-ref

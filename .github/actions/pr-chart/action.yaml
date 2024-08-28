@@ -108,7 +108,9 @@ runs:
       if: steps.helm.outcome == 'success'
       shell: bash
       run: |
-        curl -s -H "Accept: application/vnd.oci.image.manifest.v1+json" https://${{ inputs.registry }}/v2/${{ env.CHART_PROJECT }}/manifests/${{ env.PR_TAG }}
+        TOKEN=$(curl -s -u ${{ inputs.registry-user }}:${{ inputs.registry-token }} "https://${{ inputs.registry }}/v2/token?service=${{ inputs.registry }}&scope=repository:${{ env.CHART_PROJECT }}:pull" | jq -r .token)
+
+        curl -s -H "Authorization: Bearer $TOKEN" "Accept: application/vnd.oci.image.manifest.v1+json" https://${{ inputs.registry }}/v2/${{ env.CHART_PROJECT }}/manifests/${{ env.PR_TAG }}
         digest=$(curl -s -H "Accept: application/vnd.oci.image.manifest.v1+json" https://${{ inputs.registry }}/v2/${{ inputs.registry-repo }}/manifests/${{ env.PR_TAG }} | jq -r '.config.digest')
         echo ${digest}
         echo "digest=${digest}" >> "$GITHUB_OUTPUT"

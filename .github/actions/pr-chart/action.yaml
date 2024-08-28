@@ -109,7 +109,7 @@ runs:
       shell: bash
       run: |
         digest=$(curl -s -H "Accept: application/vnd.oci.image.manifest.v1+json" https://${{ inputs.registry }}/v2/${{ inputs.registry-repo }}/manifests/${{ env.PR_TAG }} | jq -r '.config.digest')
-      
+        echo ${digest}
         echo "digest=${digest}" >> "$GITHUB_OUTPUT"
 
 

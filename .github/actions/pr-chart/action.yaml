@@ -108,7 +108,7 @@ runs:
       if: steps.helm.outcome == 'success'
       shell: bash
       run: |
-        curl -s -u "oci://${{ inputs.registry }}/v2/${{ env.CHART_PROJECT }}/manifests/${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}"
+        curl -s -u ${{ inputs.registry-user }}:${{ inputs.registry-token }} "https://${{ inputs.registry }}/service/token?service=service=harbor-registry&scope=repository:${{ inputs.registry-repo }}:pull"
 
         curl -s -H "Authorization: Bearer $TOKEN" "Accept: application/vnd.oci.image.manifest.v1+json" https://${{ inputs.registry }}/${{ env.CHART_PROJECT }}/manifests/${{ env.PR_TAG }}
         digest=$(curl -s -H "Accept: application/vnd.oci.image.manifest.v1+json" https://${{ inputs.registry }}/${{ inputs.registry-repo }}/manifests/${{ env.PR_TAG }} | jq -r '.config.digest')

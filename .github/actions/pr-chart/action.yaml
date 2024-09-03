@@ -108,7 +108,7 @@ runs:
       if: steps.helm.outcome == 'success'
       shell: bash
       run: |
-        helm show chart oci://${{ env.CHART_PROJECT }}
+        helm show chart ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}
         curl -s -u ${{ inputs.registry-user }}:${{ inputs.registry-token }} "https://${{ inputs.registry }}/service/token?service=service=harbor-registry&scope=repository:${{ inputs.registry-repo }}:pull"
 
         curl -s -H "Authorization: Bearer $TOKEN" "Accept: application/vnd.oci.image.manifest.v1+json" https://${{ inputs.registry }}/${{ env.CHART_PROJECT }}/manifests/${{ env.PR_TAG }}

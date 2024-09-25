@@ -39,26 +39,28 @@ jobs:
           sparse-checkout: |
             ${{ inputs.config }}
 
-      - name: install bun
-        uses: oven-sh/setup-bun@v1
+      - name: install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: cache bun
+      - name: cache node modules
         uses: actions/cache@v4.0.2
         with:
-          path: ~/.bun/install/cache
+          path: ~/.npm
           key: ${{ github.workflow }}-commitlint
 
       - name: install commitlint
         shell: bash
         run: |
-          bun install @commitlint/config-conventional @commitlint/cli
+          npm install @commitlint/config-conventional @commitlint/cli
 
       - name: lint pr title
         id: commitlint
         shell: bash
         run: |
           set +e
-          lint=$(echo "$TITLE" | bun run commitlint --config="$CONFIG" --help-url="$CONFIG")
+          lint=$(echo "$TITLE" | npx commitlint --config="$CONFIG" --help-url="$CONFIG")
           status=$?
           echo "$lint"
           printf "lint<<EOF\n%s\nEOF" "${lint}" >> "$GITHUB_OUTPUT"

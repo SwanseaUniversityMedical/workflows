@@ -16,6 +16,9 @@ jobs:
       group: heavy
 
     steps:
+      - name: clone repo
+        uses: actions/checkout@v4
+        
       - uses: ./.github/actions/renovate
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}

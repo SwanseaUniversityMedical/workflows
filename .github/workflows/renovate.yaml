@@ -16,7 +16,7 @@ jobs:
       group: heavy
 
     steps:
-      - uses: .github/actions/renovate
+      - uses: ./.github/actions/renovate
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:

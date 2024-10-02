@@ -23,7 +23,7 @@ jobs:
           sparse-checkout: |
             .github/actions/renovate
         
-      - uses: ./tmp/.github/actions/renovate
+      - uses: ./.tmp/.github/actions/renovate
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:

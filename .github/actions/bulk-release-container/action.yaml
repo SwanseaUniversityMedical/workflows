@@ -379,7 +379,7 @@ runs:
 
     - name: find pr comment
       uses: peter-evans/find-comment@v3
-      if: (inputs.comment-enabled == 'true') && contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published
+      if: ${{(inputs.comment-enabled == 'true') && (contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)}}
       id: find-pr-comment
       with:
         issue-number: ${{ fromJSON(inputs.release-info).pr-number }}
@@ -388,7 +388,7 @@ runs:
 
     - name: comment on release success
       id: release-pr-comment
-      if: inputs.comment-enabled == 'true' && contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published
+      if: ${{ (inputs.comment-enabled == 'true') && (contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)}}
       uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}

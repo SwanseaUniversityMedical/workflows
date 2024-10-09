@@ -125,7 +125,7 @@ jobs:
           cosign-password: ${{ secrets.cosign-password }}
 
       - name: release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && inputs.release-info != ''
         uses: ./.tmp/.github/actions/bulk-release-container
         with:
           job-name: ${{ inputs.job-name }}

@@ -19,11 +19,12 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v4
         with:
+          path: .tmp
           sparse-checkout: |
             .github/actions/renovate
         
       - name: run renovate
-        uses: ./.github/actions/renovate
+        uses: ./.tmp/.github/actions/renovate
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:

@@ -13,10 +13,17 @@ jobs:
   renovate:
     runs-on:
       labels: [self-hosted, linux, x64]
-      group: heavy
+      group: light
 
     steps:
-      - uses: .github/actions/renovate
+      - name: clone repo
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/actions/renovate
+        
+      - name: run renovate
+        uses: ./.github/actions/renovate
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:

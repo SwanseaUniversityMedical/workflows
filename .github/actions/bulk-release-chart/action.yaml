@@ -62,7 +62,7 @@ runs:
 
     - name: install cosign
       if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) && inputs.cosign-public-key != ''
-      uses: sigstore/cosign-installer@v3.5.0
+      uses: sigstore/cosign-installer@v3.7.0
 
     - name: login to container registry for cosign
       if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) && inputs.cosign-public-key != ''

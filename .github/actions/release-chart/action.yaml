@@ -82,7 +82,7 @@ runs:
 
     - name: install cosign
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
-      uses: sigstore/cosign-installer@v3.5.0
+      uses: sigstore/cosign-installer@v3.7.0
 
     - name: login to container registry for cosign
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''

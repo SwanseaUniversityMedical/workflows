@@ -11,10 +11,20 @@ concurrency:
 
 jobs:
   renovate:
-    runs-on: "ubuntu-latest"
+    runs-on:
+      labels: [self-hosted, linux, x64]
+      group: light
 
     steps:
-      - uses: .github/actions/renovate
+      - name: clone repo
+        uses: actions/checkout@v4
+        with:
+          path: .tmp
+          sparse-checkout: |
+            .github/actions/renovate
+        
+      - name: run renovate
+        uses: ./.tmp/.github/actions/renovate
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:

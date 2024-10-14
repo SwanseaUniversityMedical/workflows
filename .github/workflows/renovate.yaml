@@ -23,7 +23,7 @@ jobs:
           sparse-checkout: |
             .github/actions/renovate/action.yaml
 
-      - run: ls -laR ./.tmp
+      - run: ls -laR ./.tmp-renovate
         
       - name: run renovate
         uses: ./.tmp-renovate/.github/actions/renovate

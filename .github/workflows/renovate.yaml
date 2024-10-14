@@ -19,9 +19,11 @@ jobs:
       - name: clone repo
         uses: actions/checkout@v4
         with:
-          path: .tmp
+          path: ./.tmp
           sparse-checkout: |
-            .github/actions/renovate
+            .github/actions/renovate/action.yaml
+
+      - run: ls -la ./.tmp
         
       - name: run renovate
         uses: ./.tmp/.github/actions/renovate

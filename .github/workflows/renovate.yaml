@@ -16,15 +16,8 @@ jobs:
       group: light
 
     steps:
-      - name: clone repo
-        uses: actions/checkout@v4
-        with:
-          path: .tmp
-          sparse-checkout: |
-            .github/actions/renovate
-        
       - name: run renovate
-        uses: ./.tmp/.github/actions/renovate
+        uses: SwanseaUniversityMedical/workflows/.github/actions/renovate@v1.0.3-renovate
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:

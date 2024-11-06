@@ -6,14 +6,14 @@ on:
       - opened
       - synchronize
     paths:
-      - '.github/workflows/release-sonar-dotnet-scan-workflow.yaml'
-      - '.github/workflows/sonar-dotnet-scan-workflow.yaml'
+      - '.github/workflows/release-sonar-dotnet-workflow.yaml'
+      - '.github/workflows/sonar-dotnet.yaml'
   push:
     branches:
       - main
     paths:
-      - '.github/workflows/release-sonar-dotnet-scan-workflow.yaml'
-      - '.github/workflows/sonar-dotnet-scan-workflow.yaml'
+      - '.github/workflows/release-sonar-dotnet-workflow.yaml'
+      - '.github/workflows/sonar-dotnet.yaml'
 
 permissions:
   actions: read
@@ -27,9 +27,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  sonar-dotnet-scan:
+  sonar-dotnet:
     uses: ./.github/workflows/pr-and-release-repo.yaml
     with:
-      job-name: sonar-dotnet-scan
+      job-name: sonar-dotnet
       comment-release: true
-      release-tag-format: 'v${version}-sonar-dotnet-scan'
+      release-tag-format: 'v${version}-sonar-dotnet'

@@ -77,6 +77,6 @@ jobs:
           PROJECT_NAME: ${{ inputs.project-name }}
           PROJECT_FILE: ${{ inputs.project-file }}
           PROJECT_CONTEXT: ${{ inputs.project-context }}
-          PROJECT_VERSION: ${{ steps.version.output.version }}
+          PROJECT_VERSION: ${{ steps.version.outputs.version }}
           SONAR_URL: ${{ inputs.sonar-url }}
           SONAR_TOKEN: ${{ secrets.sonar-token }}

@@ -17,11 +17,6 @@ on:
         default: '.'
         type: string
 
-      project-version-regex:
-        description: "Regex to filter upstream release tags."
-        default: '^(?<semver>v\d+\.\d+\.\d+).*$'
-        type: string
-
       sonar-url:
         description: "URL of the sonarqube sever."
         required: true

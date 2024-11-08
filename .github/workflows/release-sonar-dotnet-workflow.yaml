@@ -1,0 +1,35 @@
+name: Release Sonar DotNet Scan Workflow
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/release-sonar-dotnet-workflow.yaml'
+      - '.github/workflows/sonar-dotnet.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/release-sonar-dotnet-workflow.yaml'
+      - '.github/workflows/sonar-dotnet.yaml'
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added,
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  sonar-dotnet:
+    uses: ./.github/workflows/pr-and-release-repo.yaml
+    with:
+      job-name: sonar-dotnet
+      comment-release: true
+      release-tag-format: 'v${version}-sonar-dotnet'

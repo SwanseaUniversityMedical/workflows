@@ -1,0 +1,61 @@
+on:
+  workflow_call:
+    inputs:
+
+      project-name:
+        description: "Name of the dotnet project to scan."
+        required: true
+        type: string
+
+      project-file:
+        description: "Path to the csproj file relative to the project-context."
+        required: true
+        type: string
+
+      project-context:
+        description: "Path to the root dir of the project."
+        default: '.'
+        type: string
+
+      sonar-url:
+        description: "URL of the sonarqube sever."
+        required: true
+        type: string
+
+    secrets:
+
+      sonar-token:
+        description: "Authentication token for sonarqube."
+        required: true
+
+jobs:
+  scan:
+    runs-on:
+      labels: [self-hosted, linux, x64]
+      group: heavy
+
+    steps:
+      - name: clone repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: scan project
+        run: |
+          docker run --rm -v $(pwd):/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
+            bash -c " \
+              dotnet /sonar-scanner/SonarScanner.MSBuild.dll begin \
+                /k:$PROJECT_NAME /name:$PROJECT_NAME \
+                /d:sonar.host.url=$SONAR_URL \
+                /d:sonar.login=$SONAR_TOKEN && \
+              dotnet restore $PROJECT_FILE && \
+              dotnet build $PROJECT_FILE -c Release && \
+              dotnet /sonar-scanner/SonarScanner.MSBuild.dll end \
+                /d:sonar.login=$SONAR_TOKEN"
+        env:
+          SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/dotnet-sonar:23.06.4-r2
+          PROJECT_NAME: ${{ inputs.project-name }}
+          PROJECT_FILE: ${{ inputs.project-file }}
+          PROJECT_CONTEXT: ${{ inputs.project-context }}
+          SONAR_URL: ${{ inputs.sonar-url }}
+          SONAR_TOKEN: ${{ secrets.sonar-token }}

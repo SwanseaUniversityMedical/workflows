@@ -47,12 +47,12 @@ jobs:
           script: |
             var inputs = ${{ toJSON(inputs) }};
             
-            if (github.event.type === "push") {
+            if (github.event_name === "push") {
               // On push to tag use the tag as the version
               var tag = github.ref_name;
               core.setOutput("version", tag);
             }
-            else if (github.event.type === "pull_request") {
+            else if (github.event_name === "pull_request") {
               // On pr use pr number
               var pr = github.event.pull_request.number;
               console.log(`pr: {pr}`);

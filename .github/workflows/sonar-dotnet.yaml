@@ -46,7 +46,6 @@ jobs:
         with:
           script: |
             var inputs = ${{ toJSON(inputs) }};
-            var version_regex = inputs['project-version-regex'].trim();
             
             if (github.event.type === "push") {
               // On push to tag use the tag as the version

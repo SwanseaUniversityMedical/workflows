@@ -32,7 +32,7 @@ jobs:
   scan:
     runs-on:
       labels: [self-hosted, linux, x64]
-      group: heavy
+      group: sonar
 
     steps:
       - name: clone repo

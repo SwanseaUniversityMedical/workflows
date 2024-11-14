@@ -76,7 +76,7 @@ jobs:
               dotnet /sonar-scanner/SonarScanner.MSBuild.dll end \
                 /d:sonar.login=$SONAR_TOKEN"
         env:
-          SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/dotnet-sonar:23.06.4-r2
+          SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet:1.0.0
           PROJECT_NAME: ${{ inputs.project-name }}
           PROJECT_FILE: ${{ inputs.project-file }}
           PROJECT_CONTEXT: ${{ inputs.project-context }}

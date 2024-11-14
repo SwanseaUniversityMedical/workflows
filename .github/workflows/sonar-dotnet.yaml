@@ -57,7 +57,8 @@ jobs:
             else if (context.eventName === "pull_request") {
               // On pr use pr number
               var pr = context.payload.number;
-              var version = `pr-${pr}`;
+              var sha = context.sha.substring(0, 7);
+              var version = `pr-${pr}-${sha}`;
               console.log(`version: ${version}`);
               core.setOutput("version", version);
             }

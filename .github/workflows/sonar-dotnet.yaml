@@ -55,8 +55,8 @@ jobs:
             else if (context.eventName === "pull_request") {
               // On pr use pr number
               var pr = context.payload.number;
-              console.log(`pr: {pr}`);
-              core.setOutput("version", `pr-{pr}`);
+              console.log(`pr: ${pr}`);
+              core.setOutput("version", `pr-${pr}`);
             }
 
       - name: scan project

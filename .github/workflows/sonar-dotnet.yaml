@@ -54,7 +54,7 @@ jobs:
             }
             else if (context.eventName === "pull_request") {
               // On pr use pr number
-              var pr = github.event.pull_request.number;
+              var pr = context.payload.number;
               console.log(`pr: {pr}`);
               core.setOutput("version", `pr-{pr}`);
             }

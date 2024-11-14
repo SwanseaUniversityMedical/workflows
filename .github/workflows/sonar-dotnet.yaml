@@ -46,10 +46,11 @@ jobs:
         with:
           script: |
             var inputs = ${{ toJSON(inputs) }};
+            var ref = "${{ github.ref_name }}";
             
             if (context.eventName === "push") {
               // On push to tag use the tag as the version
-              var version = github.ref_name;
+              var version = `${ref}`;
               console.log(`version: ${version}`);
               core.setOutput("version", version);
             }

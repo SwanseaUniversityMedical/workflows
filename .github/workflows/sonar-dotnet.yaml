@@ -49,14 +49,17 @@ jobs:
             
             if (context.eventName === "push") {
               // On push to tag use the tag as the version
-              var tag = github.ref_name;
-              core.setOutput("version", tag);
+              var version = github.ref_name;
+              console.log(`version: ${version}`);
+              core.setOutput("version", version);
             }
             else if (context.eventName === "pull_request") {
               // On pr use pr number
               var pr = context.payload.number;
-              console.log(`pr: ${pr}`);
-              core.setOutput("version", `pr-${pr}`);
+              var sha = context.sha.substring(0, 8);
+              var version = `pr-${pr}-${sha}`;
+              console.log(`version: ${version}`);
+              core.setOutput("version", version);
             }
 
       - name: scan project

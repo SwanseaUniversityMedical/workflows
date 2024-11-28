@@ -47,6 +47,7 @@ jobs:
   charts:
     uses: ./.github/workflows/pr-and-release-repo.yaml
     with:
+      runs-on: "ubuntu-latest"
       job-name: charts
       comment-release: true
       release-tag-format: 'v${version}-charts'

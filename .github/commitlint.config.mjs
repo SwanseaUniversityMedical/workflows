@@ -12,7 +12,8 @@ export default {
         'commitlint',
         'labeler',
         'renovate',
-        'sonar-dotnet'
+        'sonar-dotnet',
+        'arc-container'
     ]]
   }
 };

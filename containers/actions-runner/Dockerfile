@@ -1,4 +1,4 @@
-FROM ghcr.io/actions/actions-runner:2.318.0
+FROM ghcr.io/actions/actions-runner:2.321.0
 
 LABEL org.opencontainers.image.source=https://github.com/SwanseaUniversityMedical/workflows
 

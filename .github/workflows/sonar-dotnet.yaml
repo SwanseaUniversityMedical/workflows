@@ -76,8 +76,6 @@ jobs:
               dotnet restore $PROJECT_FILE && \
               dotnet build $PROJECT_FILE -c Release && \
               dotnet /sonar-scanner/SonarScanner.MSBuild.dll end \
-                /d:sonar.scanner.skipJreProvisioning=true \
-                /d:sonar.scanner.javaExePath=/usr/bin/java \
                 /d:sonar.login=$SONAR_TOKEN"
         env:
           SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet:pr-3

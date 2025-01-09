@@ -67,16 +67,18 @@ jobs:
           docker run --rm -v $(pwd):/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
             bash -c " \
               dotnet /sonar-scanner/SonarScanner.MSBuild.dll begin \
+                /d:sonar.scanner.skipJreProvisioning=true \
+                /d:sonar.scanner.javaExePath=/usr/bin/java \
                 /k:$PROJECT_NAME /name:$PROJECT_NAME \
                 /v:$PROJECT_VERSION \
                 /d:sonar.host.url=$SONAR_URL \
-                /d:sonar.login=$SONAR_TOKEN && \
+                /d:sonar.token=$SONAR_TOKEN && \
               dotnet restore $PROJECT_FILE && \
               dotnet build $PROJECT_FILE -c Release && \
               dotnet /sonar-scanner/SonarScanner.MSBuild.dll end \
-                /d:sonar.login=$SONAR_TOKEN"
+                /d:sonar.token=$SONAR_TOKEN"
         env:
-          SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet:1.0.1
+          SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet:2.0.0
           PROJECT_NAME: ${{ inputs.project-name }}
           PROJECT_FILE: ${{ inputs.project-file }}
           PROJECT_CONTEXT: ${{ inputs.project-context }}

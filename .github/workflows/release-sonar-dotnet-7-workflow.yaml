@@ -1,4 +1,4 @@
-name: Release Sonar DotNet Scan Workflow
+name: Release Sonar DotNet 7 Scan Workflow
 
 on:
   pull_request:

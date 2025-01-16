@@ -1,0 +1,69 @@
+name: 'PR and Release Repo'
+inputs:
+  name:
+    description: "Name of the release asset."
+    required: true
+
+  major-colour:
+    description: "Colour for the major release label."
+    default: 'B60205'
+
+  minor-colour:
+    description: "Colour for the minor release label."
+    default: '8BD931'
+
+  patch-colour:
+    description: "Colour for the patch release label."
+    default: 'FBCA04'
+
+  comment-release:
+    description: "Release comment creation and update."
+    default: "true"
+
+  release-tag-format:
+    description: "Semantic-release Github release tag format."
+    default: '${version}'
+
+outputs:
+  release-info:
+    description: "All release info in one json blob."
+    value: ${{ toJSON(steps.semantic.outputs) }}
+
+  new-release-published:
+    description: "Semantic release output."
+    value: ${{ steps.release.outputs.new-release-published }}
+
+  release-version:
+    description: "Semantic release output."
+    value: ${{ steps.release.outputs.release-version }}
+
+  git-tag:
+    description: "Semantic release output."
+    value: ${{ steps.release.outputs.git-tag }}
+
+  pr-number:
+    description: "Release PR number."
+    value: ${{ steps.release.outputs.pr-number }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+
+    - id: create-release-labels
+      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v1.0.0-create-release-labels-action
+      with:
+        name: ${{ inputs.name }}
+        major-colour: ${{ inputs.major-colour }}
+        minor-colour: ${{ inputs.minor-colour }}
+        patch-colour: ${{ inputs.patch-colour }}
+
+    - id: release
+      if: github.event_name == 'push'
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-repo@v1.0.0-release-repo-action
+      with:
+        name: ${{ inputs.name }}
+        release-tag-format: ${{ inputs.release-tag-format }}
+        major-label: ${{ steps.create-release-labels.outputs.major }}
+        minor-label: ${{ steps.create-release-labels.outputs.minor }}
+        patch-label: ${{ steps.create-release-labels.outputs.patch }}

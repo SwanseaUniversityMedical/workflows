@@ -35,53 +35,10 @@ jobs:
       group: sonar
 
     steps:
-      - name: clone repo
-        uses: actions/checkout@v4
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/sonar-dotnet-8@v1.0.0-sonar-dotnet-8-action
         with:
-          fetch-depth: 0
-
-      - name: determine project version
-        id: version
-        uses: actions/github-script@v7.0.1
-        with:
-          script: |
-            var inputs = ${{ toJSON(inputs) }};
-            var ref = "${{ github.ref_name }}";
-            
-            if (context.eventName === "push") {
-              // On push to tag use the tag as the version
-              var version = `${ref}`;
-              console.log(`version: ${version}`);
-              core.setOutput("version", version);
-            }
-            else if (context.eventName === "pull_request") {
-              // On pr use pr number
-              var pr = context.payload.number;
-              var version = `pr-${pr}`;
-              console.log(`version: ${version}`);
-              core.setOutput("version", version);
-            }
-
-      - name: scan project
-        run: |
-          docker run --rm -v $(pwd):/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
-            bash -c " \
-              dotnet /sonar-scanner/SonarScanner.MSBuild.dll begin \
-                /d:sonar.scanner.skipJreProvisioning=true \
-                /d:sonar.scanner.javaExePath=/usr/bin/java \
-                /k:$PROJECT_NAME /name:$PROJECT_NAME \
-                /v:$PROJECT_VERSION \
-                /d:sonar.host.url=$SONAR_URL \
-                /d:sonar.token=$SONAR_TOKEN && \
-              dotnet restore $PROJECT_FILE && \
-              dotnet build $PROJECT_FILE -c Release && \
-              dotnet /sonar-scanner/SonarScanner.MSBuild.dll end \
-                /d:sonar.token=$SONAR_TOKEN"
-        env:
-          SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet-8:1.0.0
-          PROJECT_NAME: ${{ inputs.project-name }}
-          PROJECT_FILE: ${{ inputs.project-file }}
-          PROJECT_CONTEXT: ${{ inputs.project-context }}
-          PROJECT_VERSION: ${{ steps.version.outputs.version }}
-          SONAR_URL: ${{ inputs.sonar-url }}
-          SONAR_TOKEN: ${{ secrets.sonar-token }}
+          project-name: ${{ inputs.project-name }}
+          project-file: ${{ inputs.project-file }}
+          project-context: ${{ inputs.project-context }}
+          sonar-url: ${{ inputs.sonar-url }}
+          sonar-token: ${{ secrets.sonar-token }}

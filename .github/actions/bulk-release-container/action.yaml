@@ -1,7 +1,7 @@
-name: 'Build, Test and Release Container'
+name: 'Bulk Release Container'
 inputs:
-  job-name:
-    description: "Job name to display on Slack messages."
+  name:
+    description: "Name of the release asset."
     required: true
 
   comment-header:
@@ -113,7 +113,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }}
           :label: New version will be ${{ fromJSON(inputs.release-info).release-version }}  
 
     - name: skipped release
@@ -123,7 +123,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}  
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }}  
           :desert_island: Skipping release!
 
     - name: cache container metadata
@@ -383,7 +383,7 @@ runs:
       id: find-pr-comment
       with:
         issue-number: ${{ fromJSON(inputs.release-info).pr-number }}
-        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.name }}
         comment-author: "github-actions[bot]"
 
     - name: comment on release success
@@ -395,7 +395,7 @@ runs:
         issue-number: ${{ fromJSON(inputs.release-info).pr-number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           ```
           ${{ steps.semantic.outputs.git-tag }}
           ${{ steps.meta.outputs.tags }}

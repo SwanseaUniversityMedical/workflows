@@ -1,7 +1,7 @@
-name: 'Build and Test a Chart'
+name: 'PR Chart'
 inputs:
-  job-name:
-    description: "Job name to display on Slack messages."
+  name:
+    description: "Name of the release asset."
     required: true
 
   chart:
@@ -110,7 +110,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
           ```
           ${{ env.CHART_REPO }}:${{ env.PR_TAG }}
           ${{ env.CHART_REPO }}:${{ env.PR_COMMIT_TAG }}
@@ -131,7 +131,7 @@ runs:
       id: find-pr-comment
       with:
         issue-number: ${{ github.event.pull_request.number }}
-        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.name }}
         comment-author: "github-actions[bot]"
 
     - name: comment on build success
@@ -143,7 +143,7 @@ runs:
         issue-number: ${{ github.event.pull_request.number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.event.pull_request.head.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.event.pull_request.head.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           ```
           ${{ env.CHART_REPO }}:${{ env.PR_TAG }}
           ${{ env.CHART_REPO }}:${{ env.PR_COMMIT_TAG }}

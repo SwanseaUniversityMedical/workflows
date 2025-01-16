@@ -2,6 +2,11 @@ on:
   workflow_call:
     inputs:
 
+      runs-on:
+        description: "Runner group name."
+        default: "light"
+        type: string
+
       error-label:
         description: "Label to add on bad lints."
         default: ":black_nib: Bad PR Title"
@@ -31,7 +36,7 @@ jobs:
   lint:
     runs-on:
       labels: [self-hosted, linux, x64]
-      group: light
+      group: ${{ inputs.runs-on }}
     steps:
       - name: clone config from repo
         uses: actions/checkout@v4

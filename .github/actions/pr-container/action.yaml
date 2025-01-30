@@ -61,7 +61,7 @@ runs:
   steps:
     - name: install cosign
       if: inputs.cosign-public-key != ''
-      uses: sigstore/cosign-installer@v3.5.0
+      uses: sigstore/cosign-installer@v3.7.0
 
     - name: forward proxy settings
       shell: bash
@@ -136,7 +136,7 @@ runs:
           type=raw,value=rc-recent
 
     - name: build container
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       id: build
       with:
         file: ${{ inputs.build-file }}

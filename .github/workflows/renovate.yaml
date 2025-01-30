@@ -13,10 +13,11 @@ jobs:
   renovate:
     runs-on:
       labels: [self-hosted, linux, x64]
-      group: heavy
+      group: light
 
     steps:
-      - uses: .github/actions/renovate
+      - name: run renovate
+        uses: SwanseaUniversityMedical/workflows/.github/actions/renovate@v1.0.4-renovate
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:

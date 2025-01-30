@@ -1,0 +1,45 @@
+name: Build Actions Runner Container
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/actions-runner-container.yaml'
+      - 'containers/actions-runner/**'
+  push:
+    branches:
+      - 'main'
+    paths:
+      - '.github/workflows/actions-runner-container.yaml'
+      - 'containers/actions-runner/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added,
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Job name must be unique across repo to target
+  # branch protection rules "required checks" properly!
+  actions-runner-container:
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-container.yaml@feat/runs-on-input
+    with:
+      job-name: actions-runner-container
+      comment-pr: "true"
+      comment-release: "true"
+      registry: ${{ vars.HARBOR_REGISTRY }}
+      registry-user: ${{ vars.HARBOR_USER }}
+      registry-repo: ${{ vars.HARBOR_PROJECT }}/actions-runner
+      release-tag-format: 'v${version}-actions-runner-container'
+      cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
+      build-file: containers/actions-runner/Dockerfile
+      build-context: containers/actions-runner
+    secrets:
+      cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+      registry-token: ${{ secrets.HARBOR_TOKEN }}

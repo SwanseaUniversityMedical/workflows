@@ -11,7 +11,9 @@ export default {
         'charts',
         'commitlint',
         'labeler',
-        'renovate'
+        'renovate',
+        'sonar-dotnet',
+        'arc-container'
     ]]
   }
 };

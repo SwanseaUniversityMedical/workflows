@@ -90,7 +90,7 @@ runs:
 
     - name: install cosign
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
-      uses: sigstore/cosign-installer@v3.5.0
+      uses: sigstore/cosign-installer@v3.7.0
 
     - name: forward proxy settings
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -198,7 +198,7 @@ runs:
 
     - name: build rc container
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       id: build-rc
       with:
         file: ${{ inputs.build-file }}
@@ -329,7 +329,7 @@ runs:
 
     - name: build release container
       if: steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure' && steps.extra-tag.outcome != 'failure'
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       id: build-release
       with:
         file: ${{ inputs.build-file }}

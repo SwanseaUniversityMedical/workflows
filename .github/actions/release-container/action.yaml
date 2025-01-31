@@ -445,7 +445,7 @@ runs:
 
     - name: comment on release success
       id: release-pr-comment
-      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
+      if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success' && steps.semantic.outputs.new-release-published == 'true'
       uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}

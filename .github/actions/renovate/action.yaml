@@ -22,7 +22,7 @@ runs:
           ${{ inputs.config }}
 
     - name: cache renovate
-      if: ${{ inputs.cache != "" }}
+      if: inputs.cache != ''
       uses: actions/cache@v4
       with:
         path: ${{ inputs.cache }}

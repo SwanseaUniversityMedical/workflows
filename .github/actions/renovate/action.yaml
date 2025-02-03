@@ -8,6 +8,10 @@ inputs:
   token:
     description: "Github token to run renovate with."
 
+  cache:
+    description: "Paths to the cache directories renovate is configured to use. Specify one path per line. Set to '' to disable caching."
+    default: "/tmp/renovate"
+
 runs:
   using: "composite"
   steps:
@@ -17,6 +21,16 @@ runs:
         sparse-checkout: |
           ${{ inputs.config }}
 
+    - name: cache renovate
+      if: inputs.cache != ""
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.cache }}
+        key: ${{ github.workflow }}-${{ github.ref }}
+        restore-keys: |
+          ${{ github.workflow }}-${{ github.ref }}
+          ${{ github.workflow }}-
+          
     - name: run renovate bot
       uses: renovatebot/github-action@v41.0.12
       with:

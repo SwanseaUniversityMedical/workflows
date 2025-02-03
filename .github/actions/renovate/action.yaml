@@ -37,7 +37,7 @@ runs:
       run: |
         echo "user=$(id -u)" >> $GITHUB_OUTPUT
         echo "group=$(id -g)" >> $GITHUB_OUTPUT
-        chown -R $(id -u):$(id -g) renovate
+        chown -R $(id -u):$(id -g) renovate-cache
 
     - name: dump cache directory
       shell: bash

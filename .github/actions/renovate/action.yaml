@@ -21,6 +21,7 @@ runs:
       shell: bash
       run: |
         mkdir -p /tmp/renovate/cache
+        chmod -R 2777 /tmp/renovate
 
     - name: renovate cache
       uses: actions/cache@v4
@@ -30,6 +31,11 @@ runs:
         restore-keys: |
           ${{ github.workflow }}-${{ github.ref }}-
           ${{ github.workflow }}-
+
+    - name: own cache directory
+      shell: bash
+      run: |
+        chmod -R 2777 /tmp/renovate
 
     - name: dump cache directory
       shell: bash

@@ -22,18 +22,19 @@ runs:
       run: |
         mkdir -p /tmp/renovate/cache/renovate/repository
 
-    - name: renovate cache
-      uses: actions/cache@v4
-      with:
-        path: /tmp/renovate/cache/renovate/repository
-        key: ${{ github.workflow }}-${{ github.ref }}-${{ github.run_id }}
-        restore-keys: |
-          ${{ github.workflow }}-${{ github.ref }}-
-          ${{ github.workflow }}-
+    # - name: renovate cache
+    #   uses: actions/cache@v4
+    #   with:
+    #     path: /tmp/renovate/cache/renovate/repository
+    #     key: ${{ github.workflow }}-${{ github.ref }}-${{ github.run_id }}
+    #     restore-keys: |
+    #       ${{ github.workflow }}-${{ github.ref }}-
+    #       ${{ github.workflow }}-
 
     - name: dump cache directory
       shell: bash
       run: |
+        sudo chown -R 1000:1000 /tmp/renovate
         sudo chmod -R 2777 /tmp/renovate
         sudo ls -laR /tmp/renovate
           
@@ -46,6 +47,7 @@ runs:
         configurationFile: ${{ inputs.config }}
         token: ${{ inputs.token }}
         env-regex: "^(?:RENOVATE_\\w+|LOG_LEVEL|\\w+_PROXY)$"
+        docker-user: "1000:1000"
         docker-volumes: "/tmp/renovate/cache/renovate/repository:/tmp/renovate/cache/renovate/repository"
       env:
         RENOVATE_REPOSITORY_CACHE: "enabled"

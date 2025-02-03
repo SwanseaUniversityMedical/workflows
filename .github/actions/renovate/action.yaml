@@ -26,6 +26,7 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: ${{ inputs.cache }}
+        key: ${{ github.workflow }}-${{ github.ref }}
         restore-keys: |
           ${{ github.workflow }}-${{ github.ref }}
           ${{ github.workflow }}-

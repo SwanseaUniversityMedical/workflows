@@ -45,11 +45,15 @@ runs:
         configurationFile: ${{ inputs.config }}
         token: ${{ inputs.token }}
         env-regex: "^(?:RENOVATE_\\w+|LOG_LEVEL|\\w+_PROXY)$"
+        docker-volumes: |
+          /tmp/renovate:/tmp/renovate
       env:
-        RENOVATE_BASE_DIR: /tmp/renovate
-        RENOVATE_CACHE_DIR: /tmp/renovate/cache
-        RENOVATE_REPOSITORY_CACHE: enabled
-        RENOVATE_REPOSITORY_CACHE_TYPE: local
+        RENOVATE_BASE_DIR: "/tmp/renovate"
+        RENOVATE_CACHE_DIR: "/tmp/renovate/cache"
+        RENOVATE_REPOSITORY_CACHE: "enabled"
+        RENOVATE_REPOSITORY_CACHE_TYPE: "local"
+        RENOVATE_CACHE_PRIVATE_PACKAGES: "true"
+        RENOVATE_LOG_FILE_LEVEL: "debug"
 
     - name: dump cache directory
       shell: bash

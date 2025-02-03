@@ -31,17 +31,10 @@ runs:
           ${{ github.workflow }}-${{ github.ref }}-
           ${{ github.workflow }}-
 
-    - name: current user
-      shell: bash
-      id: id
-      run: |
-        echo "user=$(id -u)" >> $GITHUB_OUTPUT
-        echo "group=$(id -g)" >> $GITHUB_OUTPUT
-        chown -R $(id -u):$(id -g) renovate-cache
-
     - name: dump cache directory
       shell: bash
       run: |
+        sudo chown -R 12021:0 renovate-cache
         sudo ls -laR renovate-cache
           
     - name: run renovate bot
@@ -53,7 +46,6 @@ runs:
         configurationFile: ${{ inputs.config }}
         token: ${{ inputs.token }}
         env-regex: "^(?:RENOVATE_\\w+|LOG_LEVEL|\\w+_PROXY)$"
-        docker-user: "${{ steps.id.outputs.user }}:${{ steps.id.outputs.group }}"
         docker-volumes: "renovate-cache:/renovate-cache"
       env:
         RENOVATE_BASE_DIR: "/renovate-cache"

@@ -55,7 +55,7 @@ runs:
               color: inputs['major-colour'].trim()
             });
           } catch (error) {
-            //console.log(error);
+            console.log(error);
           }
           
           try {
@@ -66,7 +66,7 @@ runs:
               color: inputs['minor-colour'].trim()
             });
           } catch (error) {
-            //console.log(error);
+            console.log(error);
           }
           
           try {
@@ -77,7 +77,7 @@ runs:
               color: inputs['patch-colour'].trim()
             });
           } catch (error) {
-            //console.log(error);
+            console.log(error);
           }
           
           core.setOutput("major", major);

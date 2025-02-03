@@ -20,12 +20,12 @@ runs:
     - name: make cache directory
       shell: bash
       run: |
-        mkdir -p /renovate-cache
+        mkdir -p /tmp/renovate/cache/renovate/repository
 
     - name: renovate cache
       uses: actions/cache@v4
       with:
-        path: /renovate-cache
+        path: /tmp/renovate/cache/renovate/repository
         key: ${{ github.workflow }}-${{ github.ref }}-${{ github.run_id }}
         restore-keys: |
           ${{ github.workflow }}-${{ github.ref }}-
@@ -34,8 +34,8 @@ runs:
     - name: dump cache directory
       shell: bash
       run: |
-        sudo chmod -R 2777 /renovate-cache
-        sudo ls -laR /renovate-cache
+        sudo chmod -R 2777 /tmp/renovate
+        sudo ls -laR /tmp/renovate
           
     - name: run renovate bot
       uses: renovatebot/github-action@v41.0.12
@@ -46,10 +46,8 @@ runs:
         configurationFile: ${{ inputs.config }}
         token: ${{ inputs.token }}
         env-regex: "^(?:RENOVATE_\\w+|LOG_LEVEL|\\w+_PROXY)$"
-        docker-volumes: "/renovate-cache:/renovate-cache"
+        docker-volumes: "/tmp/renovate/cache/renovate/repository:/tmp/renovate/cache/renovate/repository"
       env:
-        RENOVATE_BASE_DIR: "/renovate-cache"
-        RENOVATE_CACHE_DIR: "/renovate-cache/cache"
         RENOVATE_REPOSITORY_CACHE: "enabled"
         RENOVATE_REPOSITORY_CACHE_TYPE: "local"
         RENOVATE_CACHE_PRIVATE_PACKAGES: "true"
@@ -58,5 +56,5 @@ runs:
     - name: dump cache directory
       shell: bash
       run: |
-        sudo ls -laR /renovate-cache
+        sudo ls -laR /tmp/renovate
         

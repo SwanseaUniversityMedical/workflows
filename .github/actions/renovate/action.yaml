@@ -21,7 +21,6 @@ runs:
       shell: bash
       run: |
         mkdir -p /tmp/renovate/cache
-        chmod -R 2777 /tmp/renovate
 
     - name: renovate cache
       uses: actions/cache@v4
@@ -32,15 +31,17 @@ runs:
           ${{ github.workflow }}-${{ github.ref }}-
           ${{ github.workflow }}-
 
-    - name: own cache directory
-      shell: bash
-      run: |
-        chmod -R 2777 /tmp/renovate
-
     - name: dump cache directory
       shell: bash
       run: |
         sudo ls -laR /tmp/renovate
+
+    - name: current user
+      shell: bash
+      id: id
+      run: |
+        echo "user=$(id -u)" >> $GITHUB_OUTPUT
+        echo "group=$(id -g)" >> $GITHUB_OUTPUT
           
     - name: run renovate bot
       uses: renovatebot/github-action@v41.0.12
@@ -51,8 +52,8 @@ runs:
         configurationFile: ${{ inputs.config }}
         token: ${{ inputs.token }}
         env-regex: "^(?:RENOVATE_\\w+|LOG_LEVEL|\\w+_PROXY)$"
-        docker-volumes: |
-          /tmp/renovate:/tmp/renovate
+        docker-user: "${{ steps.id.outputs.user }}:${{ steps.id.outputs.group }}"
+        docker-volumes: "/tmp/renovate:/tmp/renovate"
       env:
         RENOVATE_BASE_DIR: "/tmp/renovate"
         RENOVATE_CACHE_DIR: "/tmp/renovate/cache"

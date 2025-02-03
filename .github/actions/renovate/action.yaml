@@ -48,6 +48,8 @@ runs:
       env:
         RENOVATE_BASE_DIR: /tmp/renovate
         RENOVATE_CACHE_DIR: /tmp/renovate/cache
+        RENOVATE_REPOSITORY_CACHE: enabled
+        RENOVATE_REPOSITORY_CACHE_TYPE: local
 
     - name: dump cache directory
       shell: bash

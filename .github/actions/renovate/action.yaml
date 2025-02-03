@@ -21,12 +21,11 @@ runs:
         sparse-checkout: |
           ${{ inputs.config }}
 
-    - name: cache renovate
+    - name: restore renovate cache
       if: inputs.cache != ''
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: ${{ inputs.cache }}
-        key: ${{ github.workflow }}-${{ github.ref }}
         restore-keys: |
           ${{ github.workflow }}-${{ github.ref }}
           ${{ github.workflow }}-
@@ -40,3 +39,10 @@ runs:
         configurationFile: ${{ inputs.config }}
         token: ${{ inputs.token }}
         env-regex: "^(?:RENOVATE_\\w+|LOG_LEVEL|\\w+_PROXY)$"
+
+    - name: save renovate cache
+      if: inputs.cache != ''
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ inputs.cache }}
+        key: ${{ github.workflow }}-${{ github.ref }}

@@ -31,17 +31,18 @@ runs:
           ${{ github.workflow }}-${{ github.ref }}-
           ${{ github.workflow }}-
 
-    - name: dump cache directory
-      shell: bash
-      run: |
-        sudo ls -laR /tmp/renovate
-
     - name: current user
       shell: bash
       id: id
       run: |
         echo "user=$(id -u)" >> $GITHUB_OUTPUT
         echo "group=$(id -g)" >> $GITHUB_OUTPUT
+        chown -R $(id -u):$(id -g) /tmp/renovate
+
+    - name: dump cache directory
+      shell: bash
+      run: |
+        sudo ls -laR /tmp/renovate
           
     - name: run renovate bot
       uses: renovatebot/github-action@v41.0.12

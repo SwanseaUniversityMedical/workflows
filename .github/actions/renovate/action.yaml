@@ -22,19 +22,19 @@ runs:
       run: |
         mkdir -p /tmp/renovate/cache
 
-    - name: restore renovate cache
-      uses: actions/cache/restore@v4
+    - name: renovate cache
+      uses: actions/cache@v4
       with:
         path: /tmp/renovate
-        key: ${{ github.workflow }}-${{ github.ref }}
+        key: ${{ github.workflow }}-${{ github.ref }}-${{ github.run_id }}
         restore-keys: |
-          ${{ github.workflow }}-${{ github.ref }}
+          ${{ github.workflow }}-${{ github.ref }}-
           ${{ github.workflow }}-
 
     - name: dump cache directory
       shell: bash
       run: |
-        ls -laR /tmp/renovate
+        sudo ls -laR /tmp/renovate
           
     - name: run renovate bot
       uses: renovatebot/github-action@v41.0.12
@@ -54,10 +54,5 @@ runs:
     - name: dump cache directory
       shell: bash
       run: |
-        ls -laR /tmp/renovate
-
-    - name: save renovate cache
-      uses: actions/cache/save@v4
-      with:
-        path: /tmp/renovate
-        key: ${{ github.workflow }}-${{ github.ref }}
+        sudo ls -laR /tmp/renovate
+        

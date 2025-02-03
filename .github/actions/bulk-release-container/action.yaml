@@ -379,7 +379,7 @@ runs:
 
     - name: find pr comment
       uses: peter-evans/find-comment@v3
-      if: inputs.comment-enabled == 'true'
+      if: ${{ inputs.comment-enabled == 'true' && contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
       id: find-pr-comment
       with:
         issue-number: ${{ fromJSON(inputs.release-info).pr-number }}
@@ -388,7 +388,7 @@ runs:
 
     - name: comment on release success
       id: release-pr-comment
-      if: inputs.comment-enabled == 'true'
+      if: ${{ inputs.comment-enabled == 'true' && contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
       uses: peter-evans/create-or-update-comment@v4
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
@@ -397,7 +397,7 @@ runs:
         body: |
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           ```
-          ${{ steps.semantic.outputs.git-tag }}
+          ${{ fromJSON(inputs.release-info).git-tag }}
           ${{ steps.meta.outputs.tags }}
           ${{ env.EXTRA_META }}
           ${{ steps.build-release.outputs.digest }}

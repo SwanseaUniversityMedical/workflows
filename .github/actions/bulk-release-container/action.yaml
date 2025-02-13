@@ -126,35 +126,15 @@ runs:
           #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}  
           :desert_island: Skipping release!
 
-    - name: cache container metadata
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
-      uses: docker/metadata-action@v5
-      id: branch-recent-meta
-      with:
-        images: |
-          ${{ inputs.registry }}/${{ inputs.registry-repo }}
-        tags: |
-          type=ref,event=branch,prefix=rc-
-
     - name: pr cache container metadata
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
       uses: docker/metadata-action@v5
-      id: pr-recent-meta
+      id: pr-meta
       with:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
-          type=raw,value=pr-recent
-
-    - name: rc cache container metadata
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
-      uses: docker/metadata-action@v5
-      id: rc-recent-meta
-      with:
-        images: |
-          ${{ inputs.registry }}/${{ inputs.registry-repo }}
-        tags: |
-          type=raw,value=rc-recent
+          type=ref,event=pr
 
     - name: rc container metadata
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
@@ -185,17 +165,13 @@ runs:
         context: ${{ inputs.build-context }}
         tags: |
           ${{ steps.rc-meta.outputs.tags }}
-          ${{ steps.branch-recent-meta.outputs.tags }}
-          ${{ steps.rc-recent-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
         provenance: true
         cache-to: type=inline
         cache-from: |
-          type=registry,ref=${{ steps.branch-recent-meta.outputs.tags }}
-          type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
-          type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
+          type=registry,ref=${{ steps.pr-meta.outputs.tags }}
 
     - name: build success
       if: steps.build-rc.outcome == 'success'

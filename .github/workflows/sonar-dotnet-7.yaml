@@ -71,6 +71,7 @@ jobs:
                 /d:sonar.scanner.javaExePath=/usr/bin/java \
                 /k:$PROJECT_NAME /name:$PROJECT_NAME \
                 /v:$PROJECT_VERSION \
+                /d:sonar.projectBaseDir=/repo/$PROJECT_CONTEXT \
                 /d:sonar.host.url=$SONAR_URL \
                 /d:sonar.token=$SONAR_TOKEN && \
               dotnet restore $PROJECT_FILE && \

@@ -94,7 +94,7 @@ runs:
 
     - name: install helm
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: azure/setup-helm@v4.2.0
+      uses: azure/setup-helm@v4.3.0
       with:
         version: 'v3.15.1'
 

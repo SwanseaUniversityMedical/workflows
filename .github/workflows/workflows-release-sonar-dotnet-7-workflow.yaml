@@ -22,7 +22,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  # Cancel early on pull requests if new commits are added,
+  # Cancel early on pull requests if new commits are added
   # Don't cancel on release pushes
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 

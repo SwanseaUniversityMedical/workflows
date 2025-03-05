@@ -72,7 +72,7 @@ runs:
     - if: github.event_name == 'pull_request'
       uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v1.0.0-pr-container-action
       with:
-        name: ${{ inputs.job-name }}
+        name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}
@@ -89,7 +89,7 @@ runs:
     - if: github.event_name == 'push'
       uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-release-container@v1.0.0-bulk-release-container-action
       with:
-        name: ${{ inputs.job-name }}
+        name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}

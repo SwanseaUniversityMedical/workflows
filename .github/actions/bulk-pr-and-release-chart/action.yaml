@@ -64,7 +64,7 @@ runs:
     - if: github.event_name == 'pull_request'
       uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.0-pr-chart-action
       with:
-        name: ${{ inputs.job-name }}
+        name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}
@@ -80,7 +80,7 @@ runs:
     - if: github.event_name == 'push'
       uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-release-chart@v1.0.0-bulk-release-chart-action
       with:
-        name: ${{ inputs.job-name }}
+        name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}

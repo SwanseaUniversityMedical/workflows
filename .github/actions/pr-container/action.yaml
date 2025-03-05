@@ -61,7 +61,7 @@ runs:
   steps:
     - name: install cosign
       if: inputs.cosign-public-key != ''
-      uses: sigstore/cosign-installer@v3.7.0
+      uses: sigstore/cosign-installer@v3.8.1
 
     - name: forward proxy settings
       shell: bash

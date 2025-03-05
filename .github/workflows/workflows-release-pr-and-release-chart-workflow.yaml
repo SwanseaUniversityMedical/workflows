@@ -1,4 +1,4 @@
-name: Release Chart Workflow
+name: PR and Release Chart Workflow
 
 on:
   pull_request:

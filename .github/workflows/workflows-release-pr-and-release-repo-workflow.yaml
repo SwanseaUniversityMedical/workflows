@@ -1,4 +1,4 @@
-name: Repo Workflow
+name: PR and Release Repo Workflow
 
 on:
   pull_request:

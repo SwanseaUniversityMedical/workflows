@@ -1,4 +1,4 @@
-name: Bulk Chart Workflow
+name: Bulk PR and Release Chart Workflow
 
 on:
   pull_request:

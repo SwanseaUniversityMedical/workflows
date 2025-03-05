@@ -1,4 +1,4 @@
-name: Bulk Container Workflow
+name: Bulk PR and Release Container Workflow
 
 on:
   pull_request:

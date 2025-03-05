@@ -17,11 +17,11 @@ runs:
           ${{ inputs.config }}
 
     - name: run renovate bot
-      uses: renovatebot/github-action@v41.0.8
+      uses: renovatebot/github-action@v41.0.12
       with:
         renovate-image: "harbor.ukserp.ac.uk/github-workflows/renovate"
         # TODO annotate this for renovate to bump... the irony is not lost on me...
-        renovate-version: "39.92.0"
+        renovate-version: "39.157.0"
         configurationFile: ${{ inputs.config }}
         token: ${{ inputs.token }}
         env-regex: "^(?:RENOVATE_\\w+|LOG_LEVEL|\\w+_PROXY)$"

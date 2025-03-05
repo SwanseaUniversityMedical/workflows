@@ -27,7 +27,7 @@ inputs:
 outputs:
   release-info:
     description: "All release info in one json blob."
-    value: ${{ toJSON(steps.semantic.outputs) }}
+    value: ${{ toJSON(steps.release.outputs) }}
 
   new-release-published:
     description: "Semantic release output."

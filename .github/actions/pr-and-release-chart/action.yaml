@@ -74,7 +74,7 @@ runs:
     - uses: actions/checkout@v4
 
     - id: create-release-labels
-      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v1.0.0-create-release-labels-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v1.0.1-create-release-labels-action
       with:
         name: ${{ inputs.name }}
         major-colour: ${{ inputs.major-colour }}
@@ -82,7 +82,7 @@ runs:
         patch-colour: ${{ inputs.patch-colour }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.0-pr-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.1-pr-chart-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
@@ -98,7 +98,7 @@ runs:
         registry-token: ${{ inputs.registry-token }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v1.0.0-release-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v1.0.1-release-chart-action
       with:
         major-label: ${{ steps.create-release-labels.outputs.major }}
         minor-label: ${{ steps.create-release-labels.outputs.minor }}

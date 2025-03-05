@@ -10,10 +10,8 @@ export default {
         'containers',
         'charts',
         'commitlint',
-        'labeler',
         'renovate',
-        'sonar-dotnet',
-        'arc-container'
+        'sonar-dotnet'
     ]]
   }
 };

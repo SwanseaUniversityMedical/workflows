@@ -1,0 +1,30 @@
+name: Determine Bump Action
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/workflows-release-determine-bump-action.yaml'
+      - '.github/actions/determine-bump/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/workflows-release-determine-bump-action.yaml'
+      - '.github/actions/determine-bump/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added,
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  determine-bump-action:
+    uses: ./.github/workflows/pr-and-release-repo.yaml
+    with:
+      job-name: determine-bump-action
+      comment-release: true
+      release-tag-format: 'v${version}-determine-bump-action'

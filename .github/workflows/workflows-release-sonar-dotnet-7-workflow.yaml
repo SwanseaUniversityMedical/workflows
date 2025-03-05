@@ -1,0 +1,35 @@
+name: Sonar DotNet 7 Workflow
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/workflows-release-sonar-dotnet-7-workflow.yaml'
+      - '.github/workflows/sonar-dotnet-7.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/workflows-release-sonar-dotnet-7-workflow.yaml'
+      - '.github/workflows/sonar-dotnet-7.yaml'
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added,
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  sonar-dotnet-7-workflow:
+    uses: ./.github/workflows/pr-and-release-repo.yaml
+    with:
+      job-name: sonar-dotnet-7
+      comment-release: true
+      release-tag-format: 'v${version}-sonar-dotnet-7'

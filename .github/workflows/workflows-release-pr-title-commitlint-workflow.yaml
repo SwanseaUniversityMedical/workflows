@@ -1,0 +1,30 @@
+name: PR Lint Workflow
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/workflows-release-pr-title-commitlint-workflow.yaml'
+      - '.github/workflows/pr-title-commitlint.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/workflows-release-pr-title-commitlint-workflow.yaml'
+      - '.github/workflows/pr-title-commitlint.yaml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added,
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pr-lint-workflow:
+    uses: ./.github/workflows/pr-and-release-repo.yaml
+    with:
+      job-name: pr-title-commitlint
+      comment-release: true
+      release-tag-format: 'v${version}-pr-title-commitlint'

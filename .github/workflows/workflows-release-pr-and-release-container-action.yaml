@@ -1,0 +1,30 @@
+name: PR and Release Container Action
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/workflows-release-pr-and-release-container-action.yaml'
+      - '.github/actions/pr-and-release-container/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/workflows-release-pr-and-release-container-action.yaml'
+      - '.github/actions/pr-and-release-container/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added,
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pr-and-release-container-action:
+    uses: ./.github/workflows/pr-and-release-repo.yaml
+    with:
+      job-name: pr-and-release-container-action
+      comment-release: true
+      release-tag-format: 'v${version}-pr-and-release-container-action'

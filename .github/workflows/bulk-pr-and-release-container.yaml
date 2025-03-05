@@ -3,7 +3,7 @@ on:
     inputs:
 
       job-name:
-        description: "Job name to display on Slack messages."
+        description: "Name of the release asset."
         required: true
         type: string
 
@@ -87,49 +87,11 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - name: get workflow reference
-        id: workflows-ref
-        run: |
-          sha=$(curl -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }} | jq -r '.referenced_workflows[0] | .sha')
-          echo "sha=$sha" >> $GITHUB_OUTPUT
-
-      - name: clone repo
-        uses: actions/checkout@v4
-
-      - name: clone actions from workflows repo
-        uses: actions/checkout@v4
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-pr-and-release-container@v1.0.0-bulk-pr-and-release-container-action
         with:
-          repository: SwanseaUniversityMedical/workflows
-          ref: ${{ steps.workflows-ref.outputs.sha }}
-          path: .tmp
-          sparse-checkout: |
-            .github/actions/pr-container
-            .github/actions/bulk-release-container
-
-      - name: pr
-        if: github.event_name == 'pull_request'
-        uses: ./.tmp/.github/actions/pr-container
-        with:
-          job-name: ${{ inputs.job-name }}
-          comment-enabled: ${{ inputs.comment-pr }}
-          registry: ${{ inputs.registry }}
-          registry-user: ${{ inputs.registry-user }}
-          registry-repo: ${{ inputs.registry-repo }}
-          registry-token: ${{ secrets.registry-token }}
-          build-file: ${{ inputs.build-file }}
-          build-context: ${{ inputs.build-context }}
-          test-flags: ${{ inputs.test-flags }}
-          test-args: ${{ inputs.test-args }}
-          cosign-public-key: ${{ inputs.cosign-public-key }}
-          cosign-private-key: ${{ secrets.cosign-private-key }}
-          cosign-password: ${{ secrets.cosign-password }}
-
-      - name: release
-        if: github.event_name == 'push' && inputs.release-info != ''
-        uses: ./.tmp/.github/actions/bulk-release-container
-        with:
-          job-name: ${{ inputs.job-name }}
-          comment-enabled: ${{ inputs.comment-release }}
+          name: ${{ inputs.job-name }}
+          comment-pr: ${{ inputs.comment-pr }}
+          comment-release: ${{ inputs.comment-release }}
           registry: ${{ inputs.registry }}
           registry-user: ${{ inputs.registry-user }}
           registry-repo: ${{ inputs.registry-repo }}

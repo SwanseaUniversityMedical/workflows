@@ -1,0 +1,20 @@
+name: PR Lint
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-lint:
+    runs-on:
+      labels: [self-hosted, linux, x64]
+      group: light
+    steps:
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-lint@v1.0.0-pr-lint-action

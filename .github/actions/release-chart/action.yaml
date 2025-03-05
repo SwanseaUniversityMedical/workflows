@@ -1,7 +1,7 @@
-name: 'Build, Test and Release a Chart'
+name: 'Release Chart'
 inputs:
-  job-name:
-    description: "Job name to display on Slack messages."
+  name:
+    description: "Name of the release asset."
     required: true
 
   major-label:
@@ -73,7 +73,7 @@ runs:
   steps:
     - name: determine release
       id: semantic
-      uses: ./.tmp/.github/actions/release-determine-bump
+      uses: SwanseaUniversityMedical/workflows/.github/actions/determine-bump@v1.0.0-determine-bump-action
       with:
         release-tag-format: ${{ inputs.release-tag-format }}
         major-label: ${{ inputs.major-label }}
@@ -122,7 +122,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }}
           :label: New version will be ${{ steps.semantic.outputs.release-version }}  
 
     - name: skipped release
@@ -132,7 +132,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }}  
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }}  
           :desert_island: Skipping release!
 
     - name: create tags
@@ -323,7 +323,7 @@ runs:
       id: find-pr-comment
       with:
         issue-number: ${{ steps.semantic.outputs.pr-number }}
-        body-includes: ${{ inputs.comment-header }} - ${{ inputs.job-name }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.name }}
         comment-author: "github-actions[bot]"
 
     - name: comment on release success
@@ -335,7 +335,7 @@ runs:
         issue-number: ${{ steps.semantic.outputs.pr-number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.job-name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           ```
           ${{ steps.semantic.outputs.git-tag }}
           ${{ env.CHART_REPO }}:${{ env.RELEASE_TAG }}

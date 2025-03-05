@@ -1,0 +1,95 @@
+name: 'Bulk PR and Release Chart'
+inputs:
+  name:
+    description: "Name of the release asset."
+    required: true
+
+  chart:
+    description: "Path to the helm chart."
+    required: true
+
+  comment-pr:
+    description: "PR comment creation and update."
+    default: "false"
+
+  comment-release:
+    description: "Release comment creation and update."
+    default: "true"
+
+  test-command:
+    description: "Command to test the chart named $CHART."
+    default: ''
+
+  registry:
+    description: "URL of the chart registry."
+    required: true
+
+  registry-user:
+    description: "Username for the chart registry."
+    required: true
+
+  registry-project:
+    description: "Project within chart registry."
+    required: true
+
+  registry-repo:
+    description: "Repo within chart registry project."
+    required: true
+
+  release-info:
+    description: "Release information json blob."
+    required: true
+
+  cosign-public-key:
+    description: "Public key for cosigning images."
+    required: false
+
+  registry-token:
+    description: "Authentication token for the chart registry."
+    required: true
+
+  cosign-private-key:
+    description: "Private key for cosigning charts."
+    required: false
+
+  cosign-password:
+    description: "Private key password for cosigning charts."
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+
+    - if: github.event_name == 'pull_request'
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.0-pr-chart-action
+      with:
+        name: ${{ inputs.name }}
+        comment-enabled: ${{ inputs.comment-pr }}
+        registry: ${{ inputs.registry }}
+        registry-user: ${{ inputs.registry-user }}
+        registry-project: ${{ inputs.registry-project }}
+        registry-repo: ${{ inputs.registry-repo }}
+        cosign-public-key: ${{ inputs.cosign-public-key }}
+        chart: ${{ inputs.chart }}
+        test-command: ${{ inputs.test-command }}
+        cosign-private-key: ${{ inputs.cosign-private-key }}
+        cosign-password: ${{ inputs.cosign-password }}
+        registry-token: ${{ inputs.registry-token }}
+
+    - if: github.event_name == 'push'
+      uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-release-chart@v1.0.0-bulk-release-chart-action
+      with:
+        name: ${{ inputs.name }}
+        comment-enabled: ${{ inputs.comment-release }}
+        registry: ${{ inputs.registry }}
+        registry-user: ${{ inputs.registry-user }}
+        registry-project: ${{ inputs.registry-project }}
+        registry-repo: ${{ inputs.registry-repo }}
+        cosign-public-key: ${{ inputs.cosign-public-key }}
+        chart: ${{ inputs.chart }}
+        test-command: ${{ inputs.test-command }}
+        release-info: ${{ inputs.release-info }}
+        cosign-private-key: ${{ inputs.cosign-private-key }}
+        cosign-password: ${{ inputs.cosign-password }}
+        registry-token: ${{ inputs.registry-token }}

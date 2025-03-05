@@ -70,7 +70,7 @@ runs:
     - uses: actions/checkout@v4
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v1.0.1-pr-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v1.0.2-pr-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
@@ -87,7 +87,7 @@ runs:
         cosign-password: ${{ inputs.cosign-password }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-release-container@v1.0.2-bulk-release-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-release-container@v1.0.3-bulk-release-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}

@@ -60,7 +60,7 @@ runs:
 
     - id: release
       if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-repo@v1.0.1-release-repo-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-repo@v1.0.2-release-repo-action
       with:
         name: ${{ inputs.name }}
         release-tag-format: ${{ inputs.release-tag-format }}

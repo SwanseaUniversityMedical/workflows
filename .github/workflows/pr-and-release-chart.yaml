@@ -92,7 +92,7 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-chart@v1.0.0-pr-and-release-chart-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-chart@v1.0.1-pr-and-release-chart-action
         with:
           name: ${{ inputs.job-name }}
           major-colour: ${{ inputs.major-colour }}

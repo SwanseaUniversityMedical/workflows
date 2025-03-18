@@ -5,7 +5,7 @@ module.exports = {
   //dryRun: "full",
 
   // Inherit default config options
-  //extends: ["config:base"],
+  extends: ["helpers:pinGitHubActionDigests"],
   configMigration: true,
 
   // Force use of Conventional Commit messages to avoid Renovate not detecting them

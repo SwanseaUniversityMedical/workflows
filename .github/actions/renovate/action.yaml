@@ -17,7 +17,7 @@ runs:
           ${{ inputs.config }}
 
     - name: run renovate bot
-      uses: renovatebot/github-action@v41.0.14
+      uses: renovatebot/github-action@08ed9fa83e24bfe6222557f9e221395c57972127 # v41.0.16
       with:
         renovate-image: "harbor.ukserp.ac.uk/github-workflows/renovate"
         # TODO annotate this for renovate to bump... the irony is not lost on me...

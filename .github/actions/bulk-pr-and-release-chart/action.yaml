@@ -59,7 +59,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - if: github.event_name == 'pull_request'
       uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.2-pr-chart-action

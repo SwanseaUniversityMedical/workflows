@@ -61,7 +61,7 @@ runs:
   steps:
     - name: install cosign
       if: inputs.cosign-public-key != ''
-      uses: sigstore/cosign-installer@v3.8.1
+      uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
 
     - name: forward proxy settings
       shell: bash
@@ -71,7 +71,7 @@ runs:
         echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
 
     - name: install buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3
       with:
         driver-opts: |
           env.http_proxy=${{ env.HTTP_PROXY }}
@@ -88,14 +88,14 @@ runs:
             mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
 
     - name: login to container registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}
         password: ${{ inputs.registry-token }}
 
     - name: pr container metadata
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
       id: meta
       with:
         images: |
@@ -109,7 +109,7 @@ runs:
         echo "SHORT_SHA=`echo '${{ github.event.pull_request.head.sha }}' | cut -c1-7`" >> $GITHUB_ENV
 
     - name: pr hash container metadata
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
       id: hash-meta
       with:
         images: |
@@ -118,7 +118,7 @@ runs:
           type=ref,event=pr,suffix=-${{ env.SHORT_SHA }}
 
     - name: pr recent container metadata
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
       id: pr-recent-meta
       with:
         images: |
@@ -127,7 +127,7 @@ runs:
           type=raw,value=pr-recent
 
     - name: rc recent container metadata
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
       id: rc-recent-meta
       with:
         images: |
@@ -136,7 +136,7 @@ runs:
           type=raw,value=rc-recent
 
     - name: build container
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6
       id: build
       with:
         file: ${{ inputs.build-file }}
@@ -181,7 +181,7 @@ runs:
           :x: Build Failure
 
     - name: find pr comment
-      uses: peter-evans/find-comment@v3
+      uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3
       if: inputs.comment-enabled == 'true' && steps.build.outcome == 'success'
       id: find-pr-comment
       with:
@@ -192,7 +192,7 @@ runs:
     - name: comment on build success
       id: build-pr-comment
       if: inputs.comment-enabled == 'true' && steps.build.outcome == 'success'
-      uses: peter-evans/create-or-update-comment@v4
+      uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}

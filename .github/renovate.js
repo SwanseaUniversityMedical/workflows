@@ -46,4 +46,10 @@ module.exports = {
   ],
 
   // Rest of the config goes here...
+  packageRules: [
+    {
+      matchPackageNames: ["SwanseaUniversityMedical/workflows"],
+      pinDigests: false
+    }
+  ],
 };

@@ -5,7 +5,7 @@ module.exports = {
   //dryRun: "full",
 
   // Inherit default config options
-  extends: ["helpers:pinGitHubActionDigests"],
+  //extends: ["helpers:pinGitHubActionDigests"],
   configMigration: true,
 
   // Force use of Conventional Commit messages to avoid Renovate not detecting them
@@ -48,8 +48,14 @@ module.exports = {
   // Rest of the config goes here...
   packageRules: [
     {
+      matchDepTypes: ["action"],
+      pinDigests: true
+    },
+    {
+      matchDepTypes: ["action"],
       matchPackageNames: ["SwanseaUniversityMedical/workflows"],
-      pinDigests: false
+      pinDigests: false,
+      enabled: false
     }
   ],
 };

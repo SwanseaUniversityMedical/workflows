@@ -54,8 +54,7 @@ module.exports = {
     {
       matchDepTypes: ["action"],
       matchPackageNames: ["SwanseaUniversityMedical/workflows"],
-      pinDigests: false,
-      enabled: false
+      pinDigests: false
     }
   ],
 };

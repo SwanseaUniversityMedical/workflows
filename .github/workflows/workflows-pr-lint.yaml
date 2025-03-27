@@ -17,4 +17,4 @@ jobs:
       labels: [self-hosted, linux, x64]
       group: light
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-lint@v1.0.2-pr-lint-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-lint@v1.0.4-pr-lint-action

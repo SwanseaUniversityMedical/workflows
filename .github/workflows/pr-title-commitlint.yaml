@@ -33,7 +33,7 @@ jobs:
       labels: [self-hosted, linux, x64]
       group: light
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-lint@v1.0.4-pr-lint-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-lint@v1.0.5-pr-lint-action
         with:
           error-label: ${{ inputs.error-label }}
           comment-header: ${{ inputs.comment-header }}

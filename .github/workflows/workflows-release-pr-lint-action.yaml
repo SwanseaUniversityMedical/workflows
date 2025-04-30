@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   pr-lint-action:
-    uses: ./.github/workflows/pr-and-release-repo.yaml
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v1.0.5-repo
     with:
       job-name: pr-lint-action
       comment-release: true

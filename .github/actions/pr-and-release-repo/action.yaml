@@ -59,7 +59,7 @@ runs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - id: create-release-labels
-      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v1.0.2-create-release-labels-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@feat/release-skip-labels
       with:
         name: ${{ inputs.name }}
         major-colour: ${{ inputs.major-colour }}
@@ -70,7 +70,7 @@ runs:
 
     - id: release
       if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-repo@v1.0.4-release-repo-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-repo@feat/release-skip-labels
       with:
         name: ${{ inputs.name }}
         release-tag-format: ${{ inputs.release-tag-format }}

@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   bulk-pr-and-release-container-action:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v1.0.5-repo
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.0.0-repo
     with:
       job-name: bulk-pr-and-release-container-action
       comment-release: true

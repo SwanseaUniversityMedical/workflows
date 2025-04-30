@@ -76,7 +76,7 @@ jobs:
       pr-number: ${{ steps.release.outputs.pr-number }}
     steps:
       - id: release
-        uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-repo@v1.1.0-pr-and-release-repo-action
+        uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-repo@v2.0.0-pr-and-release-repo-action
         with:
           name: ${{ inputs.job-name }}
           major-colour: ${{ inputs.major-colour }}

@@ -112,7 +112,7 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@feat/release-skip-labels
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v1.1.0-pr-and-release-container-action
         with:
           name: ${{ inputs.job-name }}
           major-colour: ${{ inputs.major-colour }}

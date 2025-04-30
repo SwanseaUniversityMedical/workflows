@@ -94,10 +94,7 @@ runs:
       with:
         script: |
           var inputs = ${{ toJSON(inputs) }};
-          var asset = inputs['name'].trim();
-          
-          var skipped = `skipped: ${asset}`;
-          core.setOutput("skipped", skipped);
+          var skipped = inputs['skipped-label'];
           
           try {
             await github.rest.issues.addLabels({
@@ -145,13 +142,8 @@ runs:
       with:
         script: |
           var inputs = ${{ toJSON(inputs) }};
-          var asset = inputs['name'].trim();
-          
-          var released = `released: ${asset}`;
-          core.setOutput("released", released);
-          
-          var skipped = `skipped: ${asset}`;
-          core.setOutput("skipped", skipped);
+          var released = inputs['released-label'];
+          var skipped = inputs['skipped-label'];
           
           try {
             await github.rest.issues.addLabels({

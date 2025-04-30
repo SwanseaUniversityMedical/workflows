@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   pr-and-release-repo-action:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v1.0.5-repo
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.0.1-repo
     with:
       job-name: pr-and-release-repo-action
       comment-release: true

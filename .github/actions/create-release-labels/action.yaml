@@ -16,6 +16,14 @@ inputs:
     description: "Colour for the patch release label."
     default: 'FBCA04'
 
+  released-colour:
+    description: "Colour for the released success label."
+    default: 'BFD4F2'
+
+  skipped-colour:
+    description: "Colour for the released skipped label."
+    default: 'E99695'
+
 outputs:
   major:
     description: "PR label for major releases."
@@ -26,6 +34,12 @@ outputs:
   patch:
     description: "PR label for patch releases."
     value: ${{ steps.create-labels.outputs.patch }}
+  released:
+    description: "PR label for successful releases."
+    value: ${{ steps.create-labels.outputs.released }}
+  skipped:
+    description: "PR label for skipped releases."
+    value: ${{ steps.create-labels.outputs.skipped }}
 
 runs:
   using: "composite"
@@ -47,6 +61,12 @@ runs:
           var patch = `patch: ${asset}`;
           core.setOutput("patch", patch);
           
+          var released = `released: ${asset}`;
+          core.setOutput("released", released);
+          
+          var skipped = `skipped: ${asset}`;
+          core.setOutput("skipped", skipped);
+          
           try {
             await github.rest.issues.createLabel({
               owner: context.repo.owner,
@@ -55,7 +75,7 @@ runs:
               color: inputs['major-colour'].trim()
             });
           } catch (error) {
-            //console.log(error);
+            console.log(error);
           }
           
           try {
@@ -66,7 +86,7 @@ runs:
               color: inputs['minor-colour'].trim()
             });
           } catch (error) {
-            //console.log(error);
+            console.log(error);
           }
           
           try {
@@ -77,12 +97,36 @@ runs:
               color: inputs['patch-colour'].trim()
             });
           } catch (error) {
-            //console.log(error);
+            console.log(error);
+          }
+          
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: released,
+              color: inputs['released-colour'].trim()
+            });
+          } catch (error) {
+            console.log(error);
+          }
+          
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: skipped,
+              color: inputs['skipped-colour'].trim()
+            });
+          } catch (error) {
+            console.log(error);
           }
           
           core.setOutput("major", major);
           core.setOutput("minor", minor);
           core.setOutput("patch", patch);
+          core.setOutput("released", released);
+          core.setOutput("skipped", skipped);
 
     - name: error
       if: failure()

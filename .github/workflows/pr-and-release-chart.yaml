@@ -22,6 +22,16 @@ on:
         default: 'FBCA04'
         type: string
 
+      released-colour:
+        description: "Colour for the released success label."
+        default: 'BFD4F2'
+        type: string
+
+      skipped-colour:
+        description: "Colour for the released skipped label."
+        default: 'E99695'
+        type: string
+
       chart:
         description: "Path to the helm chart."
         required: true
@@ -92,12 +102,14 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-chart@v1.0.6-pr-and-release-chart-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-chart@v1.1.0-pr-and-release-chart-action
         with:
           name: ${{ inputs.job-name }}
           major-colour: ${{ inputs.major-colour }}
           minor-colour: ${{ inputs.minor-colour }}
           patch-colour: ${{ inputs.patch-colour }}
+          released-colour: ${{ inputs.released-colour }}
+          skipped-colour: ${{ inputs.skipped-colour }}
           comment-pr: ${{ inputs.comment-pr }}
           comment-release: ${{ inputs.comment-release }}
           registry: ${{ inputs.registry }}

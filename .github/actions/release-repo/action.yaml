@@ -16,6 +16,14 @@ inputs:
     description: "Label text for patch releases."
     required: true
 
+  released-label:
+    description: "Label text for successful releases."
+    required: true
+
+  skipped-label:
+    description: "Label text for skipped releases."
+    required: true
+
   comment-header:
     description: "Header line for the Release summary."
     default: ":rocket: :alembic: Build Release Repo"
@@ -80,6 +88,25 @@ runs:
           #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }}  
           :desert_island: Skipping release!
 
+    - name: add skipped label
+      if: steps.semantic.outputs.new-release-published != 'true'
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      with:
+        script: |
+          var inputs = ${{ toJSON(inputs) }};
+          var skipped = inputs['skipped-label'];
+          
+          try {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.semantic.outputs.pr-number }},
+              labels: [skipped]
+            });
+          } catch (error) {
+            console.log(error);
+          }
+
     - name: github release
       if: steps.semantic.outputs.new-release-published == 'true'
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
@@ -108,6 +135,37 @@ runs:
           ${{ steps.semantic.outputs.git-tag }}
           ```
           :hammer_and_wrench: Github Release Success  
+
+    - name: add released label
+      if: steps.release.outcome == 'success'
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      with:
+        script: |
+          var inputs = ${{ toJSON(inputs) }};
+          var released = inputs['released-label'];
+          var skipped = inputs['skipped-label'];
+          
+          try {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.semantic.outputs.pr-number }},
+              labels: [released]
+            });
+          } catch (error) {
+            console.log(error);
+          }
+          
+          try {
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.semantic.outputs.pr-number }},
+              name: skipped
+            });
+          } catch (error) {
+            console.log(error);
+          }
 
     - name: release error
       if: failure() && steps.release.outcome == 'failure'
@@ -139,6 +197,31 @@ runs:
           ```
           ${{ steps.semantic.outputs.git-tag }}
           ```
+
+    - name: add released label
+      if: steps.release.outcome == 'success'
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      with:
+        script: |
+          var inputs = ${{ toJSON(inputs) }};
+          var asset = inputs['name'].trim();
+          
+          var released = `released: ${asset}`;
+          core.setOutput("released", released);
+          
+          var skipped = `skipped: ${asset}`;
+          core.setOutput("skipped", skipped);
+          
+          try {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.semantic.outputs.pr-number }},
+              labels: [released]
+            });
+          } catch (error) {
+            console.log(error);
+          }
 
     - name: error
       if: failure()

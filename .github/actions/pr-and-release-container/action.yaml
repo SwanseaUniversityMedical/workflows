@@ -16,6 +16,14 @@ inputs:
     description: "Colour for the patch release label."
     default: 'FBCA04'
 
+  released-colour:
+    description: "Colour for the released success label."
+    default: 'BFD4F2'
+
+  skipped-colour:
+    description: "Colour for the released skipped label."
+    default: 'E99695'
+
   comment-pr:
     description: "PR comment creation and update."
     default: "false"
@@ -82,12 +90,14 @@ runs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - id: create-release-labels
-      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v1.0.2-create-release-labels-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v1.1.0-create-release-labels-action
       with:
         name: ${{ inputs.name }}
         major-colour: ${{ inputs.major-colour }}
         minor-colour: ${{ inputs.minor-colour }}
         patch-colour: ${{ inputs.patch-colour }}
+        released-colour: ${{ inputs.released-colour }}
+        skipped-colour: ${{ inputs.skipped-colour }}
 
     - if: github.event_name == 'pull_request'
       uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v1.0.3-pr-container-action
@@ -107,11 +117,13 @@ runs:
         cosign-password: ${{ inputs.cosign-password }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v1.0.5-release-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v1.1.0-release-container-action
       with:
         major-label: ${{ steps.create-release-labels.outputs.major }}
         minor-label: ${{ steps.create-release-labels.outputs.minor }}
         patch-label: ${{ steps.create-release-labels.outputs.patch }}
+        released-label: ${{ steps.create-release-labels.outputs.released }}
+        skipped-label: ${{ steps.create-release-labels.outputs.skipped }}
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}
         registry: ${{ inputs.registry }}

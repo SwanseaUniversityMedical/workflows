@@ -22,6 +22,16 @@ on:
         default: 'FBCA04'
         type: string
 
+      released-colour:
+        description: "Colour for the released success label."
+        default: 'BFD4F2'
+        type: string
+
+      skipped-colour:
+        description: "Colour for the released skipped label."
+        default: 'E99695'
+        type: string
+
       chart:
         description: "Path to the helm chart."
         required: true
@@ -98,6 +108,8 @@ jobs:
           major-colour: ${{ inputs.major-colour }}
           minor-colour: ${{ inputs.minor-colour }}
           patch-colour: ${{ inputs.patch-colour }}
+          released-colour: ${{ inputs.released-colour }}
+          skipped-colour: ${{ inputs.skipped-colour }}
           comment-pr: ${{ inputs.comment-pr }}
           comment-release: ${{ inputs.comment-release }}
           registry: ${{ inputs.registry }}

@@ -16,6 +16,14 @@ inputs:
     description: "Colour for the patch release label."
     default: 'FBCA04'
 
+  released-colour:
+    description: "Colour for the released success label."
+    default: 'BFD4F2'
+
+  skipped-colour:
+    description: "Colour for the released skipped label."
+    default: 'E99695'
+
   comment-release:
     description: "Release comment creation and update."
     default: "true"
@@ -57,6 +65,8 @@ runs:
         major-colour: ${{ inputs.major-colour }}
         minor-colour: ${{ inputs.minor-colour }}
         patch-colour: ${{ inputs.patch-colour }}
+        released-colour: ${{ inputs.released-colour }}
+        skipped-colour: ${{ inputs.skipped-colour }}
 
     - id: release
       if: github.event_name == 'push'
@@ -67,3 +77,5 @@ runs:
         major-label: ${{ steps.create-release-labels.outputs.major }}
         minor-label: ${{ steps.create-release-labels.outputs.minor }}
         patch-label: ${{ steps.create-release-labels.outputs.patch }}
+        released-label: ${{ steps.create-release-labels.outputs.released }}
+        skipped-label: ${{ steps.create-release-labels.outputs.skipped }}

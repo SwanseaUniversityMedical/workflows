@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   release-chart-action:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.0.0-repo
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v1.0.5-repo
     with:
       job-name: release-chart-action
       comment-release: true

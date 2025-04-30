@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   sonar-dotnet-8-action:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.0.0-repo
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v1.0.5-repo
     with:
       job-name: sonar-dotnet-8-action
       comment-release: true

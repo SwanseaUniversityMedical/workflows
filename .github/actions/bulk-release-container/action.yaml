@@ -178,7 +178,7 @@ runs:
 
     - name: build rc container
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
-      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6
+      uses: docker/build-push-action@1dc73863535b631f98b2378be8619f83b136f4a0 # v6
       id: build-rc
       with:
         file: ${{ inputs.build-file }}
@@ -309,7 +309,7 @@ runs:
 
     - name: build release container
       if: steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure' && steps.extra-tag.outcome != 'failure'
-      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6
+      uses: docker/build-push-action@1dc73863535b631f98b2378be8619f83b136f4a0 # v6
       id: build-release
       with:
         file: ${{ inputs.build-file }}

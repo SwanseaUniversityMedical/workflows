@@ -40,6 +40,22 @@ inputs:
     description: "Path to the build root dir."
     default: '.'
 
+  build-args:
+    description: "KEY=VALUE build args as a multiline string."
+    default: ''
+
+  build-secrets:
+    description: "KEY=VALUE build secrets as a multiline string."
+    default: ''
+
+  build-secret-envs:
+    description: "KEY=VALUE build secrets from env vars as a multiline string."
+    default: ''
+
+  build-secret-files:
+    description: "KEY=VALUE build secrets from files as a multiline string."
+    default: ''
+
   test-flags:
     description: "Arguments passed to docker run."
     default: ''
@@ -100,7 +116,7 @@ runs:
         skipped-colour: ${{ inputs.skipped-colour }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v1.0.5-pr-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v1.1.0-pr-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
@@ -110,6 +126,10 @@ runs:
         registry-token: ${{ inputs.registry-token }}
         build-file: ${{ inputs.build-file }}
         build-context: ${{ inputs.build-context }}
+        build-args: ${{ inputs.build-args }}
+        build-secrets: ${{ inputs.build-secrets }}
+        build-secret-envs: ${{ inputs.build-secret-envs }}
+        build-secret-files: ${{ inputs.build-secret-files }}
         test-flags: ${{ inputs.test-flags }}
         test-args: ${{ inputs.test-args }}
         cosign-public-key: ${{ inputs.cosign-public-key }}
@@ -117,7 +137,7 @@ runs:
         cosign-password: ${{ inputs.cosign-password }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v2.0.2-release-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v2.1.0-release-container-action
       with:
         major-label: ${{ steps.create-release-labels.outputs.major }}
         minor-label: ${{ steps.create-release-labels.outputs.minor }}
@@ -134,6 +154,10 @@ runs:
         release-tag-format: ${{ inputs.release-tag-format }}
         build-file: ${{ inputs.build-file }}
         build-context: ${{ inputs.build-context }}
+        build-args: ${{ inputs.build-args }}
+        build-secrets: ${{ inputs.build-secrets }}
+        build-secret-envs: ${{ inputs.build-secret-envs }}
+        build-secret-files: ${{ inputs.build-secret-files }}
         test-flags: ${{ inputs.test-flags }}
         test-args: ${{ inputs.test-args }}
         cosign-public-key: ${{ inputs.cosign-public-key }}

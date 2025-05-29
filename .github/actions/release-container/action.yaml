@@ -40,6 +40,22 @@ inputs:
     description: "Path to the build root dir."
     default: '.'
 
+  build-args:
+    description: "KEY=VALUE build args as a multiline string."
+    default: ''
+
+  build-secrets:
+    description: "KEY=VALUE build secrets as a multiline string."
+    default: ''
+
+  build-secret-envs:
+    description: "KEY=VALUE build secrets from env vars as a multiline string."
+    default: ''
+
+  build-secret-files:
+    description: "KEY=VALUE build secrets from files as a multiline string."
+    default: ''
+
   test-flags:
     description: "Arguments passed to docker run."
     default: ''
@@ -230,6 +246,14 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
+        build-args: |
+          ${{ inputs.build-args }}
+        secrets: |
+          ${{ inputs.build-secrets }}
+        secret-envs: |
+          ${{ inputs.build-secret-envs }}
+        secret-files: |
+          ${{ inputs.build-secret-files }}
         tags: |
           ${{ steps.rc-meta.outputs.tags }}
           ${{ steps.branch-recent-meta.outputs.tags }}
@@ -361,6 +385,14 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
+        build-args: |
+          ${{ inputs.build-args }}
+        secrets: |
+          ${{ inputs.build-secrets }}
+        secret-envs: |
+          ${{ inputs.build-secret-envs }}
+        secret-files: |
+          ${{ inputs.build-secret-files }}
         tags: |
           ${{ steps.meta.outputs.tags }}
           ${{ env.EXTRA_META }}

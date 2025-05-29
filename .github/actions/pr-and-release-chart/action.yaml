@@ -92,7 +92,7 @@ runs:
         skipped-colour: ${{ inputs.skipped-colour }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.3-pr-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.4-pr-chart-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}

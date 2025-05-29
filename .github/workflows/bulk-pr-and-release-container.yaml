@@ -27,6 +27,21 @@ on:
         default: '.'
         type: string
 
+      build-args:
+        description: "KEY=VALUE build args as a multiline string."
+        default: ''
+        type: string
+
+      build-secret-envs:
+        description: "KEY=VALUE build secrets from env vars as a multiline string."
+        default: ''
+        type: string
+
+      build-secret-files:
+        description: "KEY=VALUE build secrets from files as a multiline string."
+        default: ''
+        type: string
+
       test-flags:
         description: "Arguments passed to docker run."
         default: ''
@@ -81,13 +96,17 @@ on:
         description: "Private key password for cosigning images."
         required: false
 
+      build-secrets:
+        description: "KEY=VALUE build secrets as a multiline string."
+        required: false
+
 jobs:
   container:
     runs-on:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-pr-and-release-container@v1.0.5-bulk-pr-and-release-container-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-pr-and-release-container@v1.1.0-bulk-pr-and-release-container-action
         with:
           name: ${{ inputs.job-name }}
           comment-pr: ${{ inputs.comment-pr }}
@@ -100,6 +119,10 @@ jobs:
           release-info: ${{ inputs.release-info }}
           build-file: ${{ inputs.build-file }}
           build-context: ${{ inputs.build-context }}
+          build-args: ${{ inputs.build-args }}
+          build-secrets: ${{ secrets.build-secrets }}
+          build-secret-envs: ${{ inputs.build-secret-envs }}
+          build-secret-files: ${{ inputs.build-secret-files }}
           test-flags: ${{ inputs.test-flags }}
           test-args: ${{ inputs.test-args }}
           cosign-public-key: ${{ inputs.cosign-public-key }}

@@ -35,7 +35,7 @@ jobs:
       group: sonar
 
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/sonar-dotnet-7@v1.1.1-sonar-dotnet-7-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/sonar-dotnet-7@feat/sonar-disable-scan-all
         with:
           project-name: ${{ inputs.project-name }}
           project-file: ${{ inputs.project-file }}

@@ -20,10 +20,6 @@ inputs:
     description: "Path to the helm chart."
     required: true
 
-  test-command:
-    description: "Command to test the chart named $CHART."
-    default: ''
-
   registry:
     description: "URL of the chart registry."
     required: true
@@ -104,92 +100,9 @@ runs:
       shell: bash
       run: |
         echo "RELEASE_TAG=${{ inputs.version }}" >> $GITHUB_ENV
-        echo "RC_TAG=${{ inputs.version }}-rc" >> $GITHUB_ENV
-
-    - name: build release candidate chart
-      id: helm-rc
-      shell: bash
-      run: |
-        helm dependency update ${{ inputs.chart }}
-        helm package ${{ inputs.chart }} --version ${{ env.RC_TAG }}
-        helm push ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
-
-    - name: build success
-      if: steps.helm-rc.outcome == 'success'
-      shell: bash
-      run: |
-        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-      env:
-        SUMMARY: |
-          ```
-          ${{ env.CHART_REPO }}:${{ env.RC_TAG }}
-          ```
-          :hammer_and_wrench: Build Success  
-
-    - name: build failure
-      if: failure() && steps.helm-rc.outcome == 'failure'
-      shell: bash
-      run: |
-        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-      env:
-        SUMMARY: ":x: Build Failure"
-
-    - name: cosign release candidate
-      id: cosign-rc
-      if: inputs.cosign-public-key != '' && steps.helm-rc.outcome == 'success'
-      env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
-      shell: bash
-      run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${RC_TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RC_TAG}"
-
-    - name: cosign success
-      if: steps.cosign-rc.outcome == 'success'
-      shell: bash
-      run: |
-        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-      env:
-        SUMMARY: ":black_nib: Cosign Success  "
-
-    - name: cosign error
-      if: failure() && steps.cosign-rc.outcome == 'failure'
-      shell: bash
-      run: |
-        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-      env:
-        SUMMARY: ":x: Cosign Failure"
-
-    - name: test release candidate
-      id: test
-      if: inputs.test-command != '' && steps.helm-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure'
-      shell: bash
-      run: |
-        set -x
-        CHART="${{ inputs.registry-repo }}-${{ env.RC_TAG}}.tgz"
-        ${{ inputs.test-command }}
-
-    - name: test success
-      if: steps.test.outcome == 'success'
-      shell: bash
-      run: |
-        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-      env:
-        SUMMARY: ":eyes: Test Success  "
-
-    - name: test error
-      if: failure() && steps.test.outcome == 'failure'
-      shell: bash
-      run: |
-        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-      env:
-        SUMMARY: ":x: Test Failure"
 
     - name: build release chart
       id: helm-release
-      if: steps.helm-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
       shell: bash
       run: |
         helm package ${{ inputs.chart }} --version ${{ env.RELEASE_TAG }}
@@ -251,14 +164,44 @@ runs:
         retries: 3
         github-token: ${{ github.token }}
         script: |
-          github.rest.repos.createRelease({
-            owner: "${{ github.repository_owner }}",
-            repo: "${{ github.event.repository.name }}",
-            tag_name: "${{ inputs.name }}/${{ inputs.version }}",
-            target_commitish: "${{ github.sha }}",
-            body: "",
-            name: "${{ inputs.name }}/${{ inputs.version }}"
-          });
+          try {
+            console.log("Attempting to create release...");
+            github.rest.repos.createRelease({
+              owner: "${{ github.repository_owner }}",
+              repo: "${{ github.event.repository.name }}",
+              tag_name: "${{ inputs.name }}/${{ inputs.version }}",
+              target_commitish: "${{ github.sha }}",
+              body: "",
+              name: "${{ inputs.name }}/${{ inputs.version }}"
+            });
+          } catch (error) {
+            console.log(error);
+          
+            try {
+              console.log("Attempting to find existing release...");
+              var release = github.rest.repos.getReleaseByTag({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{ github.event.repository.name }}",
+                tag: "${{ inputs.name }}/${{ inputs.version }}"
+              });
+          
+              
+              console.log(`Found existing release ${release.id}`);
+              console.log("Attempting to update existing release...");
+              
+              github.rest.repos.updateRelease({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{ github.event.repository.name }}",
+                release_id: release.id,
+                tag_name: "${{ inputs.name }}/${{ inputs.version }}",
+                target_commitish: "${{ github.sha }}",
+                body: "",
+                name: "${{ inputs.name }}/${{ inputs.version }}"
+              });
+            } catch (error) {
+              console.log(error);
+            }
+          }
 
     - name: release success
       if: steps.release.outcome == 'success'

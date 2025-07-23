@@ -59,6 +59,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+
+    - name: make bitnami directory
+      shell: bash
+      run: |
+        mkdir -p /bitnami
+
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       with:
         repository: "bitnami/charts"

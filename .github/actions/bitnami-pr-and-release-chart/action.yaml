@@ -4,6 +4,10 @@ inputs:
     description: "Name of the release asset."
     required: true
 
+  version:
+    description: "Version of the bitnami chart to build."
+    default: ''
+
   test-command:
     description: "Command to test the chart named $CHART."
     default: ''
@@ -54,9 +58,28 @@ runs:
         registry-user: ${{ inputs.registry-user }}
         registry-project: ${{ inputs.registry-project }}
         registry-repo: ${{ inputs.name }}
+        registry-token: ${{ inputs.registry-token }}
         cosign-public-key: ${{ inputs.cosign-public-key }}
-        chart: "bitnami/${{ inputs.name }}"
-        test-command: ${{ inputs.test-command }}
         cosign-private-key: ${{ inputs.cosign-private-key }}
         cosign-password: ${{ inputs.cosign-password }}
+        chart: "bitnami/${{ inputs.name }}"
+        test-command: ${{ inputs.test-command }}
+
+
+
+    - if: github.event_name == 'push'
+      uses: SwanseaUniversityMedical/workflows/.github/actions/bitnami-release-chart@feat/bitnami-workflows
+      with:
+        name: ${{ inputs.name }}-chart
+        version: ${{ inputs.version }}
+        comment-enabled: "true"
+        registry: ${{ inputs.registry }}
+        registry-user: ${{ inputs.registry-user }}
+        registry-project: ${{ inputs.registry-project }}
+        registry-repo: ${{ inputs.name }}
         registry-token: ${{ inputs.registry-token }}
+        cosign-public-key: ${{ inputs.cosign-public-key }}
+        cosign-private-key: ${{ inputs.cosign-private-key }}
+        cosign-password: ${{ inputs.cosign-password }}
+        chart: "bitnami/${{ inputs.name }}"
+        test-command: ${{ inputs.test-command }}

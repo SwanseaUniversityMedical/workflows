@@ -65,8 +65,6 @@ runs:
         chart: "bitnami/${{ inputs.name }}"
         test-command: ${{ inputs.test-command }}
 
-
-
     - if: github.event_name == 'push'
       uses: SwanseaUniversityMedical/workflows/.github/actions/bitnami-release-chart@feat/bitnami-workflows
       with:

@@ -175,11 +175,33 @@ runs:
               body: "",
               name: "${{ inputs.name }}/${{ inputs.version }}"
             });
-          } catch (error) {
-            console.log(error);
+          } catch (createError) {
+            console.log(createError);
             console.log("Failed to create release...");
             
-            
+            try {
+              console.log("Attempting to find existing release...");
+              var release = github.rest.repos.getReleaseByTag({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{ github.event.repository.name }}",
+                tag: "${{ inputs.name }}/${{ inputs.version }}"
+              });
+
+              console.log(`Found existing release ${release.id}`);
+              console.log("Attempting to update existing release...");
+
+              github.rest.repos.updateRelease({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{ github.event.repository.name }}",
+                release_id: release.id,
+                tag_name: "${{ inputs.name }}/${{ inputs.version }}",
+                target_commitish: "${{ github.sha }}",
+                body: "",
+                name: "${{ inputs.name }}/${{ inputs.version }}"
+              });
+            } catch (updateError) {
+              console.log(updateError);
+            }
             
           }
 

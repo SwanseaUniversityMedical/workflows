@@ -60,15 +60,9 @@ runs:
   using: "composite"
   steps:
 
-    - name: make bitnami directory
-      shell: bash
-      run: |
-        mkdir -p /bitnami
-
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       with:
         repository: "bitnami/charts"
-        path: "/bitnami"
         ref: ${{ inputs.ref }}
 
     - if: github.event_name == 'pull_request'
@@ -81,7 +75,7 @@ runs:
         registry-project: ${{ inputs.registry-project }}
         registry-repo: ${{ inputs.registry-repo }}
         cosign-public-key: ${{ inputs.cosign-public-key }}
-        chart: "/bitnami/${{ inputs.chart }}"
+        chart: ${{ inputs.chart }}
         test-command: ${{ inputs.test-command }}
         cosign-private-key: ${{ inputs.cosign-private-key }}
         cosign-password: ${{ inputs.cosign-password }}

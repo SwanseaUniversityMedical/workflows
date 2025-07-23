@@ -68,7 +68,7 @@ runs:
     - if: github.event_name == 'push'
       uses: SwanseaUniversityMedical/workflows/.github/actions/bitnami-release-chart@feat/bitnami-workflows
       with:
-        name: ${{ inputs.name }}-chart
+        name: ${{ inputs.name }}
         version: ${{ inputs.version }}
         comment-enabled: "true"
         registry: ${{ inputs.registry }}

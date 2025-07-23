@@ -93,7 +93,7 @@ runs:
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }}
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }}-chart - :label: Commit: ${{ github.sha }}
           :label: New version will be ${{ inputs.version }}
 
     - name: create tags
@@ -166,6 +166,26 @@ runs:
         github-token: ${{ github.token }}
         script: |
           try {
+            console.log("Attempting to find existing release...");
+            var release = await github.rest.repos.getReleaseByTag({
+              owner: "${{ github.repository_owner }}",
+              repo: "${{ github.event.repository.name }}",
+              tag: "${{ inputs.name }}/${{ inputs.version }}"
+            });
+
+            console.log(`Found existing release ${release.data.id}`);
+            console.log("Attempting to delete existing release...");
+
+            await github.rest.repos.deleteRelease({
+              owner: "${{ github.repository_owner }}",
+              repo: "${{ github.event.repository.name }}",
+              release_id: release.data.id
+            });
+          } catch (updateError) {
+            console.log(updateError);
+          }
+          
+          try {
             console.log("Attempting to create release...");
             await github.rest.repos.createRelease({
               owner: "${{ github.repository_owner }}",
@@ -178,31 +198,6 @@ runs:
           } catch (createError) {
             console.log(createError);
             console.log("Failed to create release...");
-            
-            try {
-              console.log("Attempting to find existing release...");
-              var release = await github.rest.repos.getReleaseByTag({
-                owner: "${{ github.repository_owner }}",
-                repo: "${{ github.event.repository.name }}",
-                tag: "${{ inputs.name }}/${{ inputs.version }}"
-              });
-
-              console.log(`Found existing release ${release.data.id}`);
-              console.log("Attempting to update existing release...");
-
-              await github.rest.repos.updateRelease({
-                owner: "${{ github.repository_owner }}",
-                repo: "${{ github.event.repository.name }}",
-                release_id: release.data.id,
-                tag_name: "${{ inputs.name }}/${{ inputs.version }}",
-                target_commitish: "${{ github.sha }}",
-                body: "",
-                name: "${{ inputs.name }}/${{ inputs.version }}"
-              });
-            } catch (updateError) {
-              console.log(updateError);
-            }
-            
           }
 
     - name: release success
@@ -262,7 +257,7 @@ runs:
       id: find-pr-comment
       with:
         issue-number: ${{ steps.determine-release.outputs.pr-number }}
-        body-includes: ${{ inputs.comment-header }} - ${{ inputs.name }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.name }}-chart
         comment-author: "github-actions[bot]"
 
     - name: comment on release success
@@ -274,7 +269,7 @@ runs:
         issue-number: ${{ steps.determine-release.outputs.pr-number }}
         edit-mode: replace
         body: |
-          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }}-chart - :label: Commit: ${{ github.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           ```
           ${{ inputs.name }}/${{ inputs.version }}
           ${{ env.CHART_REPO }}:${{ env.RELEASE_TAG }}

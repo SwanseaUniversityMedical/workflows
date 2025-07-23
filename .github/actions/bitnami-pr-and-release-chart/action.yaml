@@ -4,22 +4,6 @@ inputs:
     description: "Name of the release asset."
     required: true
 
-  ref:
-    description: "Git ref from the bitnami/charts repo."
-    required: true
-
-  chart:
-    description: "Path to the helm chart."
-    required: true
-
-  comment-pr:
-    description: "PR comment creation and update."
-    default: "false"
-
-  comment-release:
-    description: "Release comment creation and update."
-    default: "true"
-
   test-command:
     description: "Command to test the chart named $CHART."
     default: ''
@@ -34,10 +18,6 @@ inputs:
 
   registry-project:
     description: "Project within chart registry."
-    required: true
-
-  registry-repo:
-    description: "Repo within chart registry project."
     required: true
 
   cosign-public-key:
@@ -63,19 +43,19 @@ runs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       with:
         repository: "bitnami/charts"
-        ref: ${{ inputs.ref }}
+        ref: "${{ inputs.name }}/${{ inputs.version }}"
 
     - if: github.event_name == 'pull_request'
       uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.4-pr-chart-action
       with:
-        name: ${{ inputs.name }}
-        comment-enabled: ${{ inputs.comment-pr }}
+        name: ${{ inputs.name }}-chart
+        comment-enabled: "true"
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}
         registry-project: ${{ inputs.registry-project }}
-        registry-repo: ${{ inputs.registry-repo }}
+        registry-repo: ${{ inputs.name }}
         cosign-public-key: ${{ inputs.cosign-public-key }}
-        chart: ${{ inputs.chart }}
+        chart: "bitnami/${{ inputs.name }}"
         test-command: ${{ inputs.test-command }}
         cosign-private-key: ${{ inputs.cosign-private-key }}
         cosign-password: ${{ inputs.cosign-password }}

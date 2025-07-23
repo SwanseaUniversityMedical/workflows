@@ -167,7 +167,7 @@ runs:
         script: |
           try {
             console.log("Attempting to create release...");
-            github.rest.repos.createRelease({
+            await github.rest.repos.createRelease({
               owner: "${{ github.repository_owner }}",
               repo: "${{ github.event.repository.name }}",
               tag_name: "${{ inputs.name }}/${{ inputs.version }}",
@@ -181,7 +181,7 @@ runs:
             
             try {
               console.log("Attempting to find existing release...");
-              var release = github.rest.repos.getReleaseByTag({
+              var release = await github.rest.repos.getReleaseByTag({
                 owner: "${{ github.repository_owner }}",
                 repo: "${{ github.event.repository.name }}",
                 tag: "${{ inputs.name }}/${{ inputs.version }}"
@@ -190,7 +190,7 @@ runs:
               console.log(`Found existing release ${release.id}`);
               console.log("Attempting to update existing release...");
 
-              github.rest.repos.updateRelease({
+              await github.rest.repos.updateRelease({
                 owner: "${{ github.repository_owner }}",
                 repo: "${{ github.event.repository.name }}",
                 release_id: release.id,

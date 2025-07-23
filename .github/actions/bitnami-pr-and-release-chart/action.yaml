@@ -80,4 +80,3 @@ runs:
         cosign-private-key: ${{ inputs.cosign-private-key }}
         cosign-password: ${{ inputs.cosign-password }}
         chart: "bitnami/${{ inputs.name }}"
-        test-command: ${{ inputs.test-command }}

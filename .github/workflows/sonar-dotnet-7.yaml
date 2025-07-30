@@ -35,7 +35,7 @@ jobs:
       group: sonar
 
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/sonar-dotnet-7@v1.3.1-sonar-dotnet-7-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/sonar-dotnet-7@fix/sonar-args
         with:
           project-name: ${{ inputs.project-name }}
           project-file: ${{ inputs.project-file }}

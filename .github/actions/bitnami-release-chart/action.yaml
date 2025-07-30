@@ -185,7 +185,7 @@ runs:
             await github.request('DELETE /repos/{owner}/{repo}/git/refs/{ref}', {
               owner: "${{ github.repository_owner }}",
               repo: "${{ github.event.repository.name }}",
-              ref: "v${{ inputs.version }}-${{ inputs.name }}-chart",
+              ref: "refs/tags/v${{ inputs.version }}-${{ inputs.name }}-chart",
               headers: {
                 'X-GitHub-Api-Version': '2022-11-28'
               }

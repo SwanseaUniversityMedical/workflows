@@ -1,12 +1,8 @@
 name: 'PR and Release Chart'
 inputs:
-  name:
+  ref:
     description: "Name of the release asset."
     required: true
-
-  version:
-    description: "Version of the bitnami chart to build."
-    default: ''
 
   test-command:
     description: "Command to test the chart named $CHART."
@@ -47,12 +43,21 @@ runs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       with:
         repository: "bitnami/charts"
-        ref: "${{ inputs.name }}/${{ inputs.version }}"
+        ref: ${{ inputs.ref }}
+
+    - name: extract name and version
+      id: bitnami
+      shell: bash
+      run: |
+        echo "BITNAMI_NAME=$(echo $REF | cut -d "/" -f 1)" >> $GITHUB_ENV
+        echo "BITNAMI_VERSION=$(echo $REF | cut -d "/" -f 2)" >> $GITHUB_ENV
+      env:
+        REF: ${{ inputs.ref }}
 
     - if: github.event_name == 'pull_request'
       uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.4-pr-chart-action
       with:
-        name: ${{ inputs.name }}-chart
+        name: ${{ env.BITNAMI_NAME }}-chart
         comment-enabled: "true"
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}
@@ -68,8 +73,8 @@ runs:
     - if: github.event_name == 'push'
       uses: SwanseaUniversityMedical/workflows/.github/actions/bitnami-release-chart@feat/bitnami-workflows
       with:
-        name: ${{ inputs.name }}
-        version: ${{ inputs.version }}
+        name: ${{ env.BITNAMI_NAME }}
+        version: ${{ env.BITNAMI_VERSION }}-chart
         comment-enabled: "true"
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}

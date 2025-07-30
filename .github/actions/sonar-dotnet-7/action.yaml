@@ -21,6 +21,10 @@ inputs:
     description: "Authentication token for sonarqube."
     required: true
 
+  sonar-exclusions:
+    description: "Exclusion lists."
+    default: ''
+
 runs:
   using: "composite"
   steps:
@@ -63,6 +67,7 @@ runs:
                   /k:$PROJECT_NAME /name:$PROJECT_NAME \
                   /v:$PROJECT_VERSION \
                   /d:sonar.projectBaseDir=/repo/$PROJECT_CONTEXT \
+                  /d:sonar.exclusions=$SONAR_EXCLUSIONS \
                   /d:sonar.host.url=$SONAR_URL \
                   /d:sonar.token=$SONAR_TOKEN && \
                 dotnet restore $PROJECT_FILE && \
@@ -77,5 +82,6 @@ runs:
         PROJECT_FILE: ${{ inputs.project-file }}
         PROJECT_CONTEXT: ${{ inputs.project-context }}
         PROJECT_VERSION: ${{ steps.version.outputs.version }}
+        SONAR_EXCLUSIONS: ${{ inputs.sonar-exclusions }}
         SONAR_URL: ${{ inputs.sonar-url }}
         SONAR_TOKEN: ${{ inputs.sonar-token }}

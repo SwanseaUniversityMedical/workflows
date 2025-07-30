@@ -22,6 +22,11 @@ on:
         required: true
         type: string
 
+      sonar-exclusions:
+        description: "Exclusion lists."
+        default: '**.exe'
+        type: string
+
     secrets:
 
       sonar-token:
@@ -40,5 +45,6 @@ jobs:
           project-name: ${{ inputs.project-name }}
           project-file: ${{ inputs.project-file }}
           project-context: ${{ inputs.project-context }}
+          sonar-exclusions: ${{ inputs.sonar-exclusions }}
           sonar-url: ${{ inputs.sonar-url }}
           sonar-token: ${{ secrets.sonar-token }}

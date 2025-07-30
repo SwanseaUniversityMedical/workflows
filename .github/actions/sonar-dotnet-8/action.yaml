@@ -23,7 +23,7 @@ inputs:
 
   sonar-exclusions:
     description: "Exclusion lists."
-    default: ''
+    default: '**.exe'
 
 runs:
   using: "composite"

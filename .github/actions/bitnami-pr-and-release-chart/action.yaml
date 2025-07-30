@@ -62,12 +62,12 @@ runs:
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}
         registry-project: ${{ inputs.registry-project }}
-        registry-repo: ${{ inputs.name }}
+        registry-repo: ${{ env.BITNAMI_NAME }}
         registry-token: ${{ inputs.registry-token }}
         cosign-public-key: ${{ inputs.cosign-public-key }}
         cosign-private-key: ${{ inputs.cosign-private-key }}
         cosign-password: ${{ inputs.cosign-password }}
-        chart: "bitnami/${{ inputs.name }}"
+        chart: "bitnami/${{ env.BITNAMI_NAME }}"
         test-command: ${{ inputs.test-command }}
 
     - if: github.event_name == 'push'
@@ -79,9 +79,9 @@ runs:
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}
         registry-project: ${{ inputs.registry-project }}
-        registry-repo: ${{ inputs.name }}
+        registry-repo: ${{ env.BITNAMI_NAME }}
         registry-token: ${{ inputs.registry-token }}
         cosign-public-key: ${{ inputs.cosign-public-key }}
         cosign-private-key: ${{ inputs.cosign-private-key }}
         cosign-password: ${{ inputs.cosign-password }}
-        chart: "bitnami/${{ inputs.name }}"
+        chart: "bitnami/${{ env.BITNAMI_NAME }}"

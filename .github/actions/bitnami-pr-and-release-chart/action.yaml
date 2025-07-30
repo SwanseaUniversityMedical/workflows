@@ -74,7 +74,7 @@ runs:
       uses: SwanseaUniversityMedical/workflows/.github/actions/bitnami-release-chart@feat/bitnami-workflows
       with:
         name: ${{ env.BITNAMI_NAME }}
-        version: ${{ env.BITNAMI_VERSION }}-chart
+        version: ${{ env.BITNAMI_VERSION }}
         comment-enabled: "true"
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}

@@ -203,6 +203,7 @@ runs:
               tag_name: "v${{ inputs.version }}-${{ inputs.name }}-chart",
               target_commitish: "${{ github.sha }}",
               body: "",
+              draft: false,
               name: "v${{ inputs.version }}-${{ inputs.name }}-chart"
             });
           } catch (createError) {

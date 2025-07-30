@@ -172,15 +172,25 @@ runs:
               repo: "${{ github.event.repository.name }}",
               tag: "v${{ inputs.version }}-${{ inputs.name }}-chart"
             });
-
             console.log(`Found existing release ${release.data.id}`);
+          
             console.log("Attempting to delete existing release...");
-
             await github.rest.repos.deleteRelease({
               owner: "${{ github.repository_owner }}",
               repo: "${{ github.event.repository.name }}",
               release_id: release.data.id
             });
+          
+            console.log("Attempting to delete existing tag...");
+            await github.request('DELETE /repos/{owner}/{repo}/git/refs/{ref}', {
+              owner: "${{ github.repository_owner }}",
+              repo: "${{ github.event.repository.name }}",
+              ref: "v${{ inputs.version }}-${{ inputs.name }}-chart",
+              headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+              }
+            });
+          
           } catch (updateError) {
             console.log(updateError);
           }
@@ -249,11 +259,12 @@ runs:
             }
           }
 
-          core.setFailed("Could not find pr to extract labels from.");
+          core.warning("Could not find pr to extract labels from.");
+          core.setOutput("pr-number", -1);
 
     - name: find pr comment
       uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3
-      if: inputs.comment-enabled == 'true'
+      if: inputs.comment-enabled == 'true' && steps.determine-release.outputs.pr-number != -1
       id: find-pr-comment
       with:
         issue-number: ${{ steps.determine-release.outputs.pr-number }}
@@ -262,7 +273,7 @@ runs:
 
     - name: comment on release success
       id: release-pr-comment
-      if: inputs.comment-enabled == 'true'
+      if: inputs.comment-enabled == 'true' && steps.determine-release.outputs.pr-number != -1
       uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}

@@ -191,7 +191,7 @@ runs:
 
     - name: cache container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
       id: branch-recent-meta
       with:
         images: |
@@ -201,7 +201,7 @@ runs:
 
     - name: pr cache container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
       id: pr-recent-meta
       with:
         images: |
@@ -211,7 +211,7 @@ runs:
 
     - name: rc cache container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
       id: rc-recent-meta
       with:
         images: |
@@ -221,7 +221,7 @@ runs:
 
     - name: rc container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
       id: rc-meta
       with:
         images: |
@@ -231,7 +231,7 @@ runs:
 
     - name: release container metadata
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
       id: meta
       with:
         images: |

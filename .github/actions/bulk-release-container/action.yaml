@@ -173,7 +173,7 @@ runs:
           type=raw,value=${{ fromJSON(inputs.release-info).release-version }}
 
     - name: pr container metadata
-      if: steps.semantic.outputs.new-release-published == 'true'
+      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
       uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
       id: pr-meta
       with:
@@ -209,7 +209,6 @@ runs:
         cache-from: |
           type=registry,ref=${{ steps.pr-meta.outputs.tags }}
           type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
-          type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
 
     - name: build success
       if: steps.build-rc.outcome == 'success'

@@ -180,11 +180,10 @@ runs:
         images: |
           ${{ inputs.registry }}/${{ inputs.registry-repo }}
         tags: |
-          type=raw,value=pr-${{ steps.semantic.outputs.pr-number }}
-
+          type=raw,value=pr-${{ fromJSON(inputs.release-info).pr-number }}
 
     - name: build rc container
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
+      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
       id: build-rc
       with:

@@ -106,7 +106,7 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-pr-and-release-container@v1.1.0-bulk-pr-and-release-container-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-pr-and-release-container@v1.2.0-bulk-pr-and-release-container-action
         with:
           name: ${{ inputs.job-name }}
           comment-pr: ${{ inputs.comment-pr }}

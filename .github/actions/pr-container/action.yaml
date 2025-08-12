@@ -111,7 +111,7 @@ runs:
         password: ${{ inputs.registry-token }}
 
     - name: pr container metadata
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
       id: meta
       with:
         images: |
@@ -125,7 +125,7 @@ runs:
         echo "SHORT_SHA=`echo '${{ github.event.pull_request.head.sha }}' | cut -c1-7`" >> $GITHUB_ENV
 
     - name: pr hash container metadata
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
       id: hash-meta
       with:
         images: |
@@ -134,7 +134,7 @@ runs:
           type=ref,event=pr,suffix=-${{ env.SHORT_SHA }}
 
     - name: rc recent container metadata
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
       id: rc-recent-meta
       with:
         images: |

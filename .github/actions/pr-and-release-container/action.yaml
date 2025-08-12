@@ -116,7 +116,7 @@ runs:
         skipped-colour: ${{ inputs.skipped-colour }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v1.2.0-pr-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v1.2.3-pr-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}

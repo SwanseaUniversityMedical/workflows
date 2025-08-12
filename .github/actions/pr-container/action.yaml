@@ -133,15 +133,6 @@ runs:
         tags: |
           type=ref,event=pr,suffix=-${{ env.SHORT_SHA }}
 
-    - name: pr recent container metadata
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
-      id: pr-recent-meta
-      with:
-        images: |
-          ${{ inputs.registry }}/${{ inputs.registry-repo }}
-        tags: |
-          type=raw,value=pr-recent
-
     - name: rc recent container metadata
       uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
       id: rc-recent-meta
@@ -168,7 +159,6 @@ runs:
         tags: |
           ${{ steps.meta.outputs.tags }}
           ${{ steps.hash-meta.outputs.tags }}
-          ${{ steps.pr-recent-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
@@ -176,7 +166,6 @@ runs:
         cache-to: type=inline
         cache-from: |
           type=registry,ref=${{ steps.meta.outputs.tags }}
-          type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
           type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
 
     - name: build success

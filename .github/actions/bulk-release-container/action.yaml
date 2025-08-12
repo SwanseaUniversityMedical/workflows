@@ -142,26 +142,6 @@ runs:
           #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }}  
           :desert_island: Skipping release!
 
-    - name: cache container metadata
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
-      id: branch-recent-meta
-      with:
-        images: |
-          ${{ inputs.registry }}/${{ inputs.registry-repo }}
-        tags: |
-          type=ref,event=branch,prefix=rc-
-
-    - name: pr cache container metadata
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
-      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
-      id: pr-recent-meta
-      with:
-        images: |
-          ${{ inputs.registry }}/${{ inputs.registry-repo }}
-        tags: |
-          type=raw,value=pr-recent
-
     - name: rc cache container metadata
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
       uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
@@ -192,8 +172,18 @@ runs:
         tags: |
           type=raw,value=${{ fromJSON(inputs.release-info).release-version }}
 
+    - name: pr container metadata
+      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      id: pr-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=pr-${{ fromJSON(inputs.release-info).pr-number }}
+
     - name: build rc container
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
+      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
       id: build-rc
       with:
@@ -209,7 +199,6 @@ runs:
           ${{ inputs.build-secret-files }}
         tags: |
           ${{ steps.rc-meta.outputs.tags }}
-          ${{ steps.branch-recent-meta.outputs.tags }}
           ${{ steps.rc-recent-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
@@ -217,9 +206,8 @@ runs:
         provenance: true
         cache-to: type=inline
         cache-from: |
-          type=registry,ref=${{ steps.branch-recent-meta.outputs.tags }}
+          type=registry,ref=${{ steps.pr-meta.outputs.tags }}
           type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
-          type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
 
     - name: build success
       if: steps.build-rc.outcome == 'success'
@@ -354,6 +342,7 @@ runs:
         github-token: ${{ github.token }}
         provenance: true
         cache-from: |
+          type=registry,ref=${{ steps.pr-meta.outputs.tags }}
           type=registry,ref=${{ steps.rc-meta.outputs.tags }}
           type=registry,ref=${{ steps.meta.outputs.tags }}
 

@@ -131,7 +131,7 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v2.1.0-pr-and-release-container-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@feat/pr-number
         with:
           name: ${{ inputs.job-name }}
           major-colour: ${{ inputs.major-colour }}

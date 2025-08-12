@@ -137,7 +137,7 @@ runs:
         cosign-password: ${{ inputs.cosign-password }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v2.2.0-release-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v2.2.3-release-container-action
       with:
         major-label: ${{ steps.create-release-labels.outputs.major }}
         minor-label: ${{ steps.create-release-labels.outputs.minor }}

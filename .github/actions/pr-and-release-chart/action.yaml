@@ -108,7 +108,7 @@ runs:
         registry-token: ${{ inputs.registry-token }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v2.0.1-release-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v2.0.2-release-chart-action
       with:
         major-label: ${{ steps.create-release-labels.outputs.major }}
         minor-label: ${{ steps.create-release-labels.outputs.minor }}

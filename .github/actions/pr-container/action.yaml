@@ -104,7 +104,7 @@ runs:
             mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
 
     - name: login to container registry
-      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
+      uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}
@@ -133,15 +133,6 @@ runs:
         tags: |
           type=ref,event=pr,suffix=-${{ env.SHORT_SHA }}
 
-    - name: pr recent container metadata
-      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
-      id: pr-recent-meta
-      with:
-        images: |
-          ${{ inputs.registry }}/${{ inputs.registry-repo }}
-        tags: |
-          type=raw,value=pr-recent
-
     - name: rc recent container metadata
       uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
       id: rc-recent-meta
@@ -168,7 +159,6 @@ runs:
         tags: |
           ${{ steps.meta.outputs.tags }}
           ${{ steps.hash-meta.outputs.tags }}
-          ${{ steps.pr-recent-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
@@ -176,7 +166,6 @@ runs:
         cache-to: type=inline
         cache-from: |
           type=registry,ref=${{ steps.meta.outputs.tags }}
-          type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}
           type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
 
     - name: build success

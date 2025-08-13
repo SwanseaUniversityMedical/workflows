@@ -83,7 +83,7 @@ runs:
         registry-token: ${{ inputs.registry-token }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v2.0.2-release-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v3.0.0-release-chart-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}

@@ -4,26 +4,6 @@ inputs:
     description: "Name of the release asset."
     required: true
 
-  major-colour:
-    description: "Colour for the major release label."
-    default: 'B60205'
-
-  minor-colour:
-    description: "Colour for the minor release label."
-    default: '8BD931'
-
-  patch-colour:
-    description: "Colour for the patch release label."
-    default: 'FBCA04'
-
-  released-colour:
-    description: "Colour for the released success label."
-    default: 'BFD4F2'
-
-  skipped-colour:
-    description: "Colour for the released skipped label."
-    default: 'E99695'
-
   chart:
     description: "Path to the helm chart."
     required: true
@@ -82,17 +62,12 @@ runs:
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - id: create-release-labels
-      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v2.0.0-create-release-labels-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v3.0.0-create-release-labels-action
       with:
         name: ${{ inputs.name }}
-        major-colour: ${{ inputs.major-colour }}
-        minor-colour: ${{ inputs.minor-colour }}
-        patch-colour: ${{ inputs.patch-colour }}
-        released-colour: ${{ inputs.released-colour }}
-        skipped-colour: ${{ inputs.skipped-colour }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.6-pr-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v2.0.0-pr-chart-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
@@ -110,11 +85,6 @@ runs:
     - if: github.event_name == 'push'
       uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v2.0.2-release-chart-action
       with:
-        major-label: ${{ steps.create-release-labels.outputs.major }}
-        minor-label: ${{ steps.create-release-labels.outputs.minor }}
-        patch-label: ${{ steps.create-release-labels.outputs.patch }}
-        released-label: ${{ steps.create-release-labels.outputs.released }}
-        skipped-label: ${{ steps.create-release-labels.outputs.skipped }}
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}
         registry: ${{ inputs.registry }}

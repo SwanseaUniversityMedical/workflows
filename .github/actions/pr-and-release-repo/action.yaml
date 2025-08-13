@@ -4,26 +4,6 @@ inputs:
     description: "Name of the release asset."
     required: true
 
-  major-colour:
-    description: "Colour for the major release label."
-    default: 'B60205'
-
-  minor-colour:
-    description: "Colour for the minor release label."
-    default: '8BD931'
-
-  patch-colour:
-    description: "Colour for the patch release label."
-    default: 'FBCA04'
-
-  released-colour:
-    description: "Colour for the released success label."
-    default: 'BFD4F2'
-
-  skipped-colour:
-    description: "Colour for the released skipped label."
-    default: 'E99695'
-
   comment-release:
     description: "Release comment creation and update."
     default: "true"
@@ -59,23 +39,33 @@ runs:
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - id: create-release-labels
-      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v2.0.0-create-release-labels-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v3.0.0-create-release-labels-action
       with:
         name: ${{ inputs.name }}
-        major-colour: ${{ inputs.major-colour }}
-        minor-colour: ${{ inputs.minor-colour }}
-        patch-colour: ${{ inputs.patch-colour }}
-        released-colour: ${{ inputs.released-colour }}
-        skipped-colour: ${{ inputs.skipped-colour }}
+
+    - name: add eligible label
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      with:
+        script: |
+          var inputs = ${{ toJSON(inputs) }};
+          var asset = inputs['name'];
+          var eligible = `eligible: ${asset}`;
+
+          try {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.pull_request.number }},
+              labels: [eligible]
+            });
+          } catch (error) {
+            console.log(error);
+          }
 
     - id: release
       if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-repo@v2.0.0-release-repo-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-repo@v3.0.0-release-repo-action
       with:
         name: ${{ inputs.name }}
         release-tag-format: ${{ inputs.release-tag-format }}
-        major-label: ${{ steps.create-release-labels.outputs.major }}
-        minor-label: ${{ steps.create-release-labels.outputs.minor }}
-        patch-label: ${{ steps.create-release-labels.outputs.patch }}
-        released-label: ${{ steps.create-release-labels.outputs.released }}
-        skipped-label: ${{ steps.create-release-labels.outputs.skipped }}

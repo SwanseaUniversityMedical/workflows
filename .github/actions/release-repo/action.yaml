@@ -4,26 +4,6 @@ inputs:
     description: "Name of the release asset."
     required: true
 
-  major-label:
-    description: "Label text for major releases."
-    required: true
-
-  minor-label:
-    description: "Label text for minor releases."
-    required: true
-
-  patch-label:
-    description: "Label text for patch releases."
-    required: true
-
-  released-label:
-    description: "Label text for successful releases."
-    required: true
-
-  skipped-label:
-    description: "Label text for skipped releases."
-    required: true
-
   comment-header:
     description: "Header line for the Release summary."
     default: ":rocket: :alembic: Build Release Repo"
@@ -61,12 +41,10 @@ runs:
   steps:
     - name: determine release
       id: semantic
-      uses: SwanseaUniversityMedical/workflows/.github/actions/determine-bump@v1.0.2-determine-bump-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/determine-bump@v2.0.0-determine-bump-action
       with:
+        name: ${{ inputs.name }}
         release-tag-format: ${{ inputs.release-tag-format }}
-        major-label: ${{ inputs.major-label }}
-        minor-label: ${{ inputs.minor-label }}
-        patch-label: ${{ inputs.patch-label }}
 
     - name: new release
       if: steps.semantic.outputs.new-release-published == 'true'
@@ -94,7 +72,8 @@ runs:
       with:
         script: |
           var inputs = ${{ toJSON(inputs) }};
-          var skipped = inputs['skipped-label'];
+          var asset = inputs['name'];
+          var skipped = `skipped: ${asset}`;
           
           try {
             await github.rest.issues.addLabels({
@@ -204,13 +183,9 @@ runs:
       with:
         script: |
           var inputs = ${{ toJSON(inputs) }};
-          var asset = inputs['name'].trim();
-          
+          var asset = inputs['name'];
           var released = `released: ${asset}`;
-          core.setOutput("released", released);
-          
           var skipped = `skipped: ${asset}`;
-          core.setOutput("skipped", skipped);
           
           try {
             await github.rest.issues.addLabels({
@@ -218,6 +193,17 @@ runs:
               repo: context.repo.repo,
               issue_number: ${{ steps.semantic.outputs.pr-number }},
               labels: [released]
+            });
+          } catch (error) {
+            console.log(error);
+          }
+          
+          try {
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.semantic.outputs.pr-number }},
+              name: skipped
             });
           } catch (error) {
             console.log(error);

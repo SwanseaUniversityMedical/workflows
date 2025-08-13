@@ -7,31 +7,6 @@ on:
         required: true
         type: string
 
-      major-colour:
-        description: "Colour for the major release label."
-        default: 'B60205'
-        type: string
-
-      minor-colour:
-        description: "Colour for the minor release label."
-        default: '8BD931'
-        type: string
-
-      patch-colour:
-        description: "Colour for the patch release label."
-        default: 'FBCA04'
-        type: string
-
-      released-colour:
-        description: "Colour for the released success label."
-        default: 'BFD4F2'
-        type: string
-
-      skipped-colour:
-        description: "Colour for the released skipped label."
-        default: 'E99695'
-        type: string
-
       comment-pr:
         description: "PR comment creation and update."
         default: "false"
@@ -131,14 +106,9 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v2.2.3-pr-and-release-container-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v3.0.0-pr-and-release-container-action
         with:
           name: ${{ inputs.job-name }}
-          major-colour: ${{ inputs.major-colour }}
-          minor-colour: ${{ inputs.minor-colour }}
-          patch-colour: ${{ inputs.patch-colour }}
-          released-colour: ${{ inputs.released-colour }}
-          skipped-colour: ${{ inputs.skipped-colour }}
           comment-pr: ${{ inputs.comment-pr }}
           comment-release: ${{ inputs.comment-release }}
           registry: ${{ inputs.registry }}

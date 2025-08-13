@@ -24,6 +24,10 @@ inputs:
     description: "Colour for the released skipped label."
     default: 'E99695'
 
+  eligible-colour:
+    description: "Colour for the release eligible label."
+    default: 'D4C5F9'
+
 outputs:
   major:
     description: "PR label for major releases."
@@ -40,6 +44,9 @@ outputs:
   skipped:
     description: "PR label for skipped releases."
     value: ${{ steps.create-labels.outputs.skipped }}
+  eligible:
+    description: "PR label for eligible releases."
+    value: ${{ steps.create-labels.outputs.eligible }}
 
 runs:
   using: "composite"
@@ -66,6 +73,9 @@ runs:
           
           var skipped = `skipped: ${asset}`;
           core.setOutput("skipped", skipped);
+          
+          var eligible = `eligible: ${asset}`;
+          core.setOutput("eligible", eligible);
           
           try {
             await github.rest.issues.createLabel({
@@ -122,11 +132,23 @@ runs:
             console.log(error);
           }
           
+          try {
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: eligible,
+              color: inputs['eligible-colour'].trim()
+            });
+          } catch (error) {
+            console.log(error);
+          }
+          
           core.setOutput("major", major);
           core.setOutput("minor", minor);
           core.setOutput("patch", patch);
           core.setOutput("released", released);
           core.setOutput("skipped", skipped);
+          core.setOutput("eligible", eligible);
 
     - name: error
       if: failure()

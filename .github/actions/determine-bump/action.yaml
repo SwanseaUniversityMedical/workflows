@@ -1,15 +1,7 @@
 name: 'Determine Bump'
 inputs:
-  major-label:
-    description: "Label text for major releases."
-    required: true
-
-  minor-label:
-    description: "Label text for minor releases."
-    required: true
-
-  patch-label:
-    description: "Label text for patch releases."
+  name:
+    description: "Name of the release asset."
     required: true
 
   release-tag-format:
@@ -42,9 +34,11 @@ runs:
       with:
         script: |
           var inputs = ${{ toJSON(inputs) }};
-          var major = inputs['major-label'].trim();
-          var minor = inputs['minor-label'].trim();
-          var patch = inputs['patch-label'].trim();
+          var asset = inputs['name'].trim();
+          
+          var major = `major: ${asset}`;
+          var minor = `minor: ${asset}`;
+          var patch = `patch: ${asset}`;
 
           var result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
             owner: context.repo.owner,

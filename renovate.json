@@ -16,7 +16,7 @@
       "pinDigests": false,
       "additionalBranchPrefix": "{{ compatibility }}-",
       "commitMessageAction": "{{ compatibility }} - Update",
-      "labels": ["{{ compatibility }}"],
+      "labels": ["{{ compatibility }}"]
     }
   ]
 }

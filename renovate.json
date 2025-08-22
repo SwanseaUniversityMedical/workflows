@@ -13,7 +13,10 @@
     {
       "matchDepTypes": ["action"],
       "matchPackageNames": ["SwanseaUniversityMedical/workflows"],
-      "pinDigests": false
+      "pinDigests": false,
+      "additionalBranchPrefix": "{{ compatibility }}-",
+      "commitMessageAction": "{{ compatibility }} - Update",
+      "labels": ["{{ compatibility }}"],
     }
   ]
 }

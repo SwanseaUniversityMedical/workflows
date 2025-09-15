@@ -66,6 +66,7 @@ runs:
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
+        label-eligible: 'false'
         registry: ${{ inputs.registry }}
         registry-user: ${{ inputs.registry-user }}
         registry-project: ${{ inputs.registry-project }}

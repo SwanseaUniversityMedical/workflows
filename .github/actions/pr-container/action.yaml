@@ -12,6 +12,10 @@ inputs:
     description: "PR comment creation and update."
     default: "false"
 
+  label-eligible:
+    description: "PR label release asset as eligible."
+    default: "true"
+
   build-file:
       description: "Path to the container file."
       required: true
@@ -77,6 +81,7 @@ runs:
   steps:
 
     - name: add eligible label
+      if: inputs.label-eligible == 'true'
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
       with:
         script: |

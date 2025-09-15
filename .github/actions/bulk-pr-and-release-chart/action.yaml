@@ -62,7 +62,7 @@ runs:
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v2.0.0-pr-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v2.1.0-pr-chart-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}

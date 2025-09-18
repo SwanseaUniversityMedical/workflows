@@ -51,9 +51,12 @@ runs:
     - name: create pr labels and mark asset eligible
       if: github.event_name == 'pull_request'
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      env:
+        input_ctx: ${{ toJSON(inputs) }}
       with:
         script: |
-          var name = core.getInput('name').trim();
+          const inputs = JSON.parse(process.env.input_ctx);
+          var name = inputs['name'].trim();
           
           var ensureLabel = async (prefix, name, colour) => {
             var label = `${prefix.trim()}: ${name.trim()}`;
@@ -66,17 +69,17 @@ runs:
                 color: colour
               });
             } catch (error) {
-              console.warn(error);
+              console.log(error);
             }
             console.log('::endgroup::');
           };
           
-          await ensureLabel('major', name, core.getInput('major-colour'));
-          await ensureLabel('minor', name, core.getInput('minor-colour'));
-          await ensureLabel('patch', name, core.getInput('patch-colour'));
-          await ensureLabel('released', name, core.getInput('released-colour'));
-          await ensureLabel('skipped', name, core.getInput('skipped-colour'));
-          await ensureLabel('eligible', name, core.getInput('eligible-colour'));
+          await ensureLabel('major', name, inputs['major-colour']);
+          await ensureLabel('minor', name, inputs['minor-colour']);
+          await ensureLabel('patch', name, inputs['patch-colour']);
+          await ensureLabel('released', name, inputs['released-colour']);
+          await ensureLabel('skipped', name, inputs['skipped-colour']);
+          await ensureLabel('eligible', name, inputs['eligible-colour']);
           
           var eligibleLabel = `eligible: ${name}`;
           console.log(`::group::Adding [${eligibleLabel}] label to PR...`);
@@ -88,7 +91,7 @@ runs:
               labels: [eligibleLabel]
             });
           } catch (error) {
-            console.warn(error);
+            console.log(error);
           }
           console.log('::endgroup::');
 

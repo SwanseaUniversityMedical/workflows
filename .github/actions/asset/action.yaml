@@ -55,7 +55,7 @@ runs:
         script: |
           var name = core.getInput('name').trim();
           
-          var ensureLabel = (prefix, name, colour) => {
+          var ensureLabel = async (prefix, name, colour) => {
             var label = `${prefix.trim()}: ${name.trim()}`;
             console.log(`::group::Ensuring [${label}] label exists on repo...`);
             try {
@@ -71,12 +71,12 @@ runs:
             console.log('::endgroup::');
           };
           
-          ensureLabel('major', name, core.getInput('major-colour'));
-          ensureLabel('minor', name, core.getInput('minor-colour'));
-          ensureLabel('patch', name, core.getInput('patch-colour'));
-          ensureLabel('released', name, core.getInput('released-colour'));
-          ensureLabel('skipped', name, core.getInput('skipped-colour'));
-          ensureLabel('eligible', name, core.getInput('eligible-colour'));
+          await ensureLabel('major', name, core.getInput('major-colour'));
+          await ensureLabel('minor', name, core.getInput('minor-colour'));
+          await ensureLabel('patch', name, core.getInput('patch-colour'));
+          await ensureLabel('released', name, core.getInput('released-colour'));
+          await ensureLabel('skipped', name, core.getInput('skipped-colour'));
+          await ensureLabel('eligible', name, core.getInput('eligible-colour'));
           
           var eligibleLabel = `eligible: ${name}`;
           console.log(`::group::Adding [${eligibleLabel}] label to PR...`);

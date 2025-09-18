@@ -62,6 +62,7 @@ runs:
             bash -c " \
               dotnet /sonar-scanner/SonarScanner.MSBuild.dll begin \
                 /d:sonar.scanner.scanAll=false \
+                /d:sonar.verbose=true \
                 /d:sonar.scanner.skipJreProvisioning=true \
                 /d:sonar.scanner.javaExePath=/usr/bin/java \
                 /k:\"$PROJECT_NAME\" /name:\"$PROJECT_NAME\" \

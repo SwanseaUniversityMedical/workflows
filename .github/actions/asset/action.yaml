@@ -93,13 +93,18 @@ runs:
           console.log('::endgroup::');
 
     - name: on pr updated
-      if: github.event_name == 'pull_request' && contains(fromJSON('["opened", "synchronize", "reopened"]'), github.event.action)
+      if: >-
+        github.event_name == 'pull_request' && 
+        contains(fromJSON('["opened", "synchronize", "reopened"]'), github.event.action)
       shell: bash
       run: |
         echo "Build pr!!!"
 
     - name: on pr merged
-      if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && contains(fromJSON('["closed"]'), github.event.action)
+      if: >
+        github.event_name == 'pull_request' && 
+        github.event.pull_request.merged == true && 
+        contains(fromJSON('["closed"]'), github.event.action)
       shell: bash
       run: |
         echo "Create github release!!!"

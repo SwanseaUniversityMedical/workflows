@@ -53,9 +53,12 @@ runs:
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
       env:
         input_ctx: ${{ toJSON(inputs) }}
+        event_ctx: ${{ toJSON(github.event) }}
       with:
         script: |
           const inputs = JSON.parse(process.env.input_ctx);
+          const event = JSON.parse(process.env.event_ctx);
+          
           var name = inputs['name'].trim();
           
           var ensureLabel = async (prefix, name, colour) => {
@@ -87,7 +90,7 @@ runs:
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: github.context.event.pull_request.number,
+              issue_number: event.pull_request.number,
               labels: [eligibleLabel]
             });
           } catch (error) {

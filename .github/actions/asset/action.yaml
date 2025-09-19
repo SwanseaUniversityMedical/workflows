@@ -123,6 +123,36 @@ runs:
         script: |
           core.notice('Creating release.');
 
+    - name: on pr merged determine release version
+      id: determine-release
+      if: >
+        github.event_name == 'pull_request' && 
+        github.event.pull_request.merged == true && 
+        contains(fromJSON('["closed"]'), github.event.action)
+      uses: SwanseaUniversityMedical/workflows/.github/actions/determine-bump@v2.0.0-determine-bump-action
+      with:
+        name: ${{ inputs.name }}
+        release-tag-format: ${{ inputs.release-tag-format }}
+
+    - name: on new release version
+      if: >
+        github.event_name == 'pull_request' && 
+        github.event.pull_request.merged == true && 
+        contains(fromJSON('["closed"]'), github.event.action) &&
+        steps.determine-release.outputs.new-release-published == 'true'
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      env:
+        input_ctx: ${{ toJSON(inputs) }}
+        github_ctx: ${{ toJSON(github) }}
+        release_ctx: ${{ toJSON(steps.determine-release) }}
+      with:
+        script: |
+          const inputs = JSON.parse(process.env.input_ctx);
+          const github_ctx = JSON.parse(process.env.github_ctx);
+          const release_ctx = JSON.parse(process.env.release_ctx);
+          
+          core.notice(`Creating release [${release_ctx.outputs.release-version}] with tag [${release_ctx.outputs.git-tag}].`);
+
     - name: on release
       if: github.event_name == 'push'
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1

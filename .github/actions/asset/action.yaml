@@ -143,9 +143,7 @@ runs:
             (response) => response.data
         
           ).then((tags) => {
-            for (var tag in tags) {
-              console.log(tag);
-            }
+            console.log(JSON.stringify(tags));
           });
 
     - name: setup node

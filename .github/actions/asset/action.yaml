@@ -132,16 +132,18 @@ runs:
           
           var name = inputs['name'].trim();
           
-          const iterTags = github.paginate.iterator(github.rest.repos.listTags, {
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            per_page: 100,
-            headers: {"x-github-api-version": "2022-11-28"}
+          github.paginate.iterator(
+            github.rest.repos.listTags, 
+            {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+              headers: {"x-github-api-version": "2022-11-28"}
+            },
+            (response) => response.data)
+          ).then((tags) => {
+            console.log(JSON.stringify(tags));
           });
-          
-          for await (const {tag} of iterTags) {
-            console.log(JSON.stringify(tag));
-          }
 
     - name: setup node
       if: >

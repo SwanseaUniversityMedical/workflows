@@ -145,8 +145,7 @@ runs:
             for (var tag in tags) {
               console.log(tag);
             }
-          }
-        );
+          });
 
     - name: setup node
       if: >

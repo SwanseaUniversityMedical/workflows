@@ -132,7 +132,7 @@ runs:
           
           var name = inputs['name'].trim();
           
-          github.paginate.iterator(
+          github.paginate(
             github.rest.repos.listTags, 
             {
               owner: context.repo.owner,

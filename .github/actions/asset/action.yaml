@@ -132,53 +132,66 @@ runs:
           
           var name = inputs['name'].trim();
           
-          var major = `major: ${name}`;
-          var minor = `minor: ${name}`;
-          var patch = `patch: ${name}`;
-
-          var result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
-            owner: context.repo.owner,
-            repo: context.repo.repo,  
-            commit_sha: context.sha,
-          });
-          
-          if (result.data.length > 0) {
-            if (result.data.length > 1) {
-              core.warning("Found multiple pull requests associated with the current commit!");
+          await (() => {
+            var major = `major: ${name}`;
+            var minor = `minor: ${name}`;
+            var patch = `patch: ${name}`;
+  
+            var result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,  
+              commit_sha: context.sha,
+            });
+            
+            if (result.data.length > 0) {
+              if (result.data.length > 1) {
+                core.warning("Found multiple pull requests associated with the current commit!");
+              }
+              
+              for (let i = 0; i < result.data.length; i++) {
+                var pr = result.data[i];
+                core.debug(JSON.stringify(pr));
+                
+                core.info("Found pull request " + pr.number + " which created the current commit " + context.sha);
+                core.setOutput("pr-number", pr.number);
+                
+                core.debug(JSON.stringify(pr.labels));
+                core.setOutput("labels", JSON.stringify(pr.labels));
+                
+                if (pr.labels.find((label) => (label.name === major))) {
+                  core.setOutput("release", "major");
+                  core.notice('Next release will be major.');
+                }
+                else if (pr.labels.find((label) => (label.name === minor))) {
+                  core.setOutput("release", "minor");
+                  core.notice('Next release will be minor.');
+                }
+                else if (pr.labels.find((label) => (label.name === patch))) {
+                  core.setOutput("release", "patch");
+                  core.notice('Next release will be patch.');
+                }
+                else {
+                  core.setOutput("release", "");
+                  core.notice('Next release will be skipped.');
+                }
+                
+                return;
+              }
             }
             
-            for (let i = 0; i < result.data.length; i++) {
-              var pr = result.data[i];
-              core.debug(JSON.stringify(pr));
-              
-              core.info("Found pull request " + pr.number + " which created the current commit " + context.sha);
-              core.setOutput("pr-number", pr.number);
-              
-              core.debug(JSON.stringify(pr.labels));
-              core.setOutput("labels", JSON.stringify(pr.labels));
-              
-              if (pr.labels.find((label) => (label.name === major))) {
-                core.setOutput("release", "major");
-                core.notice('Next release will be major.');
-              }
-              else if (pr.labels.find((label) => (label.name === minor))) {
-                core.setOutput("release", "minor");
-                core.notice('Next release will be minor.');
-              }
-              else if (pr.labels.find((label) => (label.name === patch))) {
-                core.setOutput("release", "patch");
-                core.notice('Next release will be patch.');
-              }
-              else {
-                core.setOutput("release", "");
-                core.notice('Next release will be skipped.');
-              }
-              
-              return;
-            }
-          }
+            core.setFailed("Could not find pr to extract labels from.");
+          })();
           
-          core.setFailed("Could not find pr to extract labels from.");
+          const iterTags = github.paginate.iterator(octokit.rest.repos.listTags, {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            per_page: 100,
+            headers: {"x-github-api-version": "2022-11-28"}
+          });
+          
+          for await (const {tag} of iterTags) {
+            console.log(JSON.stringify(tag));
+          }
 
     - name: setup node
       if: >

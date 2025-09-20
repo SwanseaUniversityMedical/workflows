@@ -158,22 +158,18 @@ runs:
               core.setOutput("labels", JSON.stringify(pr.labels));
               
               if (pr.labels.find((label) => (label.name === major))) {
-                core.info("next release will be major");
                 core.setOutput("release", "major");
                 core.notice('Next release will be major.');
               }
               else if (pr.labels.find((label) => (label.name === minor))) {
-                core.info("next release will be minor");
                 core.setOutput("release", "minor");
                 core.notice('Next release will be minor.');
               }
               else if (pr.labels.find((label) => (label.name === patch))) {
-                core.info("next release will be patch");
                 core.setOutput("release", "patch");
                 core.notice('Next release will be patch.');
               }
               else {
-                core.info("next release will be skipped");
                 core.setOutput("release", "");
                 core.notice('Next release will be skipped.');
               }
@@ -203,7 +199,7 @@ runs:
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         fetch-depth: 0
-        ref: ${{ github.head_ref }}
+        ref: ${{ github.event.pull_request.merge_commit_sha }}
 
     - name: semantic release
       id: semantic

@@ -206,7 +206,7 @@ runs:
         VERSION=$(echo "$OUTPUT" | grep -o "The next release version is [0-9]*\.[0-9]*\.[0-9]*" | awk '{print $6}')
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ github.token }}
 
 #    - name: semantic release
 #      id: semantic

@@ -106,7 +106,7 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v3.0.2-pr-and-release-container-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@fix/determine-bump
         with:
           name: ${{ inputs.job-name }}
           comment-pr: ${{ inputs.comment-pr }}

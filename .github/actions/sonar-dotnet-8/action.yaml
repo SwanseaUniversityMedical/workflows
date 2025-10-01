@@ -126,6 +126,6 @@ runs:
         SONAR_URL: ${{ inputs.sonar-url }}
         SONAR_TOKEN: ${{ inputs.sonar-token }}
         PR: ${{ github.event.pull_request.number }}
-        BRANCH_REF: ${{ github.event.pull_request.head_ref }}
-        BASE_REF: ${{ github.event.pull_request.base_ref }}
+        BRANCH_REF: ${{ github.head_ref }}
+        BASE_REF: ${{ github.base_ref }}
         HEAD_REF: ${{ github.event.pull_request.head.sha }}

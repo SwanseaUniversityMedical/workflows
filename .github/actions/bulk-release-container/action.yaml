@@ -1,4 +1,4 @@
-name: 'Bulk Release Container'
+name: "Bulk Release Container"
 inputs:
   name:
     description: "Name of the release asset."
@@ -18,31 +18,31 @@ inputs:
 
   build-context:
     description: "Path to the build root dir."
-    default: '.'
+    default: "."
 
   build-args:
     description: "KEY=VALUE build args as a multiline string."
-    default: ''
+    default: ""
 
   build-secrets:
     description: "KEY=VALUE build secrets as a multiline string."
-    default: ''
+    default: ""
 
   build-secret-envs:
     description: "KEY=VALUE build secrets from env vars as a multiline string."
-    default: ''
+    default: ""
 
   build-secret-files:
     description: "KEY=VALUE build secrets from files as a multiline string."
-    default: ''
+    default: ""
 
   test-flags:
     description: "Arguments passed to docker run."
-    default: ''
+    default: ""
 
   test-args:
     description: "Arguments passed to the container."
-    default: ''
+    default: ""
 
   registry:
     description: "URL of the container registry."
@@ -58,7 +58,7 @@ inputs:
 
   registry-extra-tag-command:
     description: "Extra tag to push release container."
-    default: ''
+    default: ""
 
   release-info:
     description: "Release information json blob."
@@ -67,6 +67,10 @@ inputs:
   cosign-public-key:
     description: "Public key for cosigning images."
     required: false
+
+  platforms:
+    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+    default: "linux/amd64,linux/arm64"
 
   registry-token:
     description: "Authentication token for the container registry."
@@ -83,7 +87,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-
     - name: install cosign
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) && inputs.cosign-public-key != '' }}
       uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
@@ -130,7 +133,7 @@ runs:
       env:
         SUMMARY: |
           #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }}
-          :label: New version will be ${{ fromJSON(inputs.release-info).release-version }}  
+          :label: New version will be ${{ fromJSON(inputs.release-info).release-version }}
 
     - name: skipped release
       if: ${{ !contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
@@ -189,6 +192,7 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
+        platforms: ${{ inputs.platforms }}
         build-args: |
           ${{ inputs.build-args }}
         secrets: |
@@ -220,7 +224,7 @@ runs:
           ${{ steps.rc-meta.outputs.tags }}
           ${{ steps.build-rc.outputs.digest }}
           ```
-          :hammer_and_wrench: Build Success  
+          :hammer_and_wrench: Build Success
 
     - name: build error
       if: failure() && steps.build-rc.outcome == 'failure'
@@ -326,6 +330,7 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
+        platforms: ${{ inputs.platforms }}
         build-args: |
           ${{ inputs.build-args }}
         secrets: |
@@ -358,7 +363,7 @@ runs:
           ${{ env.EXTRA_META }}
           ${{ steps.build-release.outputs.digest }}
           ```
-          :hammer_and_wrench: Release Build Success  
+          :hammer_and_wrench: Release Build Success
 
     - name: build error
       if: failure() && steps.build-release.outcome == 'failure'

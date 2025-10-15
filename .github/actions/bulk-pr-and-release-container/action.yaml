@@ -70,7 +70,7 @@ inputs:
 
   platforms:
     description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
-    default: "linux/amd64,linux/arm64"
+    default: "linux/amd64"
 
   registry-token:
     description: "Authentication token for the container registry."

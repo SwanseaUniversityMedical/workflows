@@ -225,7 +225,7 @@ runs:
           ${{ steps.rc-meta.outputs.tags }}
           ${{ steps.build-rc.outputs.digest }}
           ```
-          :hammer_and_wrench: Build Success 
+          :hammer_and_wrench: Build Success  
 
     - name: build error
       if: failure() && steps.build-rc.outcome == 'failure'
@@ -364,7 +364,7 @@ runs:
           ${{ env.EXTRA_META }}
           ${{ steps.build-release.outputs.digest }}
           ```
-          :hammer_and_wrench: Release Build Success 
+          :hammer_and_wrench: Release Build Success  
 
     - name: build error
       if: failure() && steps.build-release.outcome == 'failure'

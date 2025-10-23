@@ -17,8 +17,8 @@ inputs:
     default: "true"
 
   build-file:
-      description: "Path to the container file."
-      required: true
+    description: "Path to the container file."
+    required: true
 
   build-context:
     description: "Path to the build root dir."
@@ -189,6 +189,7 @@ runs:
           ${{ steps.meta.outputs.tags }}
           ${{ steps.hash-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        platforms: ${{ inputs.platforms }}
         push: true
         platforms: ${{ inputs.platforms }}
         github-token: ${{ github.token }}

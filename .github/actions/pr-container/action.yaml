@@ -1,4 +1,4 @@
-name: "PR Container"
+name: 'PR Container'
 inputs:
   name:
     description: "Name of the release asset."
@@ -22,31 +22,31 @@ inputs:
 
   build-context:
     description: "Path to the build root dir."
-    default: "."
+    default: '.'
 
   build-args:
     description: "KEY=VALUE build args as a multiline string."
-    default: ""
+    default: ''
 
   build-secrets:
     description: "KEY=VALUE build secrets as a multiline string."
-    default: ""
+    default: ''
 
   build-secret-envs:
     description: "KEY=VALUE build secrets from env vars as a multiline string."
-    default: ""
+    default: ''
 
   build-secret-files:
     description: "KEY=VALUE build secrets from files as a multiline string."
-    default: ""
+    default: ''
 
   test-flags:
     description: "Arguments passed to docker run."
-    default: ""
+    default: ''
 
   test-args:
     description: "Arguments passed to the container."
-    default: ""
+    default: ''
 
   registry:
     description: "URL of the container registry."
@@ -83,6 +83,7 @@ inputs:
 runs:
   using: "composite"
   steps:
+    
     - name: add eligible label
       if: inputs.label-eligible == 'true'
       uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
@@ -210,7 +211,7 @@ runs:
           ${{ steps.hash-meta.outputs.tags }}
           ${{ steps.build.outputs.digest }}
           ```
-          :hammer_and_wrench: Build Success
+          :hammer_and_wrench: Build Success  
 
     - name: build error
       if: failure() && steps.build.outcome == 'failure'
@@ -245,7 +246,7 @@ runs:
           ${{ steps.meta.outputs.tags }}
           ${{ steps.hash-meta.outputs.tags }}
           ${{ steps.build.outputs.digest }}
-          ```
+          ``` 
 
     - name: cosign image with key
       id: cosign

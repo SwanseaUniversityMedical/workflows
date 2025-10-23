@@ -58,7 +58,7 @@ inputs:
 
   release-tag-format:
     description: "Semantic-release Github release tag format."
-    default: "${version}"
+    default: '${version}'
 
   registry-extra-tag-command:
     description: "Extra tag to push release container."

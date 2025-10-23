@@ -1,4 +1,4 @@
-name: "Release Container"
+name: 'Release Container'
 inputs:
   name:
     description: "Name of the release asset."
@@ -18,31 +18,31 @@ inputs:
 
   build-context:
     description: "Path to the build root dir."
-    default: "."
+    default: '.'
 
   build-args:
     description: "KEY=VALUE build args as a multiline string."
-    default: ""
+    default: ''
 
   build-secrets:
     description: "KEY=VALUE build secrets as a multiline string."
-    default: ""
+    default: ''
 
   build-secret-envs:
     description: "KEY=VALUE build secrets from env vars as a multiline string."
-    default: ""
+    default: ''
 
   build-secret-files:
     description: "KEY=VALUE build secrets from files as a multiline string."
-    default: ""
+    default: ''
 
   test-flags:
     description: "Arguments passed to docker run."
-    default: ""
+    default: ''
 
   test-args:
     description: "Arguments passed to the container."
-    default: ""
+    default: ''
 
   registry:
     description: "URL of the container registry."
@@ -58,11 +58,11 @@ inputs:
 
   registry-extra-tag-command:
     description: "Extra tag to push release container."
-    default: ""
+    default: ''
 
   release-tag-format:
     description: "Semantic-release Github release tag format."
-    default: "${version}"
+    default: '${version}'
 
   cosign-public-key:
     description: "Public key for cosigning images."
@@ -140,7 +140,7 @@ runs:
       env:
         SUMMARY: |
           #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.sha }}
-          :label: New version will be ${{ steps.semantic.outputs.release-version }}
+          :label: New version will be ${{ steps.semantic.outputs.release-version }}  
 
     - name: skipped release
       if: steps.semantic.outputs.new-release-published != 'true'
@@ -160,7 +160,7 @@ runs:
           var inputs = ${{ toJSON(inputs) }};
           var asset = inputs['name'];
           var skipped = `skipped: ${asset}`;
-
+          
           try {
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
@@ -251,7 +251,7 @@ runs:
           ${{ steps.rc-meta.outputs.tags }}
           ${{ steps.build-rc.outputs.digest }}
           ```
-          :hammer_and_wrench: Build Success
+          :hammer_and_wrench: Build Success  
 
     - name: build error
       if: failure() && steps.build-rc.outcome == 'failure'
@@ -390,7 +390,7 @@ runs:
           ${{ env.EXTRA_META }}
           ${{ steps.build-release.outputs.digest }}
           ```
-          :hammer_and_wrench: Release Build Success
+          :hammer_and_wrench: Release Build Success  
 
     - name: build error
       if: failure() && steps.build-release.outcome == 'failure'
@@ -457,7 +457,7 @@ runs:
           ```
           ${{ steps.semantic.outputs.git-tag }}
           ```
-          :hammer_and_wrench: Github Release Success
+          :hammer_and_wrench: Github Release Success  
 
     - name: add released label
       if: steps.release.outcome == 'success'
@@ -468,7 +468,7 @@ runs:
           var asset = inputs['name'];
           var released = `released: ${asset}`;
           var skipped = `skipped: ${asset}`;
-
+          
           try {
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
@@ -479,7 +479,7 @@ runs:
           } catch (error) {
             console.log(error);
           }
-
+          
           try {
             await github.rest.issues.removeLabel({
               owner: context.repo.owner,

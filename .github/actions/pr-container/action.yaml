@@ -191,7 +191,6 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         platforms: ${{ inputs.platforms }}
         push: true
-        platforms: ${{ inputs.platforms }}
         github-token: ${{ github.token }}
         provenance: true
         cache-to: type=inline

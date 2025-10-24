@@ -115,7 +115,6 @@ jobs:
       - name: process platforms
         run: |
           platforms="${{ inputs.platforms }}"
-          output_platforms=""
           split_platforms=$(echo $platforms | tr ',' '\n')
           for platform in $split_platforms; do
             if [[ "$platform" == "linux/amd64" ]]; then

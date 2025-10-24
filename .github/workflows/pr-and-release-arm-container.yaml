@@ -104,7 +104,7 @@ jobs:
   container:
     runs-on:
       labels: [ self-hosted, linux, arm64 ]
-      group: default
+      group: heavy
     steps:
       - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v3.0.2-pr-and-release-container-action
         with:

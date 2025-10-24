@@ -115,6 +115,8 @@ jobs:
       - name: process platforms
         run: |
           platforms="${{ inputs.platforms }}"
+          # initialize output variable
+          output_platforms=""
           split_platforms=$(echo $platforms | tr ',' '\n')
           for platform in $split_platforms; do
             if [[ "$platform" == "linux/amd64" ]]; then
@@ -124,13 +126,18 @@ jobs:
             fi
           done
           output_platforms=${output_platforms%,}
-          echo "PLATFORMS=$output_platforms" >> $GITHUB_OUTPUT
+          # wrap as JSON array so it can be consumed by matrix, or emit empty array if none
+          if [[ -z "$output_platforms" ]]; then
+            echo "PLATFORMS=[]" >> $GITHUB_OUTPUT
+          else
+            echo "PLATFORMS=[$output_platforms]" >> $GITHUB_OUTPUT
+          fi
 
   container:
     needs: prepare-platforms
     strategy:
       matrix:
-        platform: ${{ needs.prepare-platforms.outputs.PLATFORMS }}
+        platform: ${{ fromJson(needs.prepare-platforms.outputs.PLATFORMS) }}
 
     runs-on:
       labels: [ self-hosted, "${{ matrix.platform }}" ]

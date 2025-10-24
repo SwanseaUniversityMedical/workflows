@@ -107,7 +107,7 @@ on:
         required: false
 
 jobs:
-  runs-on:
+  prepare-platforms:
     runs-on:
       labels: [ self-hosted, linux, x64 ]
       group: light
@@ -115,18 +115,21 @@ jobs:
       - name: process platforms
         run: |
           platforms="${{ inputs.platforms }}"
+          output_platforms="[]"
           if [[ "$platforms" == *"arm64"* ]]; then
-            echo "PLATFORMS=${platforms//\//, }" >> $GITHUB_OUTPUT
+            output_platforms+="${platforms//\//, }"
           fi
           if [[ "$platforms" == *"amd64"* ]]; then
-            echo "PLATFORMS=${platforms//amd64/x64}" >> $GITHUB_OUTPUT
+            output_platforms+="${platforms//amd64/x64,}"
           fi
+          # output will be a list of strings 'linux, x64' and/or 'linux, arm64'
+          echo "PLATFORMS=$output_platforms" >> $GITHUB_OUTPUT
 
   container:
-    needs: runs-on
+    needs: prepare-platforms
     strategy:
       matrix:
-        platform: [ ${ { steps.process-platforms.outputs.PLATFORMS } } ]
+        platform: ${{ fromJson(needs.prepare-platforms.outputs.PLATFORMS) }}
     runs-on:
       labels: [ self-hosted, ${{ matrix.platform }} ]
       group: default

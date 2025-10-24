@@ -115,14 +115,15 @@ jobs:
       - name: process platforms
         run: |
           platforms="${{ inputs.platforms }}"
-          output_platforms="[]"
-          if [[ "$platforms" == *"arm64"* ]]; then
-            output_platforms+="${platforms//\//, }"
-          fi
-          if [[ "$platforms" == *"amd64"* ]]; then
-            output_platforms+="${platforms//amd64/x64,}"
-          fi
-          # output will be a list of strings 'linux, x64' and/or 'linux, arm64'
+          output_platforms=""
+          split_platforms=$(echo $platforms | tr ',' '\n')
+          for platform in $split_platforms; do
+            if [[ "$platform" == "linux/amd64" ]]; then
+              output_platforms+="\"linux, x64\""
+            elif [[ "$platform" == "linux/arm64" ]]; then
+              output_platforms+="\"linux, arm64\""
+            fi
+          done
           echo "PLATFORMS=$output_platforms" >> $GITHUB_OUTPUT
 
   container:

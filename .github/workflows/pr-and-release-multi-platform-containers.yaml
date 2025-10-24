@@ -111,8 +111,11 @@ jobs:
     runs-on:
       labels: [ self-hosted, linux, x64 ]
       group: light
+    outputs:
+      PLATFORMS: ${{ steps.process-platforms.outputs.PLATFORMS }}
     steps:
-      - name: process platforms
+      - id: process-platforms
+        name: process platforms
         run: |
           platforms="${{ inputs.platforms }}"
           # initialize output variable

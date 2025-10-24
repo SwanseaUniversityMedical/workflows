@@ -119,11 +119,12 @@ jobs:
           split_platforms=$(echo $platforms | tr ',' '\n')
           for platform in $split_platforms; do
             if [[ "$platform" == "linux/amd64" ]]; then
-              output_platforms+="\"linux, x64\""
+              output_platforms+="\"linux, x64\","
             elif [[ "$platform" == "linux/arm64" ]]; then
-              output_platforms+="\"linux, arm64\""
+              output_platforms+="\"linux, arm64\","
             fi
           done
+          output_platforms=${output_platforms%,}
           echo "PLATFORMS=$output_platforms" >> $GITHUB_OUTPUT
 
   container:

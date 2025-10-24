@@ -130,8 +130,9 @@ jobs:
     strategy:
       matrix:
         platform: ${{ fromJson(needs.prepare-platforms.outputs.PLATFORMS) }}
+
     runs-on:
-      labels: [ self-hosted, ${{ matrix.platform }} ]
+      labels: [ self-hosted, "${{ matrix.platform }}" ]
       group: default
     steps:
       - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v3.0.2-pr-and-release-container-action

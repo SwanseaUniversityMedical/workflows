@@ -131,7 +131,7 @@ jobs:
     needs: prepare-platforms
     strategy:
       matrix:
-        platform: ${{ fromJson(needs.prepare-platforms.outputs.PLATFORMS) }}
+        platform: ${{ needs.prepare-platforms.outputs.PLATFORMS }}
 
     runs-on:
       labels: [ self-hosted, "${{ matrix.platform }}" ]

@@ -123,10 +123,10 @@ jobs:
           fi
 
   container:
+    needs: runs-on
     strategy:
       matrix:
-        platform: [ ${{ steps.process-platforms.outputs.PLATFORMS }} ]
-    needs: runs-on
+        platform: [ ${ { steps.process-platforms.outputs.PLATFORMS } } ]
     runs-on:
       labels: [ self-hosted, ${{ matrix.platform }} ]
       group: default

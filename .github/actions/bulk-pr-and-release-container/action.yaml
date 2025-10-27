@@ -68,10 +68,6 @@ inputs:
     description: "Public key for cosigning images."
     required: false
 
-  platforms:
-    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
-    default: "linux/amd64"
-
   registry-token:
     description: "Authentication token for the container registry."
     required: true
@@ -107,7 +103,6 @@ runs:
         build-secret-files: ${{ inputs.build-secret-files }}
         test-flags: ${{ inputs.test-flags }}
         test-args: ${{ inputs.test-args }}
-        platforms: ${{ inputs.platforms }}
         cosign-public-key: ${{ inputs.cosign-public-key }}
         cosign-private-key: ${{ inputs.cosign-private-key }}
         cosign-password: ${{ inputs.cosign-password }}
@@ -131,9 +126,6 @@ runs:
         build-secret-files: ${{ inputs.build-secret-files }}
         test-flags: ${{ inputs.test-flags }}
         test-args: ${{ inputs.test-args }}
-        platforms: ${{ inputs.platforms }}
         cosign-public-key: ${{ inputs.cosign-public-key }}
         cosign-private-key: ${{ inputs.cosign-private-key }}
         cosign-password: ${{ inputs.cosign-password }}
-
-        

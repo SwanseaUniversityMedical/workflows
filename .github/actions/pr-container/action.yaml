@@ -185,7 +185,6 @@ runs:
           ${{ steps.meta.outputs.tags }}
           ${{ steps.hash-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        platforms: ${{ inputs.platforms }}
         push: true
         github-token: ${{ github.token }}
         provenance: true

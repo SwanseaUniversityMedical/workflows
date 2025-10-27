@@ -80,10 +80,6 @@ inputs:
     description: "Private key password for cosigning images."
     required: false
 
-  platforms:
-    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
-    default: "linux/amd64"
-
 runs:
   using: "composite"
   steps:
@@ -233,7 +229,6 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}
-        platforms: ${{ inputs.platforms }}
         provenance: true
         cache-to: type=inline
         cache-from: |
@@ -370,7 +365,6 @@ runs:
           ${{ env.EXTRA_META }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
-        platforms: ${{ inputs.platforms }}
         github-token: ${{ github.token }}
         provenance: true
         cache-from: |

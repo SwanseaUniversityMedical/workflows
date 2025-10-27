@@ -83,6 +83,7 @@ on:
         type: string
 
     secrets:
+
       registry-token:
         description: "Authentication token for the container registry."
         required: true

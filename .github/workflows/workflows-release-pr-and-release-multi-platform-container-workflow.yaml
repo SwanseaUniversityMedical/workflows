@@ -1,4 +1,4 @@
-name: PR and Release ARM Container Workflow
+name: PR and Release multi-platform Container Workflow
 
 on:
   pull_request:
@@ -6,14 +6,14 @@ on:
       - opened
       - synchronize
     paths:
-      - '.github/workflows/workflows-release-pr-and-release-arm-container-workflow.yaml'
-      - '.github/workflows/pr-and-release-arm-container.yaml'
+      - '.github/workflows/workflows-release-pr-and-release-multi-platform-container-workflow.yaml'
+      - '.github/workflows/pr-and-release-multi-platform-container.yaml'
   push:
     branches:
       - main
     paths:
-      - '.github/workflows/workflows-release-pr-and-release-arm-container-workflow.yaml'
-      - '.github/workflows/pr-and-release-arm-container.yaml'
+      - '.github/workflows/workflows-release-pr-and-release-multi-platform-container-workflow.yaml'
+      - '.github/workflows/pr-and-release-multi-platform-container.yaml'
 
 
 permissions:
@@ -28,9 +28,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  pr-and-release-arm-container-workflow:
+  pr-and-release-multi-platform-container-workflow:
     uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.1.0-repo
     with:
-      job-name: arm-containers
+      job-name: multi-platform-containers
       comment-release: true
-      release-tag-format: 'v${version}-arm-containers'
+      release-tag-format: 'v${version}-multi-platform-containers'

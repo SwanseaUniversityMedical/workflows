@@ -103,10 +103,10 @@ on:
 jobs:
   container:
     runs-on:
-      labels: [ self-hosted, linux, x64 ]
-      group: heavy
+      labels: [ self-hosted, linux, arm64 ]
+      group: default
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@feat/multiarch-builds
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v3.0.2-pr-and-release-container-action
         with:
           name: ${{ inputs.job-name }}
           comment-pr: ${{ inputs.comment-pr }}

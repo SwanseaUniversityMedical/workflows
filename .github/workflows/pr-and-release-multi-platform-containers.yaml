@@ -123,9 +123,9 @@ jobs:
           split_platforms=$(echo $platforms | tr ',' '\n')
           for platform in $split_platforms; do
             if [[ "$platform" == "linux/amd64" ]]; then
-              output_platforms+="\"linux, x64\","
+              output_platforms+="{\"os\":\"linux\",\"arch\":\"x64\"},"
             elif [[ "$platform" == "linux/arm64" ]]; then
-              output_platforms+="\"linux, arm64\","
+              output_platforms+="{\"os\":\"linux\",\"arch\":\"arm64\"},"
             fi
           done
           output_platforms=${output_platforms%,}
@@ -143,7 +143,7 @@ jobs:
         platform: ${{ fromJson(needs.prepare-platforms.outputs.PLATFORMS) }}
 
     runs-on:
-      labels: [ self-hosted, "${{ matrix.platform }}" ]
+      labels: [ self-hosted, "${{ matrix.platform.os }}", "${{ matrix.platform.arch }}" ]
       group: heavy
     steps:
       - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v3.0.2-pr-and-release-container-action

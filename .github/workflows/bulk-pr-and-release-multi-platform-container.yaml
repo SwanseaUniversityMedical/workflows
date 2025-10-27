@@ -1,0 +1,170 @@
+on:
+  workflow_call:
+    inputs:
+
+      job-name:
+        description: "Name of the release asset."
+        required: true
+        type: string
+
+      comment-pr:
+        description: "PR comment creation and update."
+        default: "false"
+        type: string
+
+      comment-release:
+        description: "Release comment creation and update."
+        default: "true"
+        type: string
+
+      build-file:
+        description: "Path to the container file."
+        required: true
+        type: string
+
+      build-context:
+        description: "Path to the build root dir."
+        default: '.'
+        type: string
+
+      build-args:
+        description: "KEY=VALUE build args as a multiline string."
+        default: ''
+        type: string
+
+      build-secret-envs:
+        description: "KEY=VALUE build secrets from env vars as a multiline string."
+        default: ''
+        type: string
+
+      build-secret-files:
+        description: "KEY=VALUE build secrets from files as a multiline string."
+        default: ''
+        type: string
+
+      test-flags:
+        description: "Arguments passed to docker run."
+        default: ''
+        type: string
+
+      test-args:
+        description: "Arguments passed to the container."
+        default: ''
+        type: string
+
+      registry:
+        description: "URL of the container registry."
+        required: true
+        type: string
+
+      registry-user:
+        description: "Username for the container registry."
+        required: true
+        type: string
+
+      registry-repo:
+        description: "Repo within container registry project."
+        required: true
+        type: string
+
+      release-tag-format:
+        description: "Semantic-release Github release tag format."
+        default: '${version}'
+        type: string
+
+      registry-extra-tag-command:
+        description: "Extra tag to push release container."
+        default: ''
+        type: string
+
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        required: false
+        type: string
+      
+      platforms:
+        description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+        default: "linux/amd64"
+        type: string
+        required: false
+
+    secrets:
+
+      registry-token:
+        description: "Authentication token for the container registry."
+        required: true
+
+      cosign-private-key:
+        description: "Private key for cosigning images."
+        required: false
+
+      cosign-password:
+        description: "Private key password for cosigning images."
+        required: false
+
+      build-secrets:
+        description: "KEY=VALUE build secrets as a multiline string."
+        required: false
+
+jobs:
+  prepare-platforms:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: light
+    outputs:
+      PLATFORMS: ${{ steps.process-platforms.outputs.PLATFORMS }}
+    steps:
+      - id: process-platforms
+        name: process platforms
+        run: |
+          platforms="${{ inputs.platforms }}"
+          # initialize output variable
+          output_platforms=""
+          split_platforms=$(echo $platforms | tr ',' '\n')
+          for platform in $split_platforms; do
+            if [[ "$platform" == "linux/amd64" ]]; then
+              output_platforms+="{\"os\":\"linux\",\"arch\":\"x64\"},"
+            elif [[ "$platform" == "linux/arm64" ]]; then
+              output_platforms+="{\"os\":\"linux\",\"arch\":\"arm64\"},"
+            fi
+          done
+          output_platforms=${output_platforms%,}
+          # wrap as JSON array so it can be consumed by matrix, or emit empty array if none
+          if [[ -z "$output_platforms" ]]; then
+            echo "PLATFORMS=[]" >> $GITHUB_OUTPUT
+          else
+            echo "PLATFORMS=[$output_platforms]" >> $GITHUB_OUTPUT
+          fi
+
+  container:
+    needs: prepare-platforms
+    strategy:
+      matrix:
+        platform: ${{ fromJson(needs.prepare-platforms.outputs.PLATFORMS) }}
+
+    runs-on:
+      labels: [ self-hosted, "${{ matrix.platform.os }}", "${{ matrix.platform.arch }}" ]
+      group: heavy
+    steps:
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v3.0.2-pr-and-release-container-action
+        with:
+          name: ${{ inputs.job-name }}
+          comment-pr: ${{ inputs.comment-pr }}
+          comment-release: ${{ inputs.comment-release }}
+          registry: ${{ inputs.registry }}
+          registry-user: ${{ inputs.registry-user }}
+          registry-repo: ${{ inputs.registry-repo }}
+          registry-token: ${{ secrets.registry-token }}
+          registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
+          release-tag-format: ${{ inputs.release-tag-format }}
+          build-file: ${{ inputs.build-file }}
+          build-context: ${{ inputs.build-context }}
+          build-args: ${{ inputs.build-args }}
+          build-secrets: ${{ secrets.build-secrets }}
+          build-secret-envs: ${{ inputs.build-secret-envs }}
+          build-secret-files: ${{ inputs.build-secret-files }}
+          test-flags: ${{ inputs.test-flags }}
+          test-args: ${{ inputs.test-args }}
+          cosign-public-key: ${{ inputs.cosign-public-key }}
+          cosign-private-key: ${{ secrets.cosign-private-key }}
+          cosign-password: ${{ secrets.cosign-password }}

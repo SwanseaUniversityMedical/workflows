@@ -146,7 +146,7 @@ jobs:
       labels: [ self-hosted, "${{ matrix.platform.os }}", "${{ matrix.platform.arch }}" ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v3.0.2-pr-and-release-container-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-pr-and-release-container@v2.0.2-bulk-pr-and-release-container-action
         with:
           name: ${{ inputs.job-name }}
           comment-pr: ${{ inputs.comment-pr }}
@@ -156,7 +156,7 @@ jobs:
           registry-repo: ${{ inputs.registry-repo }}
           registry-token: ${{ secrets.registry-token }}
           registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
-          release-tag-format: ${{ inputs.release-tag-format }}
+          release-info: ${{ inputs.release-info }}
           build-file: ${{ inputs.build-file }}
           build-context: ${{ inputs.build-context }}
           build-args: ${{ inputs.build-args }}

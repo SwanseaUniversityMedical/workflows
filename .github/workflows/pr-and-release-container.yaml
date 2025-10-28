@@ -81,6 +81,10 @@ on:
         default: ''
         type: string
 
+      runner-label:
+        description: "Label for runner target"
+        default: 'x64'
+
       cosign-public-key:
         description: "Public key for cosigning images."
         required: false
@@ -107,7 +111,7 @@ on:
 jobs:
   container:
     runs-on:
-      labels: [ self-hosted, linux, x64 ]
+      labels: [ self-hosted, linux, "${{ inputs.runner-label }}" ]
       group: heavy
     steps:
       - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v3.0.2-pr-and-release-container-action

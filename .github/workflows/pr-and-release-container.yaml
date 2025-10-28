@@ -114,7 +114,7 @@ jobs:
       labels: [ self-hosted, linux, "${{ inputs.runner-label }}" ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@v3.0.2-pr-and-release-container-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container@feat/multiarch-builds
         with:
           name: ${{ inputs.job-name }}
           comment-pr: ${{ inputs.comment-pr }}

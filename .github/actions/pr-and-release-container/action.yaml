@@ -95,7 +95,7 @@ runs:
         name: ${{ inputs.name }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v2.1.0-pr-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@feat/multiarch-builds
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}

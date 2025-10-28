@@ -155,7 +155,7 @@ jobs:
           registry-user: ${{ inputs.registry-user }}
           registry-repo: ${{ inputs.registry-repo }}
           registry-token: ${{ secrets.registry-token }}
-          registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}${{ matrix.platform.arch }}
+          registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
           release-info: ${{ inputs.release-info }}
           build-file: ${{ inputs.build-file }}
           build-context: ${{ inputs.build-context }}

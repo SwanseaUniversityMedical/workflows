@@ -99,6 +99,7 @@ runs:
         registry-user: ${{ inputs.registry-user }}
         registry-repo: ${{ inputs.registry-repo }}
         registry-token: ${{ inputs.registry-token }}
+        registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
         build-file: ${{ inputs.build-file }}
         build-context: ${{ inputs.build-context }}
         build-args: ${{ inputs.build-args }}

@@ -84,6 +84,7 @@ on:
       runner-label:
         description: "Label for runner target"
         default: 'x64'
+        type: string
 
       cosign-public-key:
         description: "Public key for cosigning images."

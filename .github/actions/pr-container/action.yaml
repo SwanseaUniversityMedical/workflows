@@ -60,10 +60,6 @@ inputs:
     description: "Repo within container registry project."
     required: true
 
-  registry-extra-tag-command:
-    description: "Extra tag to push container."
-    default: ''
-
   cosign-public-key:
     description: "Public key for cosigning images."
     required: false
@@ -171,39 +167,6 @@ runs:
         tags: |
           type=raw,value=rc-recent
 
-    - name: create null extra tag
-      if: inputs.registry-extra-tag-command == ''
-      shell: bash
-      run: |
-        echo "EXTRA_TAG=" >> $GITHUB_ENV
-        echo "EXTRA_META=" >> $GITHUB_ENV
-
-    - name: create extra tag
-      id: extra-tag
-      if: inputs.registry-extra-tag-command != ''
-      shell: bash
-      run: |
-        EXTRA_TAG=$(${{ inputs.registry-extra-tag-command }})
-        echo "EXTRA_TAG=$EXTRA_TAG" >> $GITHUB_ENV
-        EXTRA_META="${{ inputs.registry }}/${{ inputs.registry-repo }}:${EXTRA_TAG}"
-        echo "EXTRA_META=$EXTRA_META" >> $GITHUB_ENV
-
-    - name: extra tag success
-      if: steps.extra-tag.outcome == 'success'
-      shell: bash
-      run: |
-        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-      env:
-        SUMMARY: ":label: New version will also be tagged as ${{ env.EXTRA_TAG }}  "
-
-    - name: extra tag error
-      if: failure() && steps.extra-tag.outcome == 'failure'
-      shell: bash
-      run: |
-        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
-      env:
-        SUMMARY: ":x: Extra Tag Command Failure"
-
     - name: build container
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
       id: build
@@ -221,7 +184,6 @@ runs:
         tags: |
           ${{ steps.meta.outputs.tags }}
           ${{ steps.hash-meta.outputs.tags }}
-          ${{ env.EXTRA_META }}
         labels: ${{ steps.meta.outputs.labels }}
         push: true
         github-token: ${{ github.token }}

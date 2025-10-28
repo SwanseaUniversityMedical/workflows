@@ -73,7 +73,7 @@ runs:
   steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       with:
-        path: /tmp/${{ inputs.git-repo }}/${{ inputs.git-ref }}
+        path: tmp/${{ inputs.git-repo }}/${{ inputs.git-ref }}
         repository: ${{ inputs.git-repo }}
         ref: ${{ inputs.git-ref }}
 
@@ -143,8 +143,8 @@ runs:
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
       id: build-release
       with:
-        file: /tmp/${{ inputs.git-repo }}/${{ inputs.git-ref }}/${{ inputs.build-file }}
-        context: /tmp/${{ inputs.git-repo }}/${{ inputs.git-ref }}/${{ inputs.build-context }}
+        file: tmp/${{ inputs.git-repo }}/${{ inputs.git-ref }}/${{ inputs.build-file }}
+        context: tmp/${{ inputs.git-repo }}/${{ inputs.git-ref }}/${{ inputs.build-context }}
         build-args: |
           ${{ inputs.build-args }}
         secrets: |

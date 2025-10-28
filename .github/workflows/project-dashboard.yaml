@@ -42,7 +42,7 @@ jobs:
           result-encoding: string
           retries: 3
           retry-exempt-status-codes: 400,401
-          github-token: ${{ secrets.DASHBOARD_TEST_TOKEN }}
+          github-token: ${{ secrets.DASHBOARD_TOKEN }}
           script: |
             const fs = require('fs').promises;
             const path = require('path');

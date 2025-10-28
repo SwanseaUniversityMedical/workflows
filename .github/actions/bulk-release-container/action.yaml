@@ -36,6 +36,10 @@ inputs:
     description: "KEY=VALUE build secrets from files as a multiline string."
     default: ''
 
+  platform:
+    description: "Platform to be passed to buildx"
+    default: 'linux/amd64'
+
   test-flags:
     description: "Arguments passed to docker run."
     default: ''
@@ -204,6 +208,7 @@ runs:
         push: true
         github-token: ${{ github.token }}
         provenance: true
+        platforms: ${{ inputs.platform }}
         cache-to: type=inline
         cache-from: |
           type=registry,ref=${{ steps.pr-meta.outputs.tags }}
@@ -341,6 +346,7 @@ runs:
         push: true
         github-token: ${{ github.token }}
         provenance: true
+        platforms: ${{ inputs.platform }}
         cache-from: |
           type=registry,ref=${{ steps.pr-meta.outputs.tags }}
           type=registry,ref=${{ steps.rc-meta.outputs.tags }}

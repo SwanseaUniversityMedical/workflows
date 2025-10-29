@@ -123,6 +123,7 @@ runs:
             mirrors = ["https://harbor.ukserp.ac.uk/ghcrcache"]
           [registry."mcr.microsoft.com"]
             mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
+        platforms: ${{ inputs.platforms }}
 
     - name: login to container registry
       if: steps.semantic.outputs.new-release-published == 'true'

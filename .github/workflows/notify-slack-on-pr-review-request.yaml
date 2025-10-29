@@ -65,7 +65,6 @@ jobs:
             slack_user=$(yq e ".\"$reviewer\"" "$mapping_file" 2>/dev/null || echo "null")
       
             if [ "$slack_user" != "null" ] && [ -n "$slack_user" ]; then
-              message="Hey $slack_user - *${{ inputs.requester }}* requested your review on <${{ inputs.pr_url }}|PR #${{ inputs.pr_number }}>: *${{ inputs.pr_title }}*"
               echo "Mapped Slack user: '$slack_user'"
               slack_mentions+=("$slack_user")
             else

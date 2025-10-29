@@ -49,9 +49,13 @@ jobs:
         run: |
           echo "Preparing Slack notifications..."
           IFS=',' read -r -a reviewers <<< "${{ inputs.reviewers }}"
+          echo "Raw reviewers input: '${{ inputs.reviewers }}'"
+          echo "Split reviewers array: ${reviewers[@]}"
+          
           for reviewer in "${reviewers[@]}"; do
             reviewer=$(echo "$reviewer" | xargs)
-            slack_user=$(yq -r ".\"$reviewer\"" .github/slack-mappings.yml 2>/dev/null || echo "null")
+            echo "Processing reviewer: '$reviewer'"
+            slack_user=$(yq -r ".\"$reviewer\"" .github/username-mappings.yaml 2>/dev/null || echo "null")
             if [ "$slack_user" != "null" ] && [ -n "$slack_user" ]; then
               message="Hey $slack_user - *${{ inputs.requester }}* requested your review on <${{ inputs.pr_url }}|PR #${{ inputs.pr_number }}>: *${{ inputs.pr_title }}*"
               curl -X POST -H 'Content-type: application/json' \
@@ -59,5 +63,6 @@ jobs:
                 "$SLACK_WEBHOOK_URL"
             else
               echo "No Slack Mapping found for reviewer $reviewer"
+          
             fi  
           done

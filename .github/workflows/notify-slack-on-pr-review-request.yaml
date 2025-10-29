@@ -62,7 +62,7 @@ jobs:
           mapping_file=".github/username-mappings.yaml"
           [ ! -f "$mapping_file" ] && mapping_file="temp_mappings.yaml"
           
-          cache_file = ".github/slack-notified.json"
+          cache_file=".github/slack-notified.json"
           now=$(date +%s)
           
           if [ -f "$cache_file" ]; then

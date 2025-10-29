@@ -72,6 +72,10 @@ inputs:
     description: "Public key for cosigning images."
     required: false
 
+  platforms:
+    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+    default: "linux/amd64"
+
   registry-token:
     description: "Authentication token for the container registry."
     required: true
@@ -117,6 +121,7 @@ runs:
             mirrors = ["https://harbor.ukserp.ac.uk/ghcrcache"]
           [registry."mcr.microsoft.com"]
             mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
+        platforms: ${{ inputs.platforms }}
 
     - name: login to container registry
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
@@ -193,6 +198,7 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
+        platforms: ${{ inputs.platforms }}
         build-args: |
           ${{ inputs.build-args }}
         secrets: |
@@ -331,6 +337,7 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
+        platforms: ${{ inputs.platforms }}
         build-args: |
           ${{ inputs.build-args }}
         secrets: |

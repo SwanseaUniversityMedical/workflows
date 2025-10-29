@@ -92,6 +92,11 @@ on:
         required: false
         type: string
 
+      platforms:
+        description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+        default: "linux/amd64"
+        type: string
+
     secrets:
 
       registry-token:

@@ -1,0 +1,83 @@
+name: Notify Slack on PR Review Request
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        required: true
+        type: string
+      pr_title:
+        required: true
+        type: string
+      pr_url:
+        required: true
+        type: string
+      requester:
+        required: true
+        type: string
+      reviewers:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
+
+jobs:
+  notify-slack:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: heavy
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Read Slack - GitHub username mapping file
+        id: read-map
+        run: |
+          if [ -f ".github/username-mappings.yaml" ]; then
+            echo "Found .github/username-mappings.yaml"
+          else
+            echo ".github/username-mappings.yaml not found"
+            echo "{}" > temp_mappings.yaml
+          fi
+      - name: Setup yq
+        run: |
+          sudo wget -qO /usr/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/bin/yq
+
+      - name: Send Slack notifications
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          echo "Preparing Slack notifications..."
+          IFS=',' read -r -a reviewers <<< "${{ inputs.reviewers }}"
+
+          mapping_file=".github/username-mappings.yaml"
+          [ ! -f "$mapping_file" ] && mapping_file="temp_mappings.yaml"
+
+          yq -r 'keys | .[]' "$mapping_file"
+          
+          slack_mentions=()
+          
+          for reviewer in "${reviewers[@]}"; do
+            reviewer=$(echo "$reviewer" | xargs | tr -d '\r\n')
+            slack_user=$(yq e ".\"$reviewer\"" "$mapping_file" 2>/dev/null || echo "null")
+      
+            if [ "$slack_user" != "null" ] && [ -n "$slack_user" ]; then
+              echo "Mapped Slack user: '$slack_user'"
+              slack_mentions+=("$slack_user")
+            else
+              echo "No Slack mapping found for '$reviewer'"
+            fi
+          done
+          
+          if [ ${#slack_mentions[@]} -gt 0 ]; then
+            mentions=$(IFS=' '; echo "${slack_mentions[*]}")
+            message="Hey $mentions - *${{ inputs.requester }}* requested your review on <${{ inputs.pr_url }}|PR #${{ inputs.pr_number }}>: *${{ inputs.pr_title }}*"
+            echo "Sending Slack message: $message"
+            curl -X POST -H 'Content-type: application/json' \
+              --data "{\"text\": \"$message\"}" \
+              "$SLACK_WEBHOOK_URL"
+          else
+            echo "No valid or new Slack users to notify."
+          fi

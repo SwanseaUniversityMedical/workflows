@@ -49,8 +49,6 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          echo "yq version.."
-          yq --version
           echo "Preparing Slack notifications..."
           IFS=',' read -r -a reviewers <<< "${{ inputs.reviewers }}"
 
@@ -59,7 +57,7 @@ jobs:
 
           echo "Using mapping file: $mapping_file"
           yq -r 'keys | .[]' "$mapping_file"
-
+          slack_mentions=()
           for reviewer in "${reviewers[@]}"; do
             reviewer=$(echo "$reviewer" | xargs | tr -d '\r\n')
             echo "Processing reviewer: '$reviewer'"
@@ -68,11 +66,20 @@ jobs:
       
             if [ "$slack_user" != "null" ] && [ -n "$slack_user" ]; then
               message="Hey $slack_user - *${{ inputs.requester }}* requested your review on <${{ inputs.pr_url }}|PR #${{ inputs.pr_number }}>: *${{ inputs.pr_title }}*"
-              echo "Sending Slack message: $message..."
-              curl -X POST -H 'Content-type: application/json' \
-              --data "{\"text\": \"$message\"}" \
-              "$SLACK_WEBHOOK_URL"
+              echo "Mapped Slack user: '$slack_user'"
+              slack_mentions+=("$slack_user")
             else
               echo "No Slack Mapping found for reviewer '$reviewer'"
             fi
           done
+          
+          if [ ${#slack_mentions[@]} -gt 0 ]; then
+            mentions=$(IFS=' '; echo "${slack_mentions[*]}")
+            message="Hey $mentions - *${{ inputs.requester }}* requested your review on <${{ inputs.pr_url }}|PR #${{ inputs.pr_number }}>: *${{ inputs.pr_title }}*"
+            echo "Sending Slack message: $message"
+            curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\": \"$message\"}" \
+            "$SLACK_WEBHOOK_URL"
+          else
+            echo "No valid Slack users to notify."
+          fi

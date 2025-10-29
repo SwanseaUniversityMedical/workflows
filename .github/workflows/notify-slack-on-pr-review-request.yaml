@@ -1,0 +1,62 @@
+name: Notify Slack on PR Review Request
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        required: true
+        type: string
+      pr_title:
+        required: true
+        type: string
+      pr_url:
+        required: true
+        type: string
+      requester:
+        required: true
+      reviewers:
+        required: true
+        type: string # comma-seperated GitHub usernames
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
+
+jobs:
+  notify-slack:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: heavy
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Read Slack - GitHub username mapping file
+        id: read-map
+        run: |
+          if [ -f ".github/username-mappings.yaml" ]; then
+            echo "Found .github/username-mappings.yaml"
+          else
+            echo ".github/username-mappings.yaml not found"
+            echo "{}" > temp_mappings.yaml
+          fi
+      - name: Setup yq
+        uses: mikefarah/yq@7f72595a12fbc7bc2870804fd5e502a63a85bdbf # v4.48.1
+
+      - name: Send Slack notifications
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          echo "Preparing Slack notifications..."
+          IFS=',' read -r -a reviewers <<< "${{ inputs.reviewers }}"
+          for reviewer in "${reviewers[@]}"; do
+            reviewer=$(echo "$reviewer" | xargs)
+            slack_user=$(yq -r ".\"$reviewer\"" .github/slack-mappings.yml 2>/dev/null || echo "null")
+            if [ "$slack_user" != "null" ] && [ -n "$slack_user" ]; then
+              message="Hey $slack_user - *${{ inputs.requester }}* requested your review on <${{ inputs.pr_url }}|PR #${{ inputs.pr_number }}>: *${{ inputs.pr_title }}*"
+              curl -X POST -H 'Content-type: application/json' \
+                --data "{\"text\": \"$message\"}" \
+                "$SLACK_WEBHOOK_URL"
+            else
+              echo "No Slack Mapping found for reviewer $reviewer"
+            fi  
+          done

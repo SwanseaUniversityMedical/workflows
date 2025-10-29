@@ -17,8 +17,8 @@ inputs:
     default: "true"
 
   build-file:
-      description: "Path to the container file."
-      required: true
+    description: "Path to the container file."
+    required: true
 
   build-context:
     description: "Path to the build root dir."
@@ -76,6 +76,10 @@ inputs:
     description: "Private key password for cosigning images."
     required: false
 
+  platforms:
+    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+    default: "linux/amd64"
+
 runs:
   using: "composite"
   steps:
@@ -127,6 +131,7 @@ runs:
             mirrors = ["https://harbor.ukserp.ac.uk/ghcrcache"]
           [registry."mcr.microsoft.com"]
             mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
+        platforms: ${{ inputs.platforms }}
 
     - name: login to container registry
       uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
@@ -185,6 +190,7 @@ runs:
           ${{ steps.meta.outputs.tags }}
           ${{ steps.hash-meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        platforms: ${{ inputs.platforms }}
         push: true
         github-token: ${{ github.token }}
         provenance: true

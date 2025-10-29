@@ -63,7 +63,7 @@ jobs:
             reviewer=$(echo "$reviewer" | xargs | tr -d '\r\n')
             slack_user=$(yq e ".\"$reviewer\"" "$mapping_file" 2>/dev/null || echo "null")
       
-            if [ "$slack_user" != "null" ] && [ $((now - last_notified)) -ge 30 ]; then
+            if [ "$slack_user" != "null" ] && [ -n "$slack_user" ]; then
               echo "Mapped Slack user: '$slack_user'"
               slack_mentions+=("$slack_user")
             else

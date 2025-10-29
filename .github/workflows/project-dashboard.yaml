@@ -1,0 +1,602 @@
+name: Project Dashboard
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/project-dashboard.yaml'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 1 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  dashboard:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: light
+    steps:
+
+      - name: Cache repository data
+        uses: actions/cache@v4
+        id: cache-repos
+        with:
+          path: |
+            .github/cache/repositories.json
+            .github/cache/project-items.json
+          key: dashboard-cache-${{ github.run_id }}
+          restore-keys: |
+            dashboard-cache-
+
+      - uses: actions/github-script@v7
+        id: dashboard-updater
+        env:
+          GITHUB_TOKEN: ${{ secrets.DASHBOARD_TOKEN }}
+          PROJECT_BOARD_ID: ${{ vars.PROJECT_BOARD_ID || '15' }}
+          ORG_NAME: ${{ vars.ORG_NAME || 'SwanseaUniversityMedical' }}
+          MAX_ITEMS_PER_QUERY: ${{ vars.MAX_ITEMS_PER_QUERY || '100' }}
+          BATCH_SIZE: ${{ vars.BATCH_SIZE || '10' }}
+        with:
+          result-encoding: string
+          retries: 3
+          retry-exempt-status-codes: 400,401
+          github-token: ${{ secrets.DASHBOARD_TOKEN }}
+          script: |
+            const fs = require('fs').promises;
+            const path = require('path');
+            
+            // Configuration from environment variables
+            const ORG_NAME = process.env.ORG_NAME;
+            const PROJECT_BOARD_NUMBER = parseInt(process.env.PROJECT_BOARD_ID);
+            const MAX_ITEMS = parseInt(process.env.MAX_ITEMS_PER_QUERY);
+            const BATCH_SIZE = parseInt(process.env.BATCH_SIZE);
+            
+            // Cache management
+            const CACHE_DIR = '.github/cache';
+            const REPOS_CACHE = path.join(CACHE_DIR, 'repositories.json');
+            const ITEMS_CACHE = path.join(CACHE_DIR, 'project-items.json');
+            
+            // Ensure cache directory exists
+            try {
+              await fs.mkdir(CACHE_DIR, { recursive: true });
+            } catch (e) {
+              // Directory might already exist
+            }
+            
+            // Helper function to read cache
+            async function readCache(filePath, maxAge = 300000) { // 5 minutes default
+              try {
+                const stats = await fs.stat(filePath);
+                const age = Date.now() - stats.mtime.getTime();
+                if (age < maxAge) {
+                  const content = await fs.readFile(filePath, 'utf8');
+                  return JSON.parse(content);
+                }
+              } catch (e) {
+                // Cache miss or error
+              }
+              return null;
+            }
+            
+            // Helper function to write cache
+            async function writeCache(filePath, data) {
+              try {
+                await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+              } catch (e) {
+                console.log(`Failed to write cache: ${e.message}`);
+              }
+            }
+            // This query deletes an item from the project board
+            const clearQuery = `mutation ClearBoard($boardID: ID!, $itemID: ID!) {
+              deleteProjectV2Item(input: {projectId: $boardID, itemId: $itemID}) {
+                deletedItemId
+              }
+            }`;
+
+            // This query gets a list of items on the project board with their content details
+            const getProjectData = `query GetProjectData($boardID: ID!, $cursor: String){node(id: $boardID) {
+              ... on ProjectV2 {
+                items(first: 100, after: $cursor) {
+                  pageInfo {
+                    hasNextPage
+                    endCursor
+                  }
+                  items: edges {
+                    node {
+                      id
+                      content {
+                        ... on Issue {
+                          id
+                          title
+                          state
+                          __typename
+                        }
+                        ... on PullRequest {
+                          id
+                          title
+                          state
+                          __typename
+                        }
+                      }
+                   }
+                  }
+                }
+              }
+            }}`;
+
+            // This query gets the ID of the project board
+            const board = `query {
+                organization(login: "${ORG_NAME}") {
+                  projectV2(number: ${PROJECT_BOARD_NUMBER}) {
+                    id
+                  }
+                }
+              }`;
+            
+            const boardData = await github.graphql(board);
+            const boardID = boardData.organization.projectV2.id;
+            
+            // Get current board items with their content details (for differential updates)
+            let cursor = null;
+            let hasNextPage = true;
+            const currentBoardItems = new Map(); // Map of contentId -> projectItemId
+            const currentOpenDependencyDashboards = new Set();
+            const itemsToRemove = [];
+
+            while (hasNextPage) {
+              const response = await github.graphql(getProjectData, { boardID, cursor });
+              response.node.items.items.forEach(item => {
+                const projectItemId = item.node.id;
+                const content = item.node.content;
+                
+                if (content) {
+                  currentBoardItems.set(content.id, projectItemId);
+                  
+                  // Check if this is a "Dependency Dashboard" issue
+                  if (content.__typename === 'Issue' && content.title === 'Dependency Dashboard') {
+                    if (content.state === 'OPEN') {
+                      currentOpenDependencyDashboards.add(content.id);
+                    } else if (content.state === 'CLOSED') {
+                      // Mark closed Dependency Dashboard issues for removal
+                      itemsToRemove.push(projectItemId);
+                      console.log(`Marking closed Dependency Dashboard issue ${content.id} for removal`);
+                    }
+                  }
+                  // Remove any PRs that might have been added previously (since we now only want issues)
+                  else if (content.__typename === 'PullRequest') {
+                    itemsToRemove.push(projectItemId);
+                    console.log(`Marking PR ${content.id} for removal (we only want issues now)`);
+                  }
+                  // Remove any non-Dependency Dashboard issues that might have been added previously
+                  else if (content.__typename === 'Issue' && content.title !== 'Dependency Dashboard') {
+                    itemsToRemove.push(projectItemId);
+                    console.log(`Marking non-Dependency Dashboard issue "${content.title}" for removal`);
+                  }
+                }
+              });
+              hasNextPage = response.node.items.pageInfo.hasNextPage;
+              cursor = response.node.items.pageInfo.endCursor;
+            }
+
+            console.log(`Current board has ${currentBoardItems.size} items, ${currentOpenDependencyDashboards.size} open Dependency Dashboard issues, ${itemsToRemove.length} items marked for removal`);
+   
+
+            // This query gets a list of repositories in the organization
+            const query = `query Search($cursor: String) {
+              search(query: "org:${ORG_NAME}", type: REPOSITORY, first: 100, after: $cursor) {
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                },
+                repos: edges {
+                  node {
+                    ... on Repository {
+                      name
+                      isPrivate
+                    }
+                  }
+                }
+              }
+            }`;
+
+            // Build a list of repositories for the organization (with caching)
+            let repositories = await readCache(REPOS_CACHE, 3600000); // Cache for 1 hour
+            
+            if (!repositories) {
+              cursor = null;
+              hasNextPage = true;
+              repositories = [];
+
+              while (hasNextPage) {
+                const response = await github.graphql(query, { cursor });
+                repositories.push(...response.search.repos.map(repo => repo.node.name));
+                hasNextPage = response.search.pageInfo.hasNextPage;
+                cursor = response.search.pageInfo.endCursor;
+              }
+              
+              await writeCache(REPOS_CACHE, repositories);
+              console.log(`Fetched and cached ${repositories.length} repositories`);
+            } else {
+              console.log(`Using cached repository list: ${repositories.length} repositories`);
+            }
+
+            // Query to get only "Dependency Dashboard" issues for a repository
+            const issuesQuery = `query GetRepoIssues($repo: String!, $issueCursor: String) {
+              organization(login: "${ORG_NAME}") {
+                repository(name: $repo) {
+                  issues(first: 100, after: $issueCursor, states: [OPEN]) {
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                    edges {
+                      node {
+                        id
+                        title
+                        __typename
+                      }
+                    }
+                  }
+                }
+              }
+            }`;
+
+            // Batch query to get multiple repositories' dependency dashboard issues at once
+            const batchRepoQuery = `query GetMultipleRepos($repos: [String!]!) {
+              organization(login: "${ORG_NAME}") {
+                repositories: nodes {
+                  ... on Repository {
+                    name
+                    issues(first: 100, states: [OPEN]) {
+                      totalCount
+                      pageInfo {
+                        hasNextPage
+                        endCursor
+                      }
+                      edges {
+                        node {
+                          id
+                          title
+                          __typename
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }`;
+
+            // Batch mutation to add multiple items to the project board at once
+            const addMultipleToBoard = `mutation AddMultipleToBoard($boardID: ID!, $items: [AddProjectV2ItemByIdInput!]!) {
+              ${Array.from({length: 50}, (_, i) => `
+                item${i}: addProjectV2ItemById(input: $items[${i}]) {
+                  item {
+                    id
+                  }
+                }
+              `).join('')}
+            }`;
+
+            // This mutation adds a single item to the project board
+            const addToBoard = `mutation AddToBoard($boardID: ID!, $ID: ID!) {
+              addProjectV2ItemById(input: {projectId: $boardID, contentId: $ID}) {
+                item {
+                  id
+                }
+              }
+            }`;
+
+            // Query to get project field information (for status field)
+            const getProjectFields = `query GetProjectFields($boardID: ID!) {
+              node(id: $boardID) {
+                ... on ProjectV2 {
+                  fields(first: 100) {
+                    nodes {
+                      ... on ProjectV2Field {
+                        id
+                        name
+                      }
+                      ... on ProjectV2SingleSelectField {
+                        id
+                        name
+                        options {
+                          id
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }`;
+
+            // Mutation to update project item field value
+            const updateProjectItemField = `mutation UpdateProjectItemField($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: ProjectV2FieldValue!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $projectId
+                itemId: $itemId
+                fieldId: $fieldId
+                value: $value
+              }) {
+                projectV2Item {
+                  id
+                }
+              }
+            }`;
+
+            // Query to get detailed issue content for "Renovate failed" checking
+            const getIssueDetails = `query GetIssueDetails($issueId: ID!) {
+              node(id: $issueId) {
+                ... on Issue {
+                  id
+                  title
+                  body
+                  comments(first: 100) {
+                    nodes {
+                      body
+                    }
+                  }
+                }
+              }
+            }`;
+
+            // Helper function to retry operations with exponential backoff
+            async function retryWithBackoff(operation, maxRetries = 3, baseDelay = 1000) {
+              for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                  return await operation();
+                } catch (error) {
+                  if (attempt === maxRetries) {
+                    throw error;
+                  }
+                  
+                  // Check if it's a temporary conflict that we should retry
+                  const isRetryable = error.message && (
+                    error.message.includes('temporary conflict') ||
+                    error.message.includes('rate limit') ||
+                    error.message.includes('timeout')
+                  );
+                  
+                  if (isRetryable) {
+                    const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+                    console.log(`Attempt ${attempt} failed, retrying in ${Math.round(delay)}ms: ${error.message}`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                  } else {
+                    throw error;
+                  }
+                }
+              }
+            }
+
+            // Helper function to add items in batches with improved error handling
+            async function addItemsInBatches(items, batchSize = 20) { // Reduced batch size for better stability
+              console.log(`Processing ${items.length} items in batches of ${batchSize}`);
+              
+              for (let i = 0; i < items.length; i += batchSize) {
+                const batch = items.slice(i, i + batchSize);
+                console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(items.length/batchSize)} (${batch.length} items)`);
+                
+                // Process items sequentially within each batch to avoid conflicts
+                for (const itemId of batch) {
+                  try {
+                    await retryWithBackoff(async () => {
+                      return await github.graphql(addToBoard, { boardID, ID: itemId });
+                    });
+                    console.log(`✓ Successfully added item ${itemId}`);
+                  } catch (error) {
+                    console.log(`✗ Failed to add item ${itemId} after retries: ${error.message}`);
+                  }
+                  
+                  // Small delay between individual items
+                  await new Promise(resolve => setTimeout(resolve, 50));
+                }
+                
+                // Longer delay between batches
+                if (i + batchSize < items.length) {
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                }
+              }
+            }
+
+            // Collect all "Dependency Dashboard" issues to add to the project board
+            const allItemsToAdd = [];
+
+            // Process repositories in batches for better efficiency
+            for (let i = 0; i < repositories.length; i += BATCH_SIZE) {
+              const reposBatch = repositories.slice(i, i + BATCH_SIZE);
+              
+              // Process each repository to get only "Dependency Dashboard" issues
+              for (const repo of reposBatch) {
+                try {
+                  let issueCursor = null;
+                  let hasIssueNextPage = true;
+
+                  // Get all Issues for this repository
+                  while (hasIssueNextPage) {
+                    const response = await github.graphql(issuesQuery, { 
+                      repo,
+                      issueCursor: hasIssueNextPage ? issueCursor : null
+                    });
+
+                    if (hasIssueNextPage && response.organization.repository.issues) {
+                      const issues = response.organization.repository.issues;
+                      // Filter for only "Dependency Dashboard" issues that are actual Issues (not PRs)
+                      const dependencyDashboardIssues = issues.edges.filter(issue => 
+                        issue.node.__typename === 'Issue' && 
+                        issue.node.title === 'Dependency Dashboard'
+                      );
+                      allItemsToAdd.push(...dependencyDashboardIssues.map(issue => issue.node.id));
+                      hasIssueNextPage = issues.pageInfo.hasNextPage;
+                      issueCursor = issues.pageInfo.endCursor;
+                    }
+                  }
+                } catch (error) {
+                  console.log(`Error processing repository ${repo}:`, error);
+                  continue;
+                }
+              }
+              
+              // Add small delay between repository batches
+              if (i + BATCH_SIZE < repositories.length) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+              }
+            }
+
+            // Remove duplicates from items to add
+            const uniqueItemsToAdd = [...new Set(allItemsToAdd)];
+            console.log(`Found ${allItemsToAdd.length} "Dependency Dashboard" issues (${uniqueItemsToAdd.length} unique)`);
+            
+            // Differential updates - only add items that aren't already on the board
+            const newItemsToAdd = uniqueItemsToAdd.filter(itemId => !currentOpenDependencyDashboards.has(itemId));
+            
+            console.log(`Adding ${newItemsToAdd.length} new Dependency Dashboard issues, removing ${itemsToRemove.length} closed/invalid items`);
+            
+            // Remove closed/invalid items in batches with improved error handling
+            if (itemsToRemove.length > 0) {
+              console.log(`Removing ${itemsToRemove.length} closed/invalid items`);
+              
+              for (let i = 0; i < itemsToRemove.length; i += 20) { // Reduced batch size
+                const batch = itemsToRemove.slice(i, i + 20);
+                console.log(`Removing batch ${Math.floor(i/20) + 1}/${Math.ceil(itemsToRemove.length/20)} (${batch.length} items)`);
+                
+                // Process removals sequentially to avoid conflicts
+                for (const projectItemId of batch) {
+                  try {
+                    await retryWithBackoff(async () => {
+                      return await github.graphql(clearQuery, { boardID, itemID: projectItemId });
+                    });
+                    console.log(`✓ Successfully removed project item ${projectItemId}`);
+                  } catch (error) {
+                    console.log(`✗ Failed to remove project item ${projectItemId} after retries: ${error.message}`);
+                  }
+                  
+                  // Small delay between individual removals
+                  await new Promise(resolve => setTimeout(resolve, 50));
+                }
+                
+                // Longer delay between batches
+                if (i + 20 < itemsToRemove.length) {
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                }
+              }
+            }
+            
+            // Add only new Dependency Dashboard issues to the project board in batches
+            if (newItemsToAdd.length > 0) {
+              await addItemsInBatches(newItemsToAdd);
+            } else {
+              console.log('No new Dependency Dashboard issues to add - board is up to date');
+            }
+
+            // Step 2: Update status fields based on "Renovate failed" content
+            console.log('\n--- Starting status field updates ---');
+            
+            // Get project fields to find the status field
+            const fieldsResponse = await github.graphql(getProjectFields, { boardID });
+            const statusField = fieldsResponse.node.fields.nodes.find(field => 
+              field.name && (field.name.toLowerCase().includes('status') || field.name.toLowerCase().includes('state'))
+            );
+            
+            if (!statusField) {
+              console.log('No status field found in project - skipping status updates');
+            } else {
+              console.log(`Found status field: ${statusField.name} (ID: ${statusField.id})`);
+              
+              // Find warning and ok status options
+              let warningOption = null;
+              let okOption = null;
+              
+              if (statusField.options) {
+                warningOption = statusField.options.find(option => 
+                  option.name.toLowerCase().includes('warning') || 
+                  option.name.toLowerCase().includes('failed') ||
+                  option.name.toLowerCase().includes('error')
+                );
+                okOption = statusField.options.find(option => 
+                  option.name.toLowerCase().includes('ok') || 
+                  option.name.toLowerCase().includes('success') ||
+                  option.name.toLowerCase().includes('good') ||
+                  option.name.toLowerCase().includes('ready')
+                );
+                
+                console.log(`Available status options: ${statusField.options.map(o => o.name).join(', ')}`);
+                console.log(`Warning option: ${warningOption?.name || 'Not found'}`);
+                console.log(`OK option: ${okOption?.name || 'Not found'}`);
+              }
+              
+              if (!warningOption || !okOption) {
+                console.log('Required status options (warning/ok) not found - skipping status updates');
+              } else {
+                // Scan through all current Dependency Dashboard issues to check for Renovate warnings
+                console.log(`Scanning ${currentOpenDependencyDashboards.size} Dependency Dashboard issues for Renovate warnings`);
+                
+                for (const issueId of currentOpenDependencyDashboards) {
+                  try {
+                    // Get detailed issue content
+                    const issueResponse = await github.graphql(getIssueDetails, { issueId });
+                    const issue = issueResponse.node;
+                    
+                    // Check for Renovate warnings in title, body, or comments
+                    let hasRenovateWarning = false;
+                    const warningPatterns = [
+                      'warning',
+                      '> [!warning]'
+                    ];
+                    
+                    // Helper function to check text for warning patterns
+                    const containsWarning = (text) => {
+                      if (!text) return false;
+                      const lowerText = text.toLowerCase();
+                      return warningPatterns.some(pattern => lowerText.includes(pattern));
+                    };
+                    
+                    if (containsWarning(issue.title)) {
+                      hasRenovateWarning = true;
+                    } else if (containsWarning(issue.body)) {
+                      hasRenovateWarning = true;
+                    } else {
+                      // Check comments
+                      for (const comment of issue.comments.nodes) {
+                        if (containsWarning(comment.body)) {
+                          hasRenovateWarning = true;
+                          break;
+                        }
+                      }
+                    }
+                    
+                    // Determine the appropriate status
+                    const targetOption = hasRenovateWarning ? warningOption : okOption;
+                    const projectItemId = currentBoardItems.get(issueId);
+                    
+                    if (projectItemId) {
+                      try {
+                        await retryWithBackoff(async () => {
+                          return await github.graphql(updateProjectItemField, {
+                            projectId: boardID,
+                            itemId: projectItemId,
+                            fieldId: statusField.id,
+                            value: {
+                              singleSelectOptionId: targetOption.id
+                            }
+                          });
+                        });
+                        
+                        console.log(`✓ Updated issue ${issueId} to "${targetOption.name}" status (Renovate warning: ${hasRenovateWarning})`);
+                      } catch (error) {
+                        console.log(`✗ Failed to update status for issue ${issueId}: ${error.message}`);
+                      }
+                    }
+                    
+                    // Small delay between status updates
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                  } catch (error) {
+                    console.log(`Error checking issue ${issueId} for Renovate failures: ${error.message}`);
+                  }
+                }
+              }
+            }
+            
+            console.log('\n--- Status field updates completed ---');

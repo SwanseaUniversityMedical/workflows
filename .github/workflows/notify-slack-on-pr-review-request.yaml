@@ -41,7 +41,9 @@ jobs:
             echo "{}" > temp_mappings.yaml
           fi
       - name: Setup yq
-        uses: mikefarah/yq@7f72595a12fbc7bc2870804fd5e502a63a85bdbf # v4.48.1
+        run: |
+          sudo wget -qO /usr/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/bin/yq
 
       - name: Send Slack notifications
         env:

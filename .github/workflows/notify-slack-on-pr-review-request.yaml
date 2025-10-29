@@ -64,10 +64,10 @@ jobs:
           yq -r 'keys | .[]' "$mapping_file"
 
           for reviewer in "${reviewers[@]}"; do
-            reviewer=$(echo "$reviewer" | xargs)
+            reviewer=$(echo "$reviewer" | xargs | tr -d '\r\n')
             echo "Processing reviewer: '$reviewer'"
 
-            slack_user=$(yq -r ".['$reviewer']" "$mapping_file" 2>/dev/null || echo "null")
+            slack_user=$(yq e ".\"$reviewer\"" "$mapping_file" 2>/dev/null || echo "null")
             echo "Mapped Slack user: '$slack_user'"
             echo "Testing yq lookup:"
             yq -r ".['rdash99']" .github/username-mappings.yaml

@@ -68,6 +68,10 @@ inputs:
     description: "Public key for cosigning images."
     required: false
 
+  platforms:
+    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+    default: "linux/amd64"
+
   registry-token:
     description: "Authentication token for the container registry."
     required: true
@@ -189,6 +193,7 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
+        platforms: ${{ inputs.platforms }}
         build-args: |
           ${{ inputs.build-args }}
         secrets: |
@@ -326,6 +331,7 @@ runs:
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
+        platforms: ${{ inputs.platforms }}
         build-args: |
           ${{ inputs.build-args }}
         secrets: |

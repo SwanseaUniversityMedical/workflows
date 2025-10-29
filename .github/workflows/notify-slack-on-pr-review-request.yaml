@@ -45,6 +45,13 @@ jobs:
           sudo wget -qO /usr/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/bin/yq
 
+      - name: Restore Slack notification cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v 4.3.0
+        id: slack-cache
+        with:
+          path: .github/slack-notified.json
+          key: slack-pr-${{ github.event.pull_request.number }}
+
       - name: Send Slack notifications
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -54,21 +61,32 @@ jobs:
 
           mapping_file=".github/username-mappings.yaml"
           [ ! -f "$mapping_file" ] && mapping_file="temp_mappings.yaml"
-
-          echo "Using mapping file: $mapping_file"
+          
+          cache_file = ".github/slack-notified.json"
+          now=$(date +%s)
+          
+          if [ -f "$cache_file" ]; then
+            notified_json=$(cat "$cache_file")
+          else
+            notified_json='{}'
+          fi
+          
           yq -r 'keys | .[]' "$mapping_file"
+          
           slack_mentions=()
+          updated_json="$notified_json"
+          
           for reviewer in "${reviewers[@]}"; do
             reviewer=$(echo "$reviewer" | xargs | tr -d '\r\n')
-            echo "Processing reviewer: '$reviewer'"
-
+            last_notified=$(echo "$notified_json" | jq -r --arg r "$reviewer" '.[$r] // 0')
             slack_user=$(yq e ".\"$reviewer\"" "$mapping_file" 2>/dev/null || echo "null")
       
-            if [ "$slack_user" != "null" ] && [ -n "$slack_user" ]; then
+            if [ "$slack_user" != "null" ] && [ $((now - last_notified)) -ge 30 ]; then
               echo "Mapped Slack user: '$slack_user'"
               slack_mentions+=("$slack_user")
+              updated_json=$(echo "$updated_json" | jq --arg r "$reviewer" --arg t "$now" '.[$r]=$t')
             else
-              echo "No Slack Mapping found for reviewer '$reviewer'"
+              echo "Skipping $reviewer (last notified $last_notified seconds ago or no Slack mapping)"
             fi
           done
           
@@ -77,8 +95,10 @@ jobs:
             message="Hey $mentions - *${{ inputs.requester }}* requested your review on <${{ inputs.pr_url }}|PR #${{ inputs.pr_number }}>: *${{ inputs.pr_title }}*"
             echo "Sending Slack message: $message"
             curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\": \"$message\"}" \
-            "$SLACK_WEBHOOK_URL"
+              --data "{\"text\": \"$message\"}" \
+              "$SLACK_WEBHOOK_URL"
+          
+          echo "$updated_json" > "$cache_file"
           else
-            echo "No valid Slack users to notify."
+            echo "No valid or new Slack users to notify."
           fi

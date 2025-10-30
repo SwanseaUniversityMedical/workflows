@@ -54,7 +54,19 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           echo "Preparing Slack notifications..."
+          requester="${{ inputs.requester }}"
           IFS=',' read -r -a reviewers <<< "${{ inputs.reviewers }}"
+
+          # Check if only requesting review from themselves
+          if [ ${#reviewers[@]} -eq 1 ]; then
+            single_reviewer=$(echo "${reviewers[0]}" | xargs | tr -d '\r\n')
+            if [ "$single_reviewer" = "$requester" ]; then
+              echo "Requester '$requester' is only requesting review from themselves. Skipping notification."
+              exit 0
+            fi
+          fi
+
+          echo "Proceeding with notification - not a self-only review request."
 
           mapping_file=".github/username-mappings.yaml"
           [ ! -f "$mapping_file" ] && mapping_file="temp_mappings.yaml"

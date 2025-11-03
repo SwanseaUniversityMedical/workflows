@@ -42,6 +42,7 @@ jobs:
           fi
       - name: Setup yq
         run: |
+          sudo apt-get update && sudo apt-get install -y wget
           sudo wget -qO /usr/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/bin/yq
 

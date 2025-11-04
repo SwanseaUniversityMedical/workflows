@@ -48,7 +48,7 @@ jobs:
 
       - name: Delay the workflow in case of cancellation
         run: |
-          sleep 10
+          sleep 60
 
       - name: Send Slack notifications
         env:

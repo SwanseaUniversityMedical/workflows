@@ -92,7 +92,7 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         dry-run: true
-        branches: ${{ github.ref }}
+        branch: ${{ github.ref_name }}
         tag-format: ${{ inputs.release-tag-format }}
         additional-packages: |
           ['@semantic-release/exec']

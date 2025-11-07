@@ -1,38 +1,50 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-
-  "extends": [":enableRenovate"],
-
-  "schedule": ["* * * * *"],
-
+  "extends": [
+    ":enableRenovate"
+  ],
+  "schedule": [
+    "* * * * *"
+  ],
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^\\.github/workflows/.*\\.yaml$"],
+      "fileMatch": [
+        "^\\.github/workflows/.*\\.yaml$"
+      ],
       "matchStrings": [
-        "uses:\\s*SwanseaUniversityMedical/workflows/(?<path>[^@]+)@(?<currentValue>v\\d+\\.\\d+\\.\\d+-[A-Za-z0-9\\-]+)"
+        "uses:\\s*SwanseaUniversityMedical/workflows/.github/actions/(?<path>[^@]+)@(?<currentValue>v\\d+\\.\\d+\\.\\d+-[A-Za-z0-9\\-]+)"
       ],
       "packageNameTemplate": "SwanseaUniversityMedical/workflows",
       "depNameTemplate": "{{{path}}}",
       "datasourceTemplate": "github-tags",
       "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>[A-Za-z0-9\\-]+)$",
-      "autoReplaceStringTemplate": "uses: SwanseaUniversityMedical/workflows/{{{path}}}@{{{newDigest}}}  # {{{currentValue}}}"
+      "autoReplaceStringTemplate": "uses: SwanseaUniversityMedical/workflows/.github/actions/{{{path}}}@{{{newDigest}}}  # {{{currentValue}}}"
     }
   ],
-
   "packageRules": [
     {
-      "matchManagers": ["github-actions"],
-      "matchPackagePatterns": ["^SwanseaUniversityMedical/workflows$"],
-      "enabled": false
+      "matchManagers": [
+        "github-actions"
+      ],
+      "enabled": false,
+      "matchPackageNames": [
+        "SwanseaUniversityMedical/workflows"
+      ]
     },
     {
-      "matchManagers": ["regex"],
-      "matchPackageNames": ["SwanseaUniversityMedical/workflows"],
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchPackageNames": [
+        "SwanseaUniversityMedical/workflows"
+      ],
       "pinDigests": true,
       "additionalBranchPrefix": "{{{depName}}}-",
       "commitMessageAction": "{{{depName}}} - update",
-      "labels": ["{{{depName}}}"]
+      "labels": [
+        "{{{depName}}}"
+      ]
     }
   ]
 }

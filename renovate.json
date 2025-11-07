@@ -33,13 +33,19 @@
       ]
     },
     {
+      "pinDigests": false,
+      "matchPackageNames": [
+        "SwanseaUniversityMedical/workflows"
+      ]
+    },
+    {
       "matchManagers": [
         "custom.regex"
       ],
       "matchPackageNames": [
         "SwanseaUniversityMedical/workflows"
       ],
-      "pinDigests": true,
+      "pinDigests": false,
       "additionalBranchPrefix": "{{{depName}}}-",
       "commitMessageAction": "{{{depName}}} - update",
       "labels": [

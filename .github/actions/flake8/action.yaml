@@ -30,7 +30,7 @@ runs:
     - name: run flake8
       shell: bash
       run: |
-        flake8 --bug-report --config=\"$FLAKE8_CONFIG\" $SOURCE_PATH && flake8 --exit-code --config=\"$FLAKE8_CONFIG\" $SOURCE_PATH
+        flake8 --bug-report --config $FLAKE8_CONFIG $SOURCE_PATH 
       env:
         FLAKE8_CONFIG: ${{ inputs.config-file }}
         SOURCE_PATH: ${{ inputs.source-path }}

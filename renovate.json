@@ -5,24 +5,36 @@
 
   "schedule": ["* * * * *"],
 
-  "packageRules": [
-    {
-      "matchDepTypes": ["action"],
-      "pinDigests": true
-    }
-  ],
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^\\.github/workflows/.*\\.ya?ml$"],
+      "fileMatch": ["^\\.github/workflows/.*\\.yaml$"],
       "matchStrings": [
-        "uses:\\s*SwanseaUniversityMedical/workflows/(?<path>[^@]+)@(?<currentValue>v?\\d+\\.\\d+\\.\\d+-[^\\s]+)"
+        "uses:\\s*SwanseaUniversityMedical/workflows/(?<path>[^@]+)@(?<currentValue>v\\d+\\.\\d+\\.\\d+-[A-Za-z0-9\\-]+)"
       ],
       "packageNameTemplate": "SwanseaUniversityMedical/workflows",
       "depNameTemplate": "{{{path}}}",
       "datasourceTemplate": "github-tags",
-      "versioningTemplate": "^(?<version>v?\\d+\\.\\d+\\.\\d+)-(?<compatibility>.*)?$",
-      "autoReplaceStringTemplate": "uses: {{packageName}}/{{{path}}}@{{{newDigest}}} # {{{currentValue}}}"
+      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>[A-Za-z0-9\\-]+)$",
+      "autoReplaceStringTemplate": "uses: SwanseaUniversityMedical/workflows/{{{path}}}@{{{newDigest}}}  # {{{currentValue}}}"
+    }
+  ],
+
+  "packageRules": [
+    {
+      // Disable the default GitHub Actions manager for this package
+      "matchManagers": ["github-actions"],
+      "matchPackagePatterns": ["^SwanseaUniversityMedical/workflows$"],
+      "enabled": false
+    },
+    {
+      // Custom behavior for our regex-managed package
+      "matchManagers": ["regex"],
+      "matchPackageNames": ["SwanseaUniversityMedical/workflows"],
+      "pinDigests": true,
+      "additionalBranchPrefix": "{{{compatibility}}}-",
+      "commitMessageAction": "{{{compatibility}}} - Update",
+      "labels": ["{{{compatibility}}}"]
     }
   ]
 }

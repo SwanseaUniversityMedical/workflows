@@ -22,19 +22,17 @@
 
   "packageRules": [
     {
-      // Disable the default GitHub Actions manager for this package
       "matchManagers": ["github-actions"],
       "matchPackagePatterns": ["^SwanseaUniversityMedical/workflows$"],
       "enabled": false
     },
     {
-      // Custom behavior for our regex-managed package
       "matchManagers": ["regex"],
       "matchPackageNames": ["SwanseaUniversityMedical/workflows"],
       "pinDigests": true,
-      "additionalBranchPrefix": "{{{compatibility}}}-",
-      "commitMessageAction": "{{{compatibility}}} - Update",
-      "labels": ["{{{compatibility}}}"]
+      "additionalBranchPrefix": "{{{depName}}}-",
+      "commitMessageAction": "{{{depName}}} - update",
+      "labels": ["{{{depName}}}"]
     }
   ]
 }

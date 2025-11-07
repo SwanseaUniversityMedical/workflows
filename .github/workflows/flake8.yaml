@@ -19,7 +19,7 @@ jobs:
       group: light
 
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/flake8@feat/python-workflows
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/flake8@v1.0.0-flake8-action
         with:
           config-file: ${{ inputs.config-file }}
           source-path: ${{ inputs.source-path }}

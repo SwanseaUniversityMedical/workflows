@@ -85,7 +85,7 @@ runs:
   steps:
     - name: determine release
       id: semantic
-      uses: SwanseaUniversityMedical/workflows/.github/actions/determine-bump@fix/determine-bump
+      uses: SwanseaUniversityMedical/workflows/.github/actions/determine-bump@v2.0.0-determine-bump-action
       with:
         name: ${{ inputs.name }}
         release-tag-format: ${{ inputs.release-tag-format }}

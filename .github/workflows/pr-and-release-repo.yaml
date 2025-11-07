@@ -51,7 +51,7 @@ jobs:
       pr-number: ${{ steps.release.outputs.pr-number }}
     steps:
       - id: release
-        uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-repo@fix/determine-bump
+        uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-repo@v3.0.0-pr-and-release-repo-action
         with:
           name: ${{ inputs.job-name }}
           release-tag-format: ${{ inputs.release-tag-format }}

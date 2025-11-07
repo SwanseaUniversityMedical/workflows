@@ -112,7 +112,7 @@ runs:
         cosign-password: ${{ inputs.cosign-password }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@fix/determine-bump
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v3.0.0-release-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}

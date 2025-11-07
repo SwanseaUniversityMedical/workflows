@@ -9,11 +9,22 @@
     {
       "matchDepTypes": ["action"],
       "pinDigests": true
-    },
+    }
+  ],
+
+  "customManagers": [
     {
-      "matchDepTypes": ["action"],
-      "matchPackageNames": ["SwanseaUniversityMedical/workflows"],
-      "pinDigests": false
+      "customType": "regex",
+      "fileMatch": ["^\\.github/workflows/.*\\.ya?ml$"],
+      "matchStrings": [
+        "uses:\\s*SwanseaUniversityMedical/workflows/(?<path>[^@]+)@(?<currentValue>v?\\d+\\.\\d+\\.\\d+-[^\\s]+)"
+      ],
+      "packageNameTemplate": "SwanseaUniversityMedical/workflows",
+      "depNameTemplate": "{{{path}}}",
+      "datasourceTemplate": "github-tags",
+      "versioning": "semver",
+      "versionCompatibility": "^(?<version>v?\\d+\\.\\d+\\.\\d+)-(?<compatibility>.*)?$",
+      "autoReplaceStringTemplate": "uses: {{packageName}}/{{{path}}}@{{{newValue}}}  # {{{currentValue}}}"
     }
   ]
 }

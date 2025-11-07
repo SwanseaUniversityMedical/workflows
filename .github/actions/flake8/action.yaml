@@ -27,15 +27,10 @@ runs:
     - name: install flake8 annotations
       uses: rbialon/flake8-annotations@48819b39d57c621b5a64a1cdce40a5caa6a43b89 #v1.1
 
-    - name: DEBUG
-      shell: bash
-      run: |
-        cd .github && ls -la
-
     - name: run flake8
       shell: bash
       run: |
-        flake8 --config=\"$FLAKE8_CONFIG\" $SOURCE_PATH
+        pwd && ls -la && flake8 --config=\"$FLAKE8_CONFIG\" $SOURCE_PATH
       env:
         FLAKE8_CONFIG: ${{ inputs.config-file }}
         SOURCE_PATH: ${{ inputs.source-path }}

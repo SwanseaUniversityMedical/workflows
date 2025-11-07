@@ -13,11 +13,7 @@
     {
       "matchDepTypes": ["action"],
       "matchPackageNames": ["SwanseaUniversityMedical/workflows"],
-      "pinDigests": false,
-      "additionalBranchPrefix": "{{ compatibility }}-",
-      "commitMessageAction": "{{ compatibility }} - Update",
-      "labels": ["{{ compatibility }}"],
-      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>[a-zA-Z0-9\\-]+)$"
+      "pinDigests": false
     }
   ]
 }

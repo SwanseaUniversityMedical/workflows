@@ -24,7 +24,7 @@
       "datasourceTemplate": "github-tags",
       "versioning": "semver",
       "versionCompatibility": "^(?<version>v?\\d+\\.\\d+\\.\\d+)-(?<compatibility>.*)?$",
-      "autoReplaceStringTemplate": "uses: SwanseaUniversityMedical/workflows/{{{path}}}@{{{newValue}}}  # {{{currentValue}}}"
+      "autoReplaceStringTemplate": "uses: {{packageName}}/{{{path}}}@{{{newValue}}}  # {{{currentValue}}}"
     }
   ]
 }

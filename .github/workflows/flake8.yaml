@@ -1,0 +1,25 @@
+on:
+  workflow_call:
+    inputs:
+
+      config-file:
+        description: "Path to the flake8 config file, relative to the repo root."
+        required: true
+        type: string
+
+      source-path:
+        description: "Path to the top-level folder containing code to lint."
+        required: true
+        type: string
+
+jobs:
+  lint:
+    runs-on:
+      labels: [self-hosted, linux, x64]
+      group: light
+
+    steps:
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/flake8@v1.0.0-flake8-action
+        with:
+          config-file: ${{ inputs.config-file }}
+          source-path: ${{ inputs.source-path }}

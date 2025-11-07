@@ -1,0 +1,35 @@
+name: Flake8 Action
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/workflows-release-flake8-action.yaml'
+      - '.github/actions/flake8/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/workflows-release-flake8-action.yaml'
+      - '.github/actions/flake8/**'
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  flake8-action:
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.1.0-repo
+    with:
+      job-name: flake8-action
+      comment-release: true
+      release-tag-format: 'v${version}-flake8-action'

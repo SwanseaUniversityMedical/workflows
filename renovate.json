@@ -13,13 +13,13 @@
         "^\\.github/workflows/.*\\.yaml$"
       ],
       "matchStrings": [
-        "uses:\\s*SwanseaUniversityMedical/workflows/(?<path>[^@]+)@(?<currentValue>v\\d+\\.\\d+\\.\\d+-[A-Za-z0-9\\-]+)"
+        "uses:\\s*SwanseaUniversityMedical/workflows/.github/actions/(?<path>[^@]+)@(?<currentValue>v\\d+\\.\\d+\\.\\d+-[A-Za-z0-9\\-]+)"
       ],
       "packageNameTemplate": "SwanseaUniversityMedical/workflows",
       "depNameTemplate": "{{{path}}}",
       "datasourceTemplate": "github-tags",
       "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>[A-Za-z0-9\\-]+)$",
-      "autoReplaceStringTemplate": "uses: SwanseaUniversityMedical/workflows/{{{path}}}@{{{newDigest}}}  # {{{currentValue}}}"
+      "autoReplaceStringTemplate": "uses: SwanseaUniversityMedical/workflows/.github/actions/{{{path}}}@{{{newDigest}}}  # {{{currentValue}}}"
     }
   ],
   "packageRules": [
@@ -29,7 +29,7 @@
       ],
       "enabled": false,
       "matchPackageNames": [
-        "/^SwanseaUniversityMedical/workflows$/"
+        "SwanseaUniversityMedical/workflows"
       ]
     },
     {

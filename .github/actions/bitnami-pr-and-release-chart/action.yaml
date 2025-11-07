@@ -1,0 +1,87 @@
+name: 'PR and Release Chart'
+inputs:
+  ref:
+    description: "Name of the release asset."
+    required: true
+
+  test-command:
+    description: "Command to test the chart named $CHART."
+    default: ''
+
+  registry:
+    description: "URL of the chart registry."
+    required: true
+
+  registry-user:
+    description: "Username for the chart registry."
+    required: true
+
+  registry-project:
+    description: "Project within chart registry."
+    required: true
+
+  cosign-public-key:
+    description: "Public key for cosigning images."
+    required: false
+
+  registry-token:
+    description: "Authentication token for the chart registry."
+    required: true
+
+  cosign-private-key:
+    description: "Private key for cosigning charts."
+    required: false
+
+  cosign-password:
+    description: "Private key password for cosigning charts."
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      with:
+        repository: "bitnami/charts"
+        ref: ${{ inputs.ref }}
+
+    - name: extract name and version
+      id: bitnami
+      shell: bash
+      run: |
+        echo "BITNAMI_NAME=$(echo $REF | cut -d "/" -f 1)" >> $GITHUB_ENV
+        echo "BITNAMI_VERSION=$(echo $REF | cut -d "/" -f 2)" >> $GITHUB_ENV
+      env:
+        REF: ${{ inputs.ref }}
+
+    - if: github.event_name == 'pull_request'
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.4-pr-chart-action
+      with:
+        name: ${{ env.BITNAMI_NAME }}-chart
+        comment-enabled: "true"
+        registry: ${{ inputs.registry }}
+        registry-user: ${{ inputs.registry-user }}
+        registry-project: ${{ inputs.registry-project }}
+        registry-repo: ${{ env.BITNAMI_NAME }}
+        registry-token: ${{ inputs.registry-token }}
+        cosign-public-key: ${{ inputs.cosign-public-key }}
+        cosign-private-key: ${{ inputs.cosign-private-key }}
+        cosign-password: ${{ inputs.cosign-password }}
+        chart: "bitnami/${{ env.BITNAMI_NAME }}"
+        test-command: ${{ inputs.test-command }}
+
+    - if: github.event_name == 'push'
+      uses: SwanseaUniversityMedical/workflows/.github/actions/bitnami-release-chart@feat/bitnami-workflows
+      with:
+        name: ${{ env.BITNAMI_NAME }}
+        version: ${{ env.BITNAMI_VERSION }}
+        comment-enabled: "true"
+        registry: ${{ inputs.registry }}
+        registry-user: ${{ inputs.registry-user }}
+        registry-project: ${{ inputs.registry-project }}
+        registry-repo: ${{ env.BITNAMI_NAME }}
+        registry-token: ${{ inputs.registry-token }}
+        cosign-public-key: ${{ inputs.cosign-public-key }}
+        cosign-private-key: ${{ inputs.cosign-private-key }}
+        cosign-password: ${{ inputs.cosign-password }}
+        chart: "bitnami/${{ env.BITNAMI_NAME }}"

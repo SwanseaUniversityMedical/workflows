@@ -13,8 +13,8 @@
       ],
       "enabled": true,
       "pinDigests": false,
-      "additionalBranchPrefix": "{{{currentDigestShort}}}-",
-      "commitMessageAction": "{{{currentDigestShort}}} - update"
+      "additionalBranchPrefix": "{{{newDigestShort}}}-",
+      "commitMessageAction": "{{{newVersion}}}@{{{newDigestShort}}} - update"
     }
   ]
 }

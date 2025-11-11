@@ -6,42 +6,17 @@
   "schedule": [
     "* * * * *"
   ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "fileMatch": [
-        "^\\.github/workflows/.*\\.yaml$"
-      ],
-      "matchStrings": [
-        "uses:\\s*SwanseaUniversityMedical/workflows/.github/actions/(?<path>[^@]+)@(?<currentValue>\\S+)"
-      ],
-      "packageNameTemplate": "SwanseaUniversityMedical/workflows",
-      "depNameTemplate": "{{{path}}}",
-      "datasourceTemplate": "github-tags",
-      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>.+)$"
-    }
-  ],
   "packageRules": [
     {
       "matchPackageNames": [
         "SwanseaUniversityMedical/workflows"
       ],
-      "enabled": false,
-      "pinDigests": false
-    },
-    {
-      "matchManagers": [
-        "custom.regex"
-      ],
-      "matchPackageNames": [
-        "SwanseaUniversityMedical/workflows"
-      ],
       "enabled": true,
       "pinDigests": false,
-      "additionalBranchPrefix": "{{{depName}}}-",
-      "commitMessageAction": "{{{depName}}} - update",
+      "additionalBranchPrefix": "{{{compatibility}}}-",
+      "commitMessageAction": "{{{compatibility}}} - update",
       "labels": [
-        "{{{depName}}}"
+        "{{{compatibility}}}"
       ]
     }
   ]

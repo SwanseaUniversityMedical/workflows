@@ -10,7 +10,8 @@
     {
       "customType": "regex",
       "fileMatch": [
-        "^\\.github/workflows/.*\\.yaml$"
+        "^\\.github/workflows/.*\\.yaml$",
+        "^\\.github/actions/.*\\.yaml$"
       ],
       "matchStrings": [
         "uses:\\s*SwanseaUniversityMedical/workflows/\\.github/actions/(?<depName>[^@]+)@(?<currentValue>\\S+)"

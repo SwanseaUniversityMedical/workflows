@@ -83,6 +83,7 @@ runs:
           }
           
           core.setFailed("Could not find pr to extract labels from.");
+          
 
     - name: semantic release
       if: steps.determine-release.outputs.release != ''

@@ -13,30 +13,22 @@
         "^\\.github/workflows/.*\\.yaml$"
       ],
       "matchStrings": [
-        "uses:\\s*SwanseaUniversityMedical/workflows/.github/actions/(?<path>[^@]+)@(?<currentValue>v\\d+\\.\\d+\\.\\d+-[A-Za-z0-9\\-]+)"
+        "uses:\\s*SwanseaUniversityMedical/workflows/.github/actions/(?<path>[^@]+)@(?<currentValue>\S+)"
       ],
       "packageNameTemplate": "SwanseaUniversityMedical/workflows",
       "depNameTemplate": "{{{path}}}",
       "datasourceTemplate": "github-tags",
-      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>[A-Za-z0-9\\-]+)$",
+      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>.+)$",
       "autoReplaceStringTemplate": "uses: SwanseaUniversityMedical/workflows/.github/actions/{{{path}}}@{{{newDigest}}}  # {{{currentValue}}}"
     }
   ],
   "packageRules": [
     {
-      "matchManagers": [
-        "github-actions"
+      "matchPackageNames": [
+        "SwanseaUniversityMedical/workflows"
       ],
       "enabled": false,
-      "matchPackageNames": [
-        "SwanseaUniversityMedical/workflows"
-      ]
-    },
-    {
-      "pinDigests": false,
-      "matchPackageNames": [
-        "SwanseaUniversityMedical/workflows"
-      ]
+      "pinDigests": false
     },
     {
       "matchManagers": [
@@ -45,6 +37,7 @@
       "matchPackageNames": [
         "SwanseaUniversityMedical/workflows"
       ],
+      "enabled": false,
       "pinDigests": false,
       "additionalBranchPrefix": "{{{depName}}}-",
       "commitMessageAction": "{{{depName}}} - update",

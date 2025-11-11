@@ -37,7 +37,7 @@
       "matchPackageNames": [
         "SwanseaUniversityMedical/workflows"
       ],
-      "enabled": false,
+      "enabled": true,
       "pinDigests": false,
       "additionalBranchPrefix": "{{{depName}}}-",
       "commitMessageAction": "{{{depName}}} - update",

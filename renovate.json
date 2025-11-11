@@ -33,7 +33,9 @@
       "matchPackageNames": [
         "SwanseaUniversityMedical/workflows"
       ],
-      "matchDepTypes": ["action"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "enabled": false
     }
   ]

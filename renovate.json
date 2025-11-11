@@ -18,8 +18,7 @@
       "packageNameTemplate": "SwanseaUniversityMedical/workflows",
       "depNameTemplate": "{{{path}}}",
       "datasourceTemplate": "github-tags",
-      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>.+)$",
-      "autoReplaceStringTemplate": "uses: SwanseaUniversityMedical/workflows/.github/actions/{{{path}}}@{{{newDigest}}}  # {{{currentValue}}}"
+      "versioningTemplate": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>.+)$"
     }
   ],
   "packageRules": [

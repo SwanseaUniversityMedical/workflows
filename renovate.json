@@ -13,11 +13,8 @@
       ],
       "enabled": true,
       "pinDigests": false,
-      "additionalBranchPrefix": "{{{compatibility}}}-",
-      "commitMessageAction": "{{{compatibility}}} - update",
-      "labels": [
-        "{{{compatibility}}}"
-      ]
+      "additionalBranchPrefix": "{{{currentDigestShort}}}-",
+      "commitMessageAction": "{{{currentDigestShort}}} - update"
     }
   ]
 }

@@ -171,15 +171,26 @@ jobs:
                   // Track Renovate PRs and remove non-Renovate or closed PRs
                   else if (content.__typename === 'PullRequest') {
                     const author = content.author?.login || '';
-                    const isRenovatePR = author.toLowerCase().includes('marvin-serp-bot') || 
-                                        author === 'marvin-serp-bot';
+                    const isMarvinBot = author === 'marvin-serp-bot';
                     
-                    if (isRenovatePR && content.state === 'OPEN') {
+                    // Check if PR title matches any of our tracked categories
+                    const titleLower = content.title?.toLowerCase() || '';
+                    const isTrackedPR = isMarvinBot && (
+                      titleLower.includes('configure renovate') ||
+                      titleLower.includes('update renovate configuration') ||
+                      titleLower.includes('migrate renovate config') ||
+                      titleLower.includes('renovate.json') ||
+                      titleLower.includes('lock file maintenance') ||
+                      titleLower.includes('pin dependencies') ||
+                      titleLower.includes('pin dependency')
+                    );
+                    
+                    if (isTrackedPR && content.state === 'OPEN') {
                       currentOpenRenovatePRs.add(content.id);
-                    } else if (!isRenovatePR || content.state !== 'OPEN') {
-                      // Remove non-Renovate PRs or closed PRs
+                    } else if (!isTrackedPR || content.state !== 'OPEN') {
+                      // Remove non-tracked PRs or closed PRs
                       itemsToRemove.push(projectItemId);
-                      const reason = !isRenovatePR ? 'not a Renovate PR' : 'PR is closed/merged';
+                      const reason = !isTrackedPR ? 'not a tracked Renovate PR' : 'PR is closed/merged';
                       console.log(`Marking PR ${content.id} for removal (${reason})`);
                     }
                   }
@@ -380,8 +391,8 @@ jobs:
               }
             }`;
 
-            // Helper function to categorize Renovate PRs
-            function categorizeRenovatePR(title, labels) {
+            // Helper function to determine Renovate PR status based on title
+            function determineRenovateStatus(title, labels) {
               const titleLower = title.toLowerCase();
               const labelNames = labels.map(l => l.name.toLowerCase());
               
@@ -394,20 +405,20 @@ jobs:
               }
               
               // Lock File Maintenance
-              //if (titleLower.includes('lock file maintenance') ||
-              //    labelNames.includes('lock-file-maintenance')) {
-              //  return 'Lock File Maintenance';
-              //}
+              if (titleLower.includes('lock file maintenance') ||
+                  labelNames.includes('lock-file-maintenance')) {
+                return 'Lock File Maintenance';
+              }
               
               // Pin Dependencies
-              //if (titleLower.includes('pin dependencies') ||
-              //    titleLower.includes('pin dependency') ||
-              //    labelNames.includes('pin-dependencies')) {
-              //  return 'Pin Dependencies';
-              //}
+              if (titleLower.includes('pin dependencies') ||
+                  titleLower.includes('pin dependency') ||
+                  labelNames.includes('pin-dependencies')) {
+                return 'Pin Dependencies';
+              }
               
-              // Default to general dependency update
-              //return 'Dependency Update';
+              // Default to general dependency update status
+              return 'Dependency Update';
             }
             
             // Helper function to retry operations with exponential backoff
@@ -470,7 +481,7 @@ jobs:
 
             // Collect all "Dependency Dashboard" issues and Renovate PRs to add to the project board
             const allItemsToAdd = [];
-            const itemCategories = new Map(); // Map of itemId -> category
+            const itemCategories = new Map(); // Map of itemId -> status
 
             // Process repositories in batches for better efficiency
             for (let i = 0; i < repositories.length; i += BATCH_SIZE) {
@@ -505,19 +516,29 @@ jobs:
                         cursor = issues.pageInfo.endCursor;
                       }
                       
-                      // Process PRs - only Renovate PRs
+                      // Process PRs - only specific Renovate PRs from marvin-serp-bot
                       if (response.organization.repository.pullRequests) {
                         const prs = response.organization.repository.pullRequests;
                         const renovatePRs = prs.edges.filter(pr => {
                           const author = pr.node.author?.login || '';
-                          // Check if it's from Renovate bot
-                          return author.toLowerCase().includes('marvin-serp-bot');
+                          const titleLower = pr.node.title?.toLowerCase() || '';
+                          
+                          // Check if it's from marvin-serp-bot AND matches specific titles
+                          return author === 'marvin-serp-bot' && (
+                            titleLower.includes('configure renovate') ||
+                            titleLower.includes('update renovate configuration') ||
+                            titleLower.includes('migrate renovate config') ||
+                            titleLower.includes('renovate.json') ||
+                            titleLower.includes('lock file maintenance') ||
+                            titleLower.includes('pin dependencies') ||
+                            titleLower.includes('pin dependency')
+                          );
                         });
                         
                         for (const pr of renovatePRs) {
-                          const category = categorizeRenovatePR(pr.node.title, pr.node.labels.nodes);
+                          const status = determineRenovateStatus(pr.node.title, pr.node.labels.nodes);
                           allItemsToAdd.push(pr.node.id);
-                          itemCategories.set(pr.node.id, category);
+                          itemCategories.set(pr.node.id, status);
                         }
                         
                         // Update pagination for PRs if needed
@@ -613,31 +634,31 @@ jobs:
               console.log('No new Dependency Dashboard issues to add - board is up to date');
             }
 
-            // Step 2: Update category field for new items
-            console.log('\n--- Starting category field updates ---');
+            // Step 2: Update status field for new PR items
+            console.log('\n--- Starting PR status field updates ---');
             
-            // Get project fields to find the category field
-            const categoryFieldsResponse = await github.graphql(getProjectFields, { boardID });
-            const categoryField = categoryFieldsResponse.node.fields.nodes.find(field => 
-              field.name && (field.name.toLowerCase().includes('category') || field.name.toLowerCase().includes('type'))
+            // Get project fields to find the status field for PRs
+            const prStatusFieldsResponse = await github.graphql(getProjectFields, { boardID });
+            const prStatusField = prStatusFieldsResponse.node.fields.nodes.find(field => 
+              field.name && (field.name.toLowerCase().includes('status') || field.name.toLowerCase().includes('state'))
             );
             
-            if (categoryField && categoryField.options) {
-              console.log(`Found category field: ${categoryField.name} (ID: ${categoryField.id})`);
-              console.log(`Available options: ${categoryField.options.map(o => o.name).join(', ')}`);
+            if (prStatusField && prStatusField.options) {
+              console.log(`Found status field: ${prStatusField.name} (ID: ${prStatusField.id})`);
+              console.log(`Available options: ${prStatusField.options.map(o => o.name).join(', ')}`);
               
-              // Update category for newly added items
+              // Update status for newly added PR items
               for (const itemId of newItemsToAdd) {
-                const category = itemCategories.get(itemId);
-                if (!category) continue;
+                const status = itemCategories.get(itemId);
+                if (!status || status === 'Dependency Dashboard') continue; // Skip issues
                 
-                // Find matching option (case-insensitive)
-                const categoryOption = categoryField.options.find(option => 
-                  option.name.toLowerCase() === category.toLowerCase() ||
-                  option.name.toLowerCase().includes(category.toLowerCase())
+                // Find matching status option (case-insensitive)
+                const statusOption = prStatusField.options.find(option => 
+                  option.name.toLowerCase() === status.toLowerCase() ||
+                  option.name.toLowerCase().includes(status.toLowerCase())
                 );
                 
-                if (categoryOption) {
+                if (statusOption) {
                   // Need to get the project item ID after it was added
                   // Fetch current board state to get the mapping
                   const updatedBoardQuery = await github.graphql(getProjectData, { boardID, cursor: null });
@@ -651,30 +672,30 @@ jobs:
                         return await github.graphql(updateProjectItemField, {
                           projectId: boardID,
                           itemId: newProjectItemId,
-                          fieldId: categoryField.id,
+                          fieldId: prStatusField.id,
                           value: {
-                            singleSelectOptionId: categoryOption.id
+                            singleSelectOptionId: statusOption.id
                           }
                         });
                       });
-                      console.log(`✓ Set category "${categoryOption.name}" for item ${itemId}`);
+                      console.log(`✓ Set status "${statusOption.name}" for PR ${itemId}`);
                     } catch (error) {
-                      console.log(`✗ Failed to set category for item ${itemId}: ${error.message}`);
+                      console.log(`✗ Failed to set status for PR ${itemId}: ${error.message}`);
                     }
                   }
                 } else {
-                  console.log(`⚠ No matching category option found for "${category}"`);
+                  console.log(`⚠ No matching status option found for "${status}"`);
                 }
                 
                 // Small delay between updates
                 await new Promise(resolve => setTimeout(resolve, 100));
               }
             } else {
-              console.log('No category field found - skipping category updates');
-              console.log('Tip: Add a "Category" or "Type" single-select field to your project to track PR types');
+              console.log('No status field found - skipping PR status updates');
+              console.log('Tip: Ensure your project has a "Status" field with options matching PR types');
             }
             
-            console.log('\n--- Category field updates completed ---');
+            console.log('\n--- PR status field updates completed ---');
             
             // Step 3: Update status fields based on "Renovate failed" content
             console.log('\n--- Starting status field updates ---');

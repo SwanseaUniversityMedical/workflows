@@ -800,6 +800,5 @@ jobs:
                 }
               }
             }
-            }
             
             console.log('\n--- Dependency Dashboard status field updates completed ---');

@@ -636,65 +636,75 @@ jobs:
 
             // Step 2: Update status field for new PR items
             console.log('\n--- Starting PR status field updates ---');
-            
+
+            // Refresh board mapping AFTER additions so newly added items are included
+            const refreshedBoard = await github.graphql(getProjectData, { boardID, cursor: null });
+            const refreshedMapping = new Map(); // contentId -> projectItemId
+            refreshedBoard.node.items.items.forEach(entry => {
+              const c = entry.node.content;
+              if (c) refreshedMapping.set(c.id, entry.node.id);
+            });
+
             // Get project fields to find the status field for PRs
             const prStatusFieldsResponse = await github.graphql(getProjectFields, { boardID });
             const prStatusField = prStatusFieldsResponse.node.fields.nodes.find(field => 
               field.name && (field.name.toLowerCase().includes('status') || field.name.toLowerCase().includes('state'))
             );
-            
+
             if (prStatusField && prStatusField.options) {
               console.log(`Found status field: ${prStatusField.name} (ID: ${prStatusField.id})`);
               console.log(`Available options: ${prStatusField.options.map(o => o.name).join(', ')}`);
-              
-              // Update status for newly added PR items
-              for (const itemId of newItemsToAdd) {
-                const status = itemCategories.get(itemId);
-                if (!status || status === 'Dependency Dashboard') continue; // Skip issues
-                
-                // Find matching status option (case-insensitive)
-                const statusOption = prStatusField.options.find(option => 
+
+              // Determine all tracked PR content IDs (includes existing + newly added)
+              const prItemsToUpdate = uniqueItemsToAdd.filter(id => {
+                const cat = itemCategories.get(id);
+                return cat && cat !== 'Dependency Dashboard';
+              });
+              console.log(`Preparing to update status for ${prItemsToUpdate.length} tracked PRs`);
+
+              // Fallback option (for statuses like "Dependency Update" that may not exist)
+              const fallbackOption = prStatusField.options.find(o => o.name.toLowerCase() === 'ok') || prStatusField.options[0];
+
+              for (const contentId of prItemsToUpdate) {
+                const status = itemCategories.get(contentId);
+                if (!status) continue;
+
+                let statusOption = prStatusField.options.find(option => 
                   option.name.toLowerCase() === status.toLowerCase() ||
                   option.name.toLowerCase().includes(status.toLowerCase())
                 );
-                
-                if (statusOption) {
-                  // Need to get the project item ID after it was added
-                  // Fetch current board state to get the mapping
-                  const updatedBoardQuery = await github.graphql(getProjectData, { boardID, cursor: null });
-                  const newProjectItemId = updatedBoardQuery.node.items.items.find(item => 
-                    item.node.content?.id === itemId
-                  )?.node.id;
-                  
-                  if (newProjectItemId) {
-                    try {
-                      await retryWithBackoff(async () => {
-                        return await github.graphql(updateProjectItemField, {
-                          projectId: boardID,
-                          itemId: newProjectItemId,
-                          fieldId: prStatusField.id,
-                          value: {
-                            singleSelectOptionId: statusOption.id
-                          }
-                        });
-                      });
-                      console.log(`✓ Set status "${statusOption.name}" for PR ${itemId}`);
-                    } catch (error) {
-                      console.log(`✗ Failed to set status for PR ${itemId}: ${error.message}`);
-                    }
-                  }
-                } else {
-                  console.log(`⚠ No matching status option found for "${status}"`);
+                if (!statusOption) {
+                  console.log(`No direct status option for "${status}" - using fallback "${fallbackOption?.name}"`);
+                  statusOption = fallbackOption;
                 }
-                
-                // Small delay between updates
+
+                const projectItemId = refreshedMapping.get(contentId);
+                if (!projectItemId) {
+                  console.log(`⚠ Could not find project item ID for content ${contentId}, skipping`);
+                  continue;
+                }
+
+                try {
+                  await retryWithBackoff(async () => {
+                    return await github.graphql(updateProjectItemField, {
+                      projectId: boardID,
+                      itemId: projectItemId,
+                      fieldId: prStatusField.id,
+                      value: { singleSelectOptionId: statusOption.id }
+                    });
+                  });
+                  console.log(`✓ Set status "${statusOption.name}" for PR content ${contentId}`);
+                } catch (err) {
+                  console.log(`✗ Failed to set status for PR content ${contentId}: ${err.message}`);
+                }
+
                 await new Promise(resolve => setTimeout(resolve, 100));
               }
             } else {
               console.log('No status field found - skipping PR status updates');
               console.log('Tip: Ensure your project has a "Status" field with options matching PR types');
             }
-            
+
             console.log('\n--- PR status field updates completed ---');
             
             // Step 3: Update status fields based on "Renovate failed" content (Issues only)

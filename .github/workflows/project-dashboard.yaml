@@ -697,44 +697,39 @@ jobs:
             
             console.log('\n--- PR status field updates completed ---');
             
-            // Step 3: Update status fields based on "Renovate failed" content
-            console.log('\n--- Starting status field updates ---');
+            // Step 3: Update status fields based on "Renovate failed" content (Issues only)
+            console.log('\n--- Starting Dependency Dashboard status field updates ---');
             
-            // Get project fields to find the status field
-            const fieldsResponse = await github.graphql(getProjectFields, { boardID });
-            const statusField = fieldsResponse.node.fields.nodes.find(field => 
-              field.name && (field.name.toLowerCase().includes('status') || field.name.toLowerCase().includes('state'))
-            );
-            
-            if (!statusField) {
-              console.log('No status field found in project - skipping status updates');
+            // Reuse the status field from Step 2
+            if (!prStatusField) {
+              console.log('No status field found in project - skipping Dependency Dashboard status updates');
             } else {
-              console.log(`Found status field: ${statusField.name} (ID: ${statusField.id})`);
+              console.log(`Using status field: ${prStatusField.name} (ID: ${prStatusField.id})`);
               
               // Find warning and ok status options
               let warningOption = null;
               let okOption = null;
               
-              if (statusField.options) {
-                warningOption = statusField.options.find(option => 
+              if (prStatusField.options) {
+                warningOption = prStatusField.options.find(option => 
                   option.name.toLowerCase().includes('warning') || 
                   option.name.toLowerCase().includes('failed') ||
                   option.name.toLowerCase().includes('error')
                 );
-                okOption = statusField.options.find(option => 
+                okOption = prStatusField.options.find(option => 
                   option.name.toLowerCase().includes('ok') || 
                   option.name.toLowerCase().includes('success') ||
                   option.name.toLowerCase().includes('good') ||
                   option.name.toLowerCase().includes('ready')
                 );
                 
-                console.log(`Available status options: ${statusField.options.map(o => o.name).join(', ')}`);
+                console.log(`Available status options: ${prStatusField.options.map(o => o.name).join(', ')}`);
                 console.log(`Warning option: ${warningOption?.name || 'Not found'}`);
                 console.log(`OK option: ${okOption?.name || 'Not found'}`);
               }
               
               if (!warningOption || !okOption) {
-                console.log('Required status options (warning/ok) not found - skipping status updates');
+                console.log('Required status options (warning/ok) not found - skipping Dependency Dashboard status updates');
               } else {
                 // Scan through all current Dependency Dashboard issues to check for Renovate warnings
                 console.log(`Scanning ${currentOpenDependencyDashboards.size} Dependency Dashboard issues for Renovate warnings`);
@@ -783,7 +778,7 @@ jobs:
                           return await github.graphql(updateProjectItemField, {
                             projectId: boardID,
                             itemId: projectItemId,
-                            fieldId: statusField.id,
+                            fieldId: prStatusField.id,
                             value: {
                               singleSelectOptionId: targetOption.id
                             }
@@ -805,5 +800,6 @@ jobs:
                 }
               }
             }
+            }
             
-            console.log('\n--- Status field updates completed ---');
+            console.log('\n--- Dependency Dashboard status field updates completed ---');

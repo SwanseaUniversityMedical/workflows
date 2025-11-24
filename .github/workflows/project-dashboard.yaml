@@ -393,21 +393,21 @@ jobs:
                 return 'Config Migration';
               }
               
-              # // Lock File Maintenance
-              # if (titleLower.includes('lock file maintenance') ||
-              #     labelNames.includes('lock-file-maintenance')) {
-              #   return 'Lock File Maintenance';
-              # }
+              // Lock File Maintenance
+              //if (titleLower.includes('lock file maintenance') ||
+              //    labelNames.includes('lock-file-maintenance')) {
+              //  return 'Lock File Maintenance';
+              //}
               
-              # // Pin Dependencies
-              # if (titleLower.includes('pin dependencies') ||
-              #     titleLower.includes('pin dependency') ||
-              #     labelNames.includes('pin-dependencies')) {
-              #   return 'Pin Dependencies';
-              # }
+              // Pin Dependencies
+              //if (titleLower.includes('pin dependencies') ||
+              //    titleLower.includes('pin dependency') ||
+              //    labelNames.includes('pin-dependencies')) {
+              //  return 'Pin Dependencies';
+              //}
               
               // Default to general dependency update
-              return 'Dependency Update';
+              //return 'Dependency Update';
             }
             
             // Helper function to retry operations with exponential backoff

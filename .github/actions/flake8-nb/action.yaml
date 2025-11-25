@@ -30,7 +30,7 @@ runs:
     - name: run flake8-nb
       shell: bash
       run: |
-        flake8_nb --count --statistics --config $FLAKE8_CONFIG $SOURCE_PATH
+        flake8_nb --config $FLAKE8_CONFIG $SOURCE_PATH
       env:
         FLAKE8_CONFIG: ${{ inputs.config-file }}
         SOURCE_PATH: ${{ inputs.source-path }}

@@ -22,7 +22,7 @@ runs:
 
     - name: install flake8-nb
       shell: bash
-      run: pip install flake8-nb
+      run: pip install flake8-nb flake8-annotations
 
     - name: install flake8 annotations
       uses: rbialon/flake8-annotations@48819b39d57c621b5a64a1cdce40a5caa6a43b89 #v1.1
@@ -30,6 +30,7 @@ runs:
     - name: run flake8-nb
       shell: bash
       run: |
+        flake8_nb --version
         flake8_nb --config $FLAKE8_CONFIG $SOURCE_PATH
       env:
         FLAKE8_CONFIG: ${{ inputs.config-file }}

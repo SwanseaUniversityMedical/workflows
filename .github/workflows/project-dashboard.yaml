@@ -397,12 +397,17 @@ jobs:
               const labelNames = labels.map(l => l.name.toLowerCase());
               
               // Config Migration PRs
-              if (titleLower.includes('configure renovate') || 
-                  titleLower.includes('update renovate configuration') ||
+              if (titleLower.includes('update renovate configuration') ||
                   titleLower.includes('migrate renovate config') ||
                   titleLower.includes('renovate.json')) {
                 return 'Config Migration';
               }
+            
+              // Config PRs
+              if (titleLower.includes('configure renovate')) {
+                return 'Configure Renovate';
+              }
+              
               
               // Lock File Maintenance
               if (titleLower.includes('lock file maintenance') ||

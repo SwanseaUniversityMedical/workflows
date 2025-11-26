@@ -234,7 +234,7 @@ jobs:
             let repositories = await readCache(REPOS_CACHE, 300000); // Cache for 5 minutes
             
             // Force cache refresh on scheduled runs if cache exists but seems stale
-            if (repositories) {
+            if (repositories && context.eventName === 'schedule') {
               try {
                 const stats = await fs.stat(REPOS_CACHE);
                 const ageMinutes = Math.round((Date.now() - stats.mtime.getTime()) / 60000);

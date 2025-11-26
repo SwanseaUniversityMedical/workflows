@@ -230,24 +230,7 @@ jobs:
             }`;
 
             // Build a list of repositories for the organization (with caching)
-            // Use shorter cache TTL (5 minutes) to ensure fresh data on scheduled runs
-            let repositories = await readCache(REPOS_CACHE, 300000); // Cache for 5 minutes
-            
-            // Force cache refresh on scheduled runs if cache exists but seems stale
-            if (repositories && context.eventName === 'schedule') {
-              try {
-                const stats = await fs.stat(REPOS_CACHE);
-                const ageMinutes = Math.round((Date.now() - stats.mtime.getTime()) / 60000);
-                
-                // Invalidate cache if it's older than 4 minutes on scheduled runs
-                if (ageMinutes >= 4) {
-                  console.log(`Cache is ${ageMinutes} minutes old - invalidating for scheduled run`);
-                  repositories = null; // Force refresh
-                }
-              } catch (e) {
-                // Ignore stat errors
-              }
-            }
+            let repositories = await readCache(REPOS_CACHE, 3600000); // Cache for 1 hour
             
             if (!repositories) {
               cursor = null;
@@ -264,13 +247,7 @@ jobs:
               await writeCache(REPOS_CACHE, repositories);
               console.log(`Fetched and cached ${repositories.length} repositories`);
             } else {
-              try {
-                const stats = await fs.stat(REPOS_CACHE);
-                const ageMinutes = Math.round((Date.now() - stats.mtime.getTime()) / 60000);
-                console.log(`Using cached repository list: ${repositories.length} repositories (age: ${ageMinutes} minute(s))`);
-              } catch (e) {
-                console.log(`Using cached repository list: ${repositories.length} repositories`);
-              }
+              console.log(`Using cached repository list: ${repositories.length} repositories`);
             }
 
             // Query to get "Dependency Dashboard" issues and Renovate PRs for a repository

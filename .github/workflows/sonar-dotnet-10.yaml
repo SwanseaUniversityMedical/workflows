@@ -1,0 +1,50 @@
+on:
+  workflow_call:
+    inputs:
+
+      project-name:
+        description: "Name of the dotnet project to scan."
+        required: true
+        type: string
+
+      project-file:
+        description: "Path to the csproj file relative to the project-context."
+        required: true
+        type: string
+
+      project-context:
+        description: "Path to the root dir of the project."
+        default: '.'
+        type: string
+
+      sonar-url:
+        description: "URL of the sonarqube sever."
+        required: true
+        type: string
+
+      sonar-exclusions:
+        description: "Exclusion lists."
+        default: '**.exe'
+        type: string
+
+    secrets:
+
+      sonar-token:
+        description: "Authentication token for sonarqube."
+        required: true
+
+jobs:
+  scan:
+    runs-on:
+      labels: [self-hosted, linux, x64]
+      group: sonar
+
+    steps:
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/sonar-dotnet-10@v1.0.0-sonar-dotnet-10-action
+        with:
+          project-name: ${{ inputs.project-name }}
+          project-file: ${{ inputs.project-file }}
+          project-context: ${{ inputs.project-context }}
+          sonar-exclusions: ${{ inputs.sonar-exclusions }}
+          sonar-url: ${{ inputs.sonar-url }}
+          sonar-token: ${{ secrets.sonar-token }}

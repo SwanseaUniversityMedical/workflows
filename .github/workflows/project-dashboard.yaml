@@ -642,6 +642,12 @@ jobs:
             // Step 2: Update status field for new PR items
             console.log('\n--- Starting PR status field updates ---');
 
+            // Add delay to allow GitHub API to fully process newly added items
+            if (newItemsToAdd.length > 0) {
+              console.log('Waiting for GitHub API to process newly added items...');
+              await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+            }
+
             // Refresh board mapping AFTER additions so newly added items are included
             const refreshedBoard = await github.graphql(getProjectData, { boardID, cursor: null });
             const refreshedMapping = new Map(); // contentId -> projectItemId

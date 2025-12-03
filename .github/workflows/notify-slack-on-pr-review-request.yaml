@@ -57,6 +57,12 @@ jobs:
           echo "Preparing Slack notifications..."
           requester="${{ inputs.requester }}"
           IFS=',' read -r -a reviewers <<< "${{ inputs.reviewers }}"
+          
+          # Skip if triggered by marvin
+          if [ "$requester" = "marvin-serp-bto" ]; then
+            echo "Requester is Marvin, skipping notification."
+            exit 0
+          fi
 
           # Check if only requesting review from themselves
           if [ ${#reviewers[@]} -eq 1 ]; then

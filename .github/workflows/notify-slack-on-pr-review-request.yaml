@@ -59,7 +59,7 @@ jobs:
           IFS=',' read -r -a reviewers <<< "${{ inputs.reviewers }}"
           
           # Skip if triggered by marvin
-          if [ "$requester" = "marvin-serp-bto" ]; then
+          if [ "$requester" = "marvin-serp-bot" ]; then
             echo "Requester is Marvin, skipping notification."
             exit 0
           fi

@@ -1,0 +1,268 @@
+name: 'PR Container'
+inputs:
+  name:
+    description: "Name of the release asset."
+    required: true
+
+  comment-header:
+    description: "Header line for the PR comment."
+    default: ":hammer_and_wrench: :whale: Build PR Container"
+
+  comment-enabled:
+    description: "PR comment creation and update."
+    default: "false"
+
+  build-file:
+      description: "Path to the container file."
+      required: true
+
+  build-context:
+    description: "Path to the build root dir."
+    default: '.'
+
+  test-flags:
+    description: "Arguments passed to docker run."
+    default: ''
+
+  test-args:
+    description: "Arguments passed to the container."
+    default: ''
+
+  registry:
+    description: "URL of the container registry."
+    required: true
+
+  registry-user:
+    description: "Username for the container registry."
+    required: true
+
+  registry-repo:
+    description: "Repo within container registry project."
+    required: true
+
+  cosign-public-key:
+    description: "Public key for cosigning images."
+    required: false
+
+  registry-token:
+    description: "Authentication token for the container registry."
+    required: true
+
+  cosign-private-key:
+    description: "Private key for cosigning images."
+    required: false
+
+  cosign-password:
+    description: "Private key password for cosigning images."
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: install cosign
+      if: inputs.cosign-public-key != ''
+      uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+
+    - name: forward proxy settings
+      shell: bash
+      run: |
+        echo "HTTP_PROXY=$HTTP_PROXY" >> $GITHUB_ENV
+        echo "HTTPS_PROXY=$HTTPS_PROXY" >> $GITHUB_ENV
+        echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
+
+    - name: install buildx
+      uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3
+      with:
+        driver-opts: |
+          env.http_proxy=${{ env.HTTP_PROXY }}
+          env.https_proxy=${{ env.HTTPS_PROXY }}
+          "env.no_proxy='${{ env.NO_PROXY }}'"
+        buildkitd-config-inline: |
+          [registry."docker.io"]
+            mirrors = ["https://harbor.ukserp.ac.uk/proxycache"]
+          [registry."quay.io"]
+            mirrors = ["https://harbor.ukserp.ac.uk/quaycache"]
+          [registry."ghcr.io"]
+            mirrors = ["https://harbor.ukserp.ac.uk/ghcrcache"]
+          [registry."mcr.microsoft.com"]
+            mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
+
+    - name: login to container registry
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-user }}
+        password: ${{ inputs.registry-token }}
+
+    - name: pr container metadata
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      id: meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=ref,event=pr
+
+    - name: create short sha of the pr branch commit
+      shell: bash
+      run: |
+        echo "SHORT_SHA=`echo '${{ github.event.pull_request.head.sha }}' | cut -c1-7`" >> $GITHUB_ENV
+
+    - name: pr hash container metadata
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      id: hash-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=ref,event=pr,suffix=-${{ env.SHORT_SHA }}
+
+    - name: pr recent container metadata
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      id: pr-recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=pr-recent
+
+    - name: rc recent container metadata
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5
+      id: rc-recent-meta
+      with:
+        images: |
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}
+        tags: |
+          type=raw,value=rc-recent
+
+    - name: build container
+      uses: docker/bake-action@v6 # v6
+      id: build
+      with:
+        files: ${{ inputs.build-file }}
+        push: true
+        github-token: ${{ github.token }}
+        provenance: true
+        set: |
+          *.tags=${{ steps.meta.outputs.tags }}, ${{ steps.hash-meta.outputs.tags }}, ${{ steps.pr-recent-meta.outputs.tags }}
+          *.cache-from=type=registry,ref=${{ steps.meta.outputs.tags }}, type=registry,ref=${{ steps.pr-recent-meta.outputs.tags }}, type=registry,ref=${{ steps.rc-recent-meta.outputs.tags }}
+          *.cache-to=type=inline
+          *.labels=${{ steps.meta.outputs.labels }}
+          *.context=${{ inputs.build-context }}
+          
+
+    - name: build success
+      if: steps.build.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}
+          ```
+          ${{ steps.meta.outputs.tags }}
+          ${{ steps.hash-meta.outputs.tags }}
+          ${{ steps.build.outputs.digest }}
+          ```
+          :hammer_and_wrench: Build Success  
+
+    - name: build error
+      if: failure() && steps.build.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.event.pull_request.head.sha }}  
+          :x: Build Failure
+
+    - name: find pr comment
+      uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3
+      if: inputs.comment-enabled == 'true' && steps.build.outcome == 'success'
+      id: find-pr-comment
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.name }}
+        comment-author: "github-actions[bot]"
+
+    - name: comment on build success
+      id: build-pr-comment
+      if: inputs.comment-enabled == 'true' && steps.build.outcome == 'success'
+      uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        edit-mode: replace
+        body: |
+          #### ${{ inputs.comment-header }} - ${{ inputs.name }} - :label: Commit: ${{ github.event.pull_request.head.sha }} - :gear: Workflow: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          ```
+          ${{ steps.meta.outputs.tags }}
+          ${{ steps.hash-meta.outputs.tags }}
+          ${{ steps.build.outputs.digest }}
+          ``` 
+
+    - name: cosign image with key
+      id: cosign
+      if: inputs.cosign-public-key != '' && steps.build.outcome == 'success'
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        TAGS: ${{ steps.meta.outputs.tags }}
+        DIGEST: ${{ steps.build.outputs.digest }}
+      shell: bash
+      run: |
+        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
+        cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
+
+    - name: cosign success
+      if: steps.cosign.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":black_nib: Cosign Success  "
+
+    - name: cosign error
+      if: failure() && steps.cosign.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Cosign Failure"
+
+    - name: test
+      id: test
+      if: (inputs.test-flags != '' || inputs.test-args != '') && steps.build.outcome == 'success' && steps.cosign.outcome != 'failure'
+      shell: bash
+      run: |
+        docker run \
+          ${{ inputs.test-flags }} \
+          ${{ inputs.registry }}/${{ inputs.registry-repo }}@${{ steps.build.outputs.digest }} \
+          ${{ inputs.test-args }}
+
+    - name: test success
+      if: steps.test.outcome == 'success'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":eyes: Test Success"
+
+    - name: test error
+      if: failure() && steps.test.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: ":x: Test Failure"
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during execution! Check the workflow run logs for details!

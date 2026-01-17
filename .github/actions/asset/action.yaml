@@ -1,0 +1,239 @@
+name: 'Asset'
+inputs:
+
+  name:
+    description: "Name of the release asset."
+    required: true
+
+  comment-release:
+    description: "Release comment creation and update."
+    default: "true"
+
+  ##
+  # Release tagging
+  ##
+
+  release-tag-format:
+    description: "Semantic-release Github release tag format."
+    default: '${version}'
+
+  ##
+  # PR labelling
+  ##
+
+  major-colour:
+    description: "Colour for the major release label."
+    default: 'B60205'
+
+  minor-colour:
+    description: "Colour for the minor release label."
+    default: '8BD931'
+
+  patch-colour:
+    description: "Colour for the patch release label."
+    default: 'FBCA04'
+
+  released-colour:
+    description: "Colour for the released success label."
+    default: 'BFD4F2'
+
+  skipped-colour:
+    description: "Colour for the released skipped label."
+    default: 'E99695'
+
+  eligible-colour:
+    description: "Colour for the release eligible label."
+    default: 'D4C5F9'
+
+runs:
+  using: "composite"
+  steps:
+    - name: create pr labels and mark asset eligible for release
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      env:
+        input_ctx: ${{ toJSON(inputs) }}
+        github_ctx: ${{ toJSON(github) }}
+      with:
+        script: |
+          const inputs = JSON.parse(process.env.input_ctx);
+          const github_ctx = JSON.parse(process.env.github_ctx);
+          
+          var name = inputs['name'].trim();
+          
+          var ensureLabel = async (prefix, name, colour) => {
+            var label = `${prefix.trim()}: ${name.trim()}`;
+            console.log(`::group::Ensuring [${label}] label exists on repo...`);
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+                color: colour
+              });
+            } catch (error) {
+              console.log(error);
+            }
+            console.log('::endgroup::');
+          };
+          
+          await ensureLabel('major', name, inputs['major-colour']);
+          await ensureLabel('minor', name, inputs['minor-colour']);
+          await ensureLabel('patch', name, inputs['patch-colour']);
+          await ensureLabel('released', name, inputs['released-colour']);
+          await ensureLabel('skipped', name, inputs['skipped-colour']);
+          await ensureLabel('eligible', name, inputs['eligible-colour']);
+          
+          var eligibleLabel = `eligible: ${name}`;
+          console.log(`::group::Adding [${eligibleLabel}] label to PR...`);
+          try {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: github_ctx.event.pull_request.number,
+              labels: [eligibleLabel]
+            });
+          } catch (error) {
+            console.log(error);
+          }
+          console.log('::endgroup::');
+
+    - name: on pr updated
+      if: >-
+        github.event_name == 'pull_request' && 
+        contains(fromJSON('["opened", "synchronize", "reopened"]'), github.event.action)
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      env:
+        input_ctx: ${{ toJSON(inputs) }}
+        github_ctx: ${{ toJSON(github) }}
+      with:
+        script: |
+          const inputs = JSON.parse(process.env.input_ctx);
+          const github_ctx = JSON.parse(process.env.github_ctx);
+          
+          core.notice(`Running on pull request update [pr-${github_ctx.event.pull_request.number}].`);
+
+    - name: on pr merged
+      id: determine-release
+      if: >
+        github.event_name == 'pull_request' && 
+        github.event.pull_request.merged == true && 
+        contains(fromJSON('["closed"]'), github.event.action)
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      env:
+        input_ctx: ${{ toJSON(inputs) }}
+        github_ctx: ${{ toJSON(github) }}
+      with:
+        script: |
+          const inputs = JSON.parse(process.env.input_ctx);
+          const github_ctx = JSON.parse(process.env.github_ctx);
+          
+          core.notice(`Running on pull request merge [pr-${github_ctx.event.pull_request.number}].`);
+          
+          var name = inputs['name'].trim();
+          
+          github.paginate(
+            github.rest.repos.listTags, 
+            {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+              headers: {"x-github-api-version": "2022-11-28"}
+            },
+            (response) => response.data.map((tag) => tag.name)
+        
+          ).then((tags) => {
+            console.log(JSON.stringify(tags));
+          });
+
+    - name: setup node
+      if: >
+        github.event_name == 'pull_request' && 
+        github.event.pull_request.merged == true && 
+        contains(fromJSON('["closed"]'), github.event.action) && 
+        steps.determine-release.outputs.release != ''
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: clone repo
+      if: >
+        github.event_name == 'pull_request' && 
+        github.event.pull_request.merged == true && 
+        contains(fromJSON('["closed"]'), github.event.action) && 
+        steps.determine-release.outputs.release != ''
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+    - name: semantic release
+      id: semantic
+      if: >
+        github.event_name == 'pull_request' && 
+        github.event.pull_request.merged == true && 
+        contains(fromJSON('["closed"]'), github.event.action) && 
+        steps.determine-release.outputs.release != ''
+      shell: bash
+      run: |
+        OUTPUT=$(unset GITHUB_ACTIONS && npx semantic-release --dry-run --no-ci --branches "$MERGE_REF")
+        VERSION=$(echo "$OUTPUT" | grep -o "The next release version is [0-9]*\.[0-9]*\.[0-9]*" | awk '{print $6}')
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        MERGE_REF: ${{ github.event.pull_request.merge_commit_sha }}
+
+#    - name: semantic release
+#      id: semantic
+#      if: >
+#        github.event_name == 'pull_request' &&
+#        github.event.pull_request.merged == true &&
+#        contains(fromJSON('["closed"]'), github.event.action) &&
+#        steps.determine-release.outputs.release != ''
+#      uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
+#      env:
+#        GITHUB_TOKEN: ${{ github.token }}
+#      with:
+#        dry-run: true
+#        branches: ${{ github.head_ref }}
+#        tag-format: ${{ inputs.release-tag-format }}
+#        additional-packages: |
+#          ['@semantic-release/exec']
+#        plugins: |-
+#          [
+#            ['@semantic-release/exec', {
+#              "analyzeCommitsCmd": "([ \"${commits.length}\" -gt 0 ] && printf \"%s\" \"${{ steps.determine-release.outputs.release }}\") || true",
+#            }]
+#          ]
+
+    - name: on new release version
+      if: >
+        github.event_name == 'pull_request' && 
+        github.event.pull_request.merged == true && 
+        contains(fromJSON('["closed"]'), github.event.action) &&
+        steps.determine-release.outputs.release != ''
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      env:
+        input_ctx: ${{ toJSON(inputs) }}
+        github_ctx: ${{ toJSON(github) }}
+        release_ctx: ${{ toJSON(steps.semantic) }}
+      with:
+        script: |
+          const inputs = JSON.parse(process.env.input_ctx);
+          const github_ctx = JSON.parse(process.env.github_ctx);
+          const release_ctx = JSON.parse(process.env.release_ctx);
+          
+          core.notice(`Creating release [${JSON.stringify(release_ctx)}].`);
+
+    - name: on release
+      if: github.event_name == 'push'
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      env:
+        input_ctx: ${{ toJSON(inputs) }}
+        github_ctx: ${{ toJSON(github) }}
+      with:
+        script: |
+          const inputs = JSON.parse(process.env.input_ctx);
+          const github_ctx = JSON.parse(process.env.github_ctx);
+          
+          core.notice(`Running on release tag [${github_ctx.ref_name}].`);

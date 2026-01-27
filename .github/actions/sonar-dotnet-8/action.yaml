@@ -24,21 +24,6 @@ inputs:
   sonar-exclusions:
     description: "Exclusion lists."
     default: '**.exe'
-  
-  sonar-pr-key:
-    description: "pull request id"
-    type: string
-    default: ${{ github.event.pull_request.number}}
-  
-  sonar-pr-branch:
-    description: "pull request branch name"
-    type: string
-    default: ${{ github.head_ref }}
-  
-  sonar-pr-base:
-    description: "pull request base branch name"
-    type: string
-    default: ${{ github.base_ref }}
 
 runs:
   using: "composite"
@@ -84,10 +69,7 @@ runs:
                 /d:sonar.projectBaseDir=\"/repo/$PROJECT_CONTEXT\" \
                 /d:sonar.exclusions=\"$SONAR_EXCLUSIONS\" \
                 /d:sonar.host.url=\"$SONAR_URL\" \
-                /d:sonar.token=\"$SONAR_TOKEN\" \ 
-                /d:sonar.pullrequest.key=\"$SONAR_PR_KEY\" \
-                /d:sonar.pullrequest.branch=\"$SONAR_PR_BRANCH\" \
-                /d:sonar.pullrequest.base=\"$SONAR_PR_BASE\" && \
+                /d:sonar.token=\"$SONAR_TOKEN\" && \
               dotnet restore \"$PROJECT_FILE\" && \
               dotnet build \"$PROJECT_FILE\" -c Release && \
               dotnet /sonar-scanner/SonarScanner.MSBuild.dll end \

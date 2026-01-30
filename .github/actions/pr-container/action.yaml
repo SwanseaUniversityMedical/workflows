@@ -193,7 +193,7 @@ runs:
         platforms: ${{ inputs.platforms }}
         push: true
         github-token: ${{ github.token }}
-        provenance: true
+        provenance: false
         cache-to: type=inline
         cache-from: |
           type=registry,ref=${{ steps.meta.outputs.tags }}

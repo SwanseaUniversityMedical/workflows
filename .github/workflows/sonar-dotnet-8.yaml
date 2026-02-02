@@ -18,7 +18,7 @@ on:
         type: string
 
       sonar-url:
-        description: "URL of the sonarqube sever."
+        description: "URL of the sonarqube server."
         required: true
         type: string
 

@@ -2,8 +2,8 @@ on:
   workflow_call:
     inputs:
 
-      project-context:
-        description: "Path to the root dir of the project."
+      base-dir:
+        description: "Path to the base dir for the scan."
         default: '.'
 
       sonar-url:
@@ -41,6 +41,7 @@ jobs:
           SONAR_TOKEN: ${{ inputs.sonar-token }}
           SONAR_HOST_URL: ${{ inputs.sonar-url }}
         with:
+          projectBaseDir: ${{ inputs.base-dir }}
           args: >
             -Dsonar.projectKey=${{ inputs.project-key }}
             -Dsonar.branch.name=${{ github.ref_name }}
@@ -54,6 +55,7 @@ jobs:
           SONAR_TOKEN: ${{ inputs.sonar-token }}
           SONAR_HOST_URL: ${{ inputs.sonar-url }}
         with:
+          projectBaseDir: ${{ inputs.base-dir }}
           args: >
             -Dsonar.projectKey=${{ inputs.project-key }}
             -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}

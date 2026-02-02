@@ -43,7 +43,7 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         uses: sonarsource/sonarqube-scan-action@v7.0.0
         env:
-          SONAR_TOKEN: ${{ inputs.sonar-token }}
+          SONAR_TOKEN: ${{ secrets.sonar-token }}
           SONAR_HOST_URL: ${{ inputs.sonar-url }}
         with:
           projectBaseDir: ${{ inputs.base-dir }}
@@ -57,7 +57,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         uses: sonarsource/sonarqube-scan-action@v7.0.0
         env:
-          SONAR_TOKEN: ${{ inputs.sonar-token }}
+          SONAR_TOKEN: ${{ secrets.sonar-token }}
           SONAR_HOST_URL: ${{ inputs.sonar-url }}
         with:
           projectBaseDir: ${{ inputs.base-dir }}

@@ -12,11 +12,6 @@ on:
         required: true
         type: string
 
-      sonar-token:
-        description: "Authentication token for sonarqube."
-        required: true
-        type: string
-
       project-key:
         description: "SonarQube Project Key"
         required: true
@@ -26,6 +21,11 @@ on:
         description: "Exclusion lists."
         default: '**.exe'
         type: string
+
+    secrets:
+      sonar-token:
+        description: "Authentication token for sonarqube."
+        required: true
 
 
 jobs:

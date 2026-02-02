@@ -22,10 +22,6 @@ on:
         description: "Exclusion lists."
         default: '**.exe'
 
-      pr-decoration:
-        description: "pr-decoration enabled"
-        required: true
-        default: false
 
 jobs:
   scan:
@@ -33,20 +29,35 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: sonar
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/generic-sonar@v1.0.0-generic-sonar-action
-        if: ${{ inputs.pr-decoration == false }}
+      - name: clone repo
+        uses: actions/checkout@v2
         with:
-          project-key: ${{ inputs.project-key }}
-          project-context: ${{ inputs.project-context }}
-          sonar-exclusions: ${{ inputs.sonar-exclusions }}
-          sonar-url: ${{ inputs.sonar-url }}
-          sonar-token: ${{ secrets.sonar-token }}
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/generic-sonar-pr-decoration@v1.0.0-generic-sonar-pr-decoration-action
-        if: ${{ inputs.pr-decoration == true }}
+      - name: scan project
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: sonarsource/sonarqube-scan-action@v7.0.0
+        env:
+          SONAR_TOKEN: ${{ inputs.sonar-token }}
+          SONAR_HOST_URL: ${{ inputs.sonar-url }}
         with:
-          project-key: ${{ inputs.project-key }}
-          project-context: ${{ inputs.project-context }}
-          sonar-exclusions: ${{ inputs.sonar-exclusions }}
-          sonar-url: ${{ inputs.sonar-url }}
-          sonar-token: ${{ secrets.sonar-token }}
+          args: >
+            -Dsonar.projectKey=${{ inputs.project-key }}
+            -Dsonar.branch.name=${{ github.ref_name }}
+            -Dsonar.exclusions=${{ inputs.sonar-exclusions }}
+
+
+      - name: scan project PR
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: sonarsource/sonarqube-scan-action@v7.0.0
+        env:
+          SONAR_TOKEN: ${{ inputs.sonar-token }}
+          SONAR_HOST_URL: ${{ inputs.sonar-url }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ inputs.project-key }}
+            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
+            -Dsonar.pullrequest.branch=${{ github.head_ref }}
+            -Dsonar.pullrequest.base=${{ github.base_ref }}
+            -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
+            -Dsonar.exclusions=${{ inputs.sonar-exclusions }}

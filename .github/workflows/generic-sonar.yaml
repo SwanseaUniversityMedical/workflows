@@ -1,0 +1,52 @@
+on:
+  workflow_call:
+    inputs:
+
+      project-context:
+        description: "Path to the root dir of the project."
+        default: '.'
+
+      sonar-url:
+        description: "URL of the sonarqube sever."
+        required: true
+
+      sonar-token:
+        description: "Authentication token for sonarqube."
+        required: true
+
+      project-key:
+        description: "SonarQube Project Key"
+        required: true
+
+      sonar-exclusions:
+        description: "Exclusion lists."
+        default: '**.exe'
+
+      pr-decoration:
+        description: "pr-decoration enabled"
+        required: true
+        default: false
+
+jobs:
+  scan:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: sonar
+    steps:
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/generic-sonar@v1.0.0-generic-sonar-action
+        if: ${{ inputs.pr-decoration == false }}
+        with:
+          project-key: ${{ inputs.project-key }}
+          project-context: ${{ inputs.project-context }}
+          sonar-exclusions: ${{ inputs.sonar-exclusions }}
+          sonar-url: ${{ inputs.sonar-url }}
+          sonar-token: ${{ secrets.sonar-token }}
+
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/generic-sonar-pr-decoration@v1.0.0-generic-sonar-pr-decoration-action
+        if: ${{ inputs.pr-decoration == true }}
+        with:
+          project-key: ${{ inputs.project-key }}
+          project-context: ${{ inputs.project-context }}
+          sonar-exclusions: ${{ inputs.sonar-exclusions }}
+          sonar-url: ${{ inputs.sonar-url }}
+          sonar-token: ${{ secrets.sonar-token }}

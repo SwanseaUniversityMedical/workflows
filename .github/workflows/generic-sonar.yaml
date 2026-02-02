@@ -5,22 +5,27 @@ on:
       base-dir:
         description: "Path to the base dir for the scan."
         default: '.'
+        type: string
 
       sonar-url:
         description: "URL of the sonarqube sever."
         required: true
+        type: string
 
       sonar-token:
         description: "Authentication token for sonarqube."
         required: true
+        type: string
 
       project-key:
         description: "SonarQube Project Key"
         required: true
+        type: string
 
       sonar-exclusions:
         description: "Exclusion lists."
         default: '**.exe'
+        type: string
 
 
 jobs:

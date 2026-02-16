@@ -79,7 +79,7 @@ runs:
           break;
         done
       env:
-        SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet-10:1.0.0
+        SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet-10:1.0.1
         PROJECT_NAME: ${{ inputs.project-name }}
         PROJECT_FILE: ${{ inputs.project-file }}
         PROJECT_CONTEXT: ${{ inputs.project-context }}
@@ -115,7 +115,7 @@ runs:
           break;
         done
       env:
-        SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet-10:1.0.0
+        SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet-10:1.0.1
         PROJECT_NAME: ${{ inputs.project-name }}
         PROJECT_FILE: ${{ inputs.project-file }}
         PROJECT_CONTEXT: ${{ inputs.project-context }}

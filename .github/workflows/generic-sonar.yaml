@@ -26,6 +26,10 @@ on:
       sonar-token:
         description: "Authentication token for sonarqube."
         required: true
+      
+      sonar-root-cert:
+        description: "Certificate for sonarqube server if needed."
+        required: false
 
 
 jobs:
@@ -45,6 +49,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.sonar-token }}
           SONAR_HOST_URL: ${{ inputs.sonar-url }}
+          SONAR_ROOT_CERT: ${{ secrets.sonar-root-cert }}
         with:
           projectBaseDir: ${{ inputs.base-dir }}
           args: >
@@ -59,6 +64,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.sonar-token }}
           SONAR_HOST_URL: ${{ inputs.sonar-url }}
+          SONAR_ROOT_CERT: ${{ secrets.sonar-root-cert }}
         with:
           projectBaseDir: ${{ inputs.base-dir }}
           args: >

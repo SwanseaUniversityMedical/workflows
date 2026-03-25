@@ -94,6 +94,9 @@ runs:
         name: ${{ inputs.name }}
         release-tag-format: ${{ inputs.release-tag-format }}
 
+    - name: Install envsubst
+      run: sudo apt-get update && sudo apt-get install -y gettext
+
     - name: install cosign
       if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
       uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0

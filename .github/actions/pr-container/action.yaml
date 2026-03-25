@@ -138,7 +138,7 @@ runs:
         platforms: ${{ inputs.platforms }}
 
     - name: login to container registry
-      uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
+      uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}

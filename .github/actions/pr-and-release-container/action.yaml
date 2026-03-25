@@ -90,7 +90,7 @@ runs:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - id: create-release-labels
-      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v3.0.0-create-release-labels-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v3.0.1-create-release-labels-action
       with:
         name: ${{ inputs.name }}
 
@@ -117,7 +117,7 @@ runs:
         cosign-password: ${{ inputs.cosign-password }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v3.1.6-release-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v3.1.7-release-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}

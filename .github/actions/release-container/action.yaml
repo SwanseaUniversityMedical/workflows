@@ -112,7 +112,7 @@ runs:
 
     - name: install buildx
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
       with:
         driver-opts: |
           env.http_proxy=${{ env.HTTP_PROXY }}
@@ -131,7 +131,7 @@ runs:
 
     - name: login to container registry
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
+      uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}
@@ -219,7 +219,7 @@ runs:
 
     - name: build rc container
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+      uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
       id: build-rc
       with:
         file: ${{ inputs.build-file }}
@@ -357,7 +357,7 @@ runs:
 
     - name: build release container
       if: steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure' && steps.extra-tag.outcome != 'failure'
-      uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+      uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
       id: build-release
       with:
         file: ${{ inputs.build-file }}
@@ -437,7 +437,7 @@ runs:
 
     - name: github release
       if: steps.build-release.outcome == 'success' && steps.cosign-release.outcome != 'failure'
-      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
       id: release
       with:
         retries: 3
@@ -505,7 +505,7 @@ runs:
         SUMMARY: ":x: Github Release Failure"
 
     - name: find pr comment
-      uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3
+      uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3.1.0
       if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success'
       id: find-pr-comment
       with:
@@ -516,7 +516,7 @@ runs:
     - name: comment on release success
       id: release-pr-comment
       if: inputs.comment-enabled == 'true' && steps.release.outcome == 'success' && steps.semantic.outputs.new-release-published == 'true'
-      uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5
+      uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
         issue-number: ${{ steps.semantic.outputs.pr-number }}

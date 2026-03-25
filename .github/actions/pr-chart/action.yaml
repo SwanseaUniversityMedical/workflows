@@ -90,7 +90,7 @@ runs:
 
     - name: login to container registry for cosign
       if: inputs.cosign-public-key != ''
-      uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
+      uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}
@@ -155,7 +155,7 @@ runs:
         SUMMARY: ":x: Build Failure"
 
     - name: find pr comment
-      uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3
+      uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3.1.0
       if: inputs.comment-enabled == 'true' && steps.helm.outcome == 'success'
       id: find-pr-comment
       with:
@@ -166,7 +166,7 @@ runs:
     - name: comment on build success
       id: build-pr-comment
       if: inputs.comment-enabled == 'true' && steps.helm.outcome == 'success'
-      uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5
+      uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
         issue-number: ${{ github.event.pull_request.number }}

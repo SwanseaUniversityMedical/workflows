@@ -127,7 +127,7 @@ runs:
 
     - name: add skipped label
       if: steps.semantic.outputs.new-release-published != 'true'
-      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
       with:
         script: |
           var inputs = ${{ toJSON(inputs) }};
@@ -293,7 +293,7 @@ runs:
     - name: github release
       id: release
       if: steps.helm-release.outcome == 'success' && steps.cosign-release.outcome != 'failure'
-      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
       with:
         retries: 3
         github-token: ${{ github.token }}
@@ -321,7 +321,7 @@ runs:
 
     - name: add released label
       if: steps.release.outcome == 'success'
-      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
       with:
         script: |
           var inputs = ${{ toJSON(inputs) }};

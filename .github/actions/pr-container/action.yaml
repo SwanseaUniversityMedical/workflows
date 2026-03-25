@@ -105,6 +105,7 @@ runs:
           }
 
     - name: Install envsubst
+      shell: bash
       run: sudo apt-get update && sudo apt-get install -y gettext
 
     - name: install cosign

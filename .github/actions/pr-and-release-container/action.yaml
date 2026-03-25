@@ -95,7 +95,7 @@ runs:
         name: ${{ inputs.name }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v2.2.3-pr-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v2.2.4-pr-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
@@ -117,7 +117,7 @@ runs:
         cosign-password: ${{ inputs.cosign-password }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v3.1.5-release-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v3.1.6-release-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}

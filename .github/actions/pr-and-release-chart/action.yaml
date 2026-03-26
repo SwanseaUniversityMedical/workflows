@@ -67,7 +67,7 @@ runs:
         name: ${{ inputs.name }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v2.1.4-pr-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v2.1.5-pr-chart-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
@@ -83,7 +83,7 @@ runs:
         registry-token: ${{ inputs.registry-token }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v3.0.7-release-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v3.0.8-release-chart-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}

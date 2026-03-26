@@ -277,7 +277,11 @@ runs:
         DIGEST: ${{ steps.build-rc.outputs.digest }}
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
+        cosign sign --yes \
+                    --key env://COSIGN_PRIVATE_KEY \
+                    --new-bundle-format=false \
+                    --use-signing-config=false \
+                    "${TAGS}@${DIGEST}"
         cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
     - name: cosign success
@@ -416,7 +420,11 @@ runs:
         DIGEST: ${{ steps.build-release.outputs.digest }}
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
+        cosign sign --yes \
+                    --key env://COSIGN_PRIVATE_KEY \
+                    --new-bundle-format=false \
+                    --use-signing-config=false \
+                    "${TAGS}@${DIGEST}"
         cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
     - name: cosign success

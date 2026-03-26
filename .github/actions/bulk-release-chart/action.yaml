@@ -163,7 +163,11 @@ runs:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${RC_TAG}"
+        cosign sign --yes \
+                    --key env://COSIGN_PRIVATE_KEY \
+                    --new-bundle-format=false \
+                    --use-signing-config=false \
+                    "${CHART_REPO}:${RC_TAG}"
         cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RC_TAG}"
 
     - name: cosign success
@@ -244,7 +248,11 @@ runs:
         COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${CHART_REPO}:${RELEASE_TAG}"
+        cosign sign --yes \
+                    --key env://COSIGN_PRIVATE_KEY \
+                    --new-bundle-format=false \
+                    --use-signing-config=false \
+                    "${CHART_REPO}:${RELEASE_TAG}"
         cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RELEASE_TAG}"
 
     - name: cosign success

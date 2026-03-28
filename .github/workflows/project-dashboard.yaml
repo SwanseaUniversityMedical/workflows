@@ -182,7 +182,18 @@ jobs:
                       titleLower.includes('renovate.json') ||
                       titleLower.includes('lock file maintenance') ||
                       titleLower.includes('pin dependencies') ||
-                      titleLower.includes('pin dependency')
+                      titleLower.includes('pin dependency') ||
+                      titleLower.includes('update swanseauniversitymedical/workflows action') ||
+                      titleLower.includes('update dependency pr-and-release') ||
+                      titleLower.includes('update workflows non-major dependencies') ||
+                      titleLower.includes('update dependency pr-title') ||
+                      titleLower.includes('update dependency sonar-dotnet-8') ||
+                      titleLower.includes('update dependency sonar-dotnet-7') ||
+                      titleLower.includes('update dependency sonar-dotnet-10') ||
+                      titleLower.includes('update dependency flake8') ||
+                      titleLower.includes('update dependency ruff') ||
+                      titleLower.includes('update dependency notify-slack-on-pr-review-request') ||
+                      titleLower.includes('update dependency bulk-pr-and-release')
                     );
                     
                     if (isTrackedPR && content.state === 'OPEN') {
@@ -409,10 +420,19 @@ jobs:
               }
               
               
-              // Lock File Maintenance
-              if (titleLower.includes('lock file maintenance') ||
-                  labelNames.includes('lock-file-maintenance')) {
-                return 'Lock File Maintenance';
+              // Workflows
+              if (titleLower.includes('update swanseauniversitymedical/workflows action') ||
+                      titleLower.includes('update dependency pr-and-release') ||
+                      titleLower.includes('update workflows non-major dependencies') ||
+                      titleLower.includes('update dependency pr-title') ||
+                      titleLower.includes('update dependency sonar-dotnet-8') ||
+                      titleLower.includes('update dependency sonar-dotnet-7') ||
+                      titleLower.includes('update dependency sonar-dotnet-10') ||
+                      titleLower.includes('update dependency flake8') ||
+                      titleLower.includes('update dependency ruff') ||
+                      titleLower.includes('update dependency notify-slack-on-pr-review-request') ||
+                      titleLower.includes('update dependency bulk-pr-and-release') ) {
+                return 'Workflow Updates';
               }
               
               // Pin Dependencies
@@ -536,7 +556,18 @@ jobs:
                             titleLower.includes('renovate.json') ||
                             titleLower.includes('lock file maintenance') ||
                             titleLower.includes('pin dependencies') ||
-                            titleLower.includes('pin dependency')
+                            titleLower.includes('pin dependency') ||
+                            titleLower.includes('update swanseauniversitymedical/workflows action') ||
+                            titleLower.includes('update dependency pr-and-release') ||
+                            titleLower.includes('update workflows non-major dependencies') ||
+                            titleLower.includes('update dependency pr-title') ||
+                            titleLower.includes('update dependency sonar-dotnet-8') ||
+                            titleLower.includes('update dependency sonar-dotnet-7') ||
+                            titleLower.includes('update dependency sonar-dotnet-10') ||
+                            titleLower.includes('update dependency flake8') ||
+                            titleLower.includes('update dependency ruff') ||
+                            titleLower.includes('update dependency notify-slack-on-pr-review-request') ||
+                            titleLower.includes('update dependency bulk-pr-and-release')
                           );
                         });
                         
@@ -649,12 +680,19 @@ jobs:
             }
 
             // Refresh board mapping AFTER additions so newly added items are included
-            const refreshedBoard = await github.graphql(getProjectData, { boardID, cursor: null });
+            // Paginate through all pages to ensure all items are captured
+            let refreshCursor = null;
+            let refreshHasNextPage = true;
             const refreshedMapping = new Map(); // contentId -> projectItemId
-            refreshedBoard.node.items.items.forEach(entry => {
-              const c = entry.node.content;
-              if (c) refreshedMapping.set(c.id, entry.node.id);
-            });
+            while (refreshHasNextPage) {
+              const refreshedBoard = await github.graphql(getProjectData, { boardID, cursor: refreshCursor });
+              refreshedBoard.node.items.items.forEach(entry => {
+                const c = entry.node.content;
+                if (c) refreshedMapping.set(c.id, entry.node.id);
+              });
+              refreshHasNextPage = refreshedBoard.node.items.pageInfo.hasNextPage;
+              refreshCursor = refreshedBoard.node.items.pageInfo.endCursor;
+            }
 
             // Get project fields to find the status field for PRs
             const prStatusFieldsResponse = await github.graphql(getProjectFields, { boardID });
@@ -823,3 +861,4 @@ jobs:
             }
             
             console.log('\n--- Dependency Dashboard status field updates completed ---');
+

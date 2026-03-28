@@ -680,12 +680,19 @@ jobs:
             }
 
             // Refresh board mapping AFTER additions so newly added items are included
-            const refreshedBoard = await github.graphql(getProjectData, { boardID, cursor: null });
+            // Paginate through all pages to ensure all items are captured
+            let refreshCursor = null;
+            let refreshHasNextPage = true;
             const refreshedMapping = new Map(); // contentId -> projectItemId
-            refreshedBoard.node.items.items.forEach(entry => {
-              const c = entry.node.content;
-              if (c) refreshedMapping.set(c.id, entry.node.id);
-            });
+            while (refreshHasNextPage) {
+              const refreshedBoard = await github.graphql(getProjectData, { boardID, cursor: refreshCursor });
+              refreshedBoard.node.items.items.forEach(entry => {
+                const c = entry.node.content;
+                if (c) refreshedMapping.set(c.id, entry.node.id);
+              });
+              refreshHasNextPage = refreshedBoard.node.items.pageInfo.hasNextPage;
+              refreshCursor = refreshedBoard.node.items.pageInfo.endCursor;
+            }
 
             // Get project fields to find the status field for PRs
             const prStatusFieldsResponse = await github.graphql(getProjectFields, { boardID });
@@ -855,4 +862,3 @@ jobs:
             
             console.log('\n--- Dependency Dashboard status field updates completed ---');
 
-            

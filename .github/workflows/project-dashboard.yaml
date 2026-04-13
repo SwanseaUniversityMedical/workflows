@@ -193,7 +193,8 @@ jobs:
                       titleLower.includes('update dependency flake8') ||
                       titleLower.includes('update dependency ruff') ||
                       titleLower.includes('update dependency notify-slack-on-pr-review-request') ||
-                      titleLower.includes('update dependency bulk-pr-and-release')
+                      titleLower.includes('update dependency bulk-pr-and-release') ||
+                      titleLower.includes('update dependency generic-sonar')
                     );
                     
                     if (isTrackedPR && content.state === 'OPEN') {
@@ -431,7 +432,8 @@ jobs:
                       titleLower.includes('update dependency flake8') ||
                       titleLower.includes('update dependency ruff') ||
                       titleLower.includes('update dependency notify-slack-on-pr-review-request') ||
-                      titleLower.includes('update dependency bulk-pr-and-release') ) {
+                      titleLower.includes('update dependency bulk-pr-and-release') ||
+                      titleLower.includes('update dependency generic-sonar') ) {
                 return 'Workflow Updates';
               }
               
@@ -567,7 +569,8 @@ jobs:
                             titleLower.includes('update dependency flake8') ||
                             titleLower.includes('update dependency ruff') ||
                             titleLower.includes('update dependency notify-slack-on-pr-review-request') ||
-                            titleLower.includes('update dependency bulk-pr-and-release')
+                            titleLower.includes('update dependency bulk-pr-and-release') ||
+                            titleLower.includes('update dependency generic-sonar')
                           );
                         });
                         

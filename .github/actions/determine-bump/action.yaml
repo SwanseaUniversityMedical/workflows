@@ -87,7 +87,7 @@ runs:
 
     - name: semantic release
       if: steps.determine-release.outputs.release != ''
-      uses: docker://harbor.ukserp.ac.uk/github-workflows/semantic-release-action:v3
+      uses: codfish/semantic-release-action@6abd188d2458e2fd6c99073454f6cc49196362e8    #v5
       id: semantic
       env:
         GITHUB_TOKEN: ${{ github.token }}

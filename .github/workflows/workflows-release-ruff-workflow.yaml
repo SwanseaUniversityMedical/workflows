@@ -32,4 +32,4 @@ jobs:
     with:
       job-name: ruff
       comment-release: true
-      release-tag-format: 'v${version}-ruff'
+      release-tag-format: 'v${version}-ruff-workflow'

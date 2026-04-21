@@ -32,4 +32,4 @@ jobs:
     with:
       job-name: sonar-dotnet-10
       comment-release: true
-      release-tag-format: 'v${version}-sonar-dotnet-10'
+      release-tag-format: 'v${version}-sonar-dotnet-10-workflow'

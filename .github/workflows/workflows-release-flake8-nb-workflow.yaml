@@ -32,4 +32,4 @@ jobs:
     with:
       job-name: flake8-nb
       comment-release: true
-      release-tag-format: 'v${version}-flake8-nb'
+      release-tag-format: 'v${version}-flake8-nb-workflow'

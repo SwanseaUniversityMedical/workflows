@@ -36,6 +36,10 @@ inputs:
     description: "KEY=VALUE build secrets from files as a multiline string."
     default: ''
 
+  build-target:
+    description: "String name of the Dockerfile stage to build. Last stage if blank."
+    default: ''
+
   test-flags:
     description: "Arguments passed to docker run."
     default: ''
@@ -232,6 +236,7 @@ runs:
           ${{ inputs.build-secret-envs }}
         secret-files: |
           ${{ inputs.build-secret-files }}
+        target: ${{ inputs.build-target }}
         tags: |
           ${{ steps.rc-meta.outputs.tags }}
           ${{ steps.rc-recent-meta.outputs.tags }}
@@ -374,6 +379,7 @@ runs:
           ${{ inputs.build-secret-envs }}
         secret-files: |
           ${{ inputs.build-secret-files }}
+        target: ${{ inputs.build-target }}
         tags: |
           ${{ steps.meta.outputs.tags }}
           ${{ env.EXTRA_META }}

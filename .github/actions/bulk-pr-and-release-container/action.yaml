@@ -118,7 +118,7 @@ runs:
         cosign-password: ${{ inputs.cosign-password }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-release-container@v1.3.5-bulk-release-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-release-container@v1.4.0-bulk-release-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}

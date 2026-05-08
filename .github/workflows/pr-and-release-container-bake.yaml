@@ -1,0 +1,125 @@
+on:
+  workflow_call:
+    inputs:
+
+      job-name:
+        description: "Name of the release asset."
+        required: true
+        type: string
+
+      major-colour:
+        description: "Colour for the major release label."
+        default: 'B60205'
+        type: string
+
+      minor-colour:
+        description: "Colour for the minor release label."
+        default: '8BD931'
+        type: string
+
+      patch-colour:
+        description: "Colour for the patch release label."
+        default: 'FBCA04'
+        type: string
+
+      comment-pr:
+        description: "PR comment creation and update."
+        default: "false"
+        type: string
+
+      comment-release:
+        description: "Release comment creation and update."
+        default: "true"
+        type: string
+
+      build-file:
+        description: "Path to the container file."
+        required: true
+        type: string
+
+      build-context:
+        description: "Path to the build root dir."
+        default: '.'
+        type: string
+
+      test-flags:
+        description: "Arguments passed to docker run."
+        default: ''
+        type: string
+
+      test-args:
+        description: "Arguments passed to the container."
+        default: ''
+        type: string
+
+      registry:
+        description: "URL of the container registry."
+        required: true
+        type: string
+
+      registry-user:
+        description: "Username for the container registry."
+        required: true
+        type: string
+
+      registry-repo:
+        description: "Repo within container registry project."
+        required: true
+        type: string
+
+      release-tag-format:
+        description: "Semantic-release Github release tag format."
+        default: '${version}'
+        type: string
+
+      registry-extra-tag-command:
+        description: "Extra tag to push release container."
+        default: ''
+        type: string
+
+      cosign-public-key:
+        description: "Public key for cosigning images."
+        required: false
+        type: string
+
+    secrets:
+
+      registry-token:
+        description: "Authentication token for the container registry."
+        required: true
+
+      cosign-private-key:
+        description: "Private key for cosigning images."
+        required: false
+
+      cosign-password:
+        description: "Private key password for cosigning images."
+        required: false
+
+jobs:
+  container:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: heavy
+    steps:
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-container-bake@v1.0.6-pr-and-release-container-action
+        with:
+          name: ${{ inputs.job-name }}
+          major-colour: ${{ inputs.major-colour }}
+          minor-colour: ${{ inputs.minor-colour }}
+          patch-colour: ${{ inputs.patch-colour }}
+          comment-pr: ${{ inputs.comment-pr }}
+          comment-release: ${{ inputs.comment-release }}
+          registry: ${{ inputs.registry }}
+          registry-user: ${{ inputs.registry-user }}
+          registry-repo: ${{ inputs.registry-repo }}
+          registry-token: ${{ secrets.registry-token }}
+          registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
+          release-tag-format: ${{ inputs.release-tag-format }}
+          build-file: ${{ inputs.build-file }}
+          build-context: ${{ inputs.build-context }}
+          test-flags: ${{ inputs.test-flags }}
+          test-args: ${{ inputs.test-args }}
+          cosign-public-key: ${{ inputs.cosign-public-key }}
+          cosign-private-key: ${{ secrets.cosign-private-key }}
+          cosign-password: ${{ secrets.cosign-password }}

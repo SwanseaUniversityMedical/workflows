@@ -19,7 +19,7 @@ jobs:
       group: light
 
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/ruff@feat/ruff-ci
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/ruff@v1.0.0-ruff-action
         with:
           config-file: ${{ inputs.config-file }}
           source-path: ${{ inputs.source-path }}

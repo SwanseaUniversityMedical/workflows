@@ -40,20 +40,16 @@ inputs:
     description: "Semantic-release Github release tag format."
     default: '${version}'
 
-  cosign-public-key:
-    description: "Public key for cosigning images."
-    required: false
+  notation-cert:
+    description: "Public key for notation signing images."
+    required: true
 
   registry-token:
     description: "Authentication token for the chart registry."
     required: true
 
-  cosign-private-key:
-    description: "Private key for cosigning charts."
-    required: false
-
-  cosign-password:
-    description: "Private key password for cosigning charts."
+  notation-key:
+    description: "Private key for notation signing charts."
     required: false
 
 runs:
@@ -75,11 +71,11 @@ runs:
         registry-user: ${{ inputs.registry-user }}
         registry-project: ${{ inputs.registry-project }}
         registry-repo: ${{ inputs.registry-repo }}
-        cosign-public-key: ${{ inputs.cosign-public-key }}
+        notation-cert: ${{ inputs.notation-cert }}
         chart: ${{ inputs.chart }}
         test-command: ${{ inputs.test-command }}
-        cosign-private-key: ${{ inputs.cosign-private-key }}
-        cosign-password: ${{ inputs.cosign-password }}
+        notation-key: ${{ inputs.notation-key }}
+
         registry-token: ${{ inputs.registry-token }}
 
     - if: github.event_name == 'push'
@@ -91,10 +87,10 @@ runs:
         registry-user: ${{ inputs.registry-user }}
         registry-project: ${{ inputs.registry-project }}
         registry-repo: ${{ inputs.registry-repo }}
-        cosign-public-key: ${{ inputs.cosign-public-key }}
+        notation-cert: ${{ inputs.notation-cert }}
         chart: ${{ inputs.chart }}
         test-command: ${{ inputs.test-command }}
         release-tag-format: ${{ inputs.release-tag-format }}
-        cosign-private-key: ${{ inputs.cosign-private-key }}
-        cosign-password: ${{ inputs.cosign-password }}
+        notation-key: ${{ inputs.notation-key }}
+
         registry-token: ${{ inputs.registry-token }}

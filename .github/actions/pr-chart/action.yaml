@@ -40,20 +40,16 @@ inputs:
     description: "Repo within chart registry project."
     required: true
 
-  cosign-public-key:
-    description: "Public key for cosigning images."
-    required: false
+  notation-cert:
+    description: "Public key for notation signing images."
+    required: true
 
   registry-token:
     description: "Authentication token for the chart registry."
     required: true
 
-  cosign-private-key:
-    description: "Private key for cosigning charts."
-    required: false
-
-  cosign-password:
-    description: "Private key password for cosigning charts."
+  notation-key:
+    description: "Private key for notation signing charts."
     required: false
 
 runs:
@@ -79,17 +75,45 @@ runs:
           } catch (error) {
             console.log(error);
           }
+          
+    - name: Setup Notation
+      uses: notaryproject/notation-action/setup@b6fee73110795d6793253c673bd723f12bcf9bbb # v1.2.2
+      with:
+        version: "1.3.1"
 
-    - name: Install envsubst
+    - name: Generate notation key config
       shell: bash
-      run: sudo apt-get update && sudo apt-get install -y gettext
+      run: |
+        set -xeuo pipefail
 
-    - name: install cosign
-      if: inputs.cosign-public-key != ''
-      uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
+        BASE_DIR="$HOME/.config/notation/localkeys"
+        mkdir -p "$BASE_DIR"
 
-    - name: login to container registry for cosign
-      if: inputs.cosign-public-key != ''
+        CERT_FILE="$BASE_DIR/chi.swan.ac.uk.crt"
+        printf "%s" "$NOTATION_CERT" > "$CERT_FILE"
+
+        KEY_FILE="$BASE_DIR/chi.swan.ac.uk.key"
+        printf "%s" "$NOTATION_KEY" > "$KEY_FILE"
+        chmod 600 "$KEY_FILE"
+
+        cat > "$HOME/.config/notation/signingkeys.json" <<EOF
+        {
+          "default": "chi.swan.ac.uk",
+          "keys": [
+            {
+              "name": "chi.swan.ac.uk",
+              "keyPath": "$KEY_FILE",
+              "certPath": "$CERT_FILE"
+            }
+          ]
+        }
+        EOF
+      env:
+        NOTATION_CERT: ${{ inputs.notation-cert }}
+        NOTATION_KEY: ${{ inputs.notation-key }}
+
+    - name: login to container registry for notation
+      if: inputs.notation-cert != ''
       uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
       with:
         registry: ${{ inputs.registry }}
@@ -178,47 +202,33 @@ runs:
           ${{ env.CHART_REPO }}:${{ env.PR_COMMIT_TAG }}
           ``` 
 
-    - name: cosign chart
-      id: cosign
-      if: inputs.cosign-public-key != '' && steps.helm.outcome == 'success'
-      env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+    - name: notation chart
+      id: notation
+      if: inputs.notation-cert != '' && steps.helm.outcome == 'success'
       shell: bash
       run: |
-        cosign sign --yes \
-                    --key env://COSIGN_PRIVATE_KEY \
-                    --new-bundle-format=false \
-                    --use-signing-config=false \
-                    "${CHART_REPO}:${PR_TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${PR_TAG}"
-        cosign sign --yes \
-                    --key env://COSIGN_PRIVATE_KEY \
-                    --new-bundle-format=false \
-                    --use-signing-config=false \
-                    "${CHART_REPO}:${PR_COMMIT_TAG//\+/_}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${PR_COMMIT_TAG//\+/_}"
+        notation sign --key="chi.swan.ac.uk" "${CHART_REPO}:${PR_TAG}"
+        notation sign --key="chi.swan.ac.uk" "${CHART_REPO}:${PR_COMMIT_TAG//\+/_}"
 
-    - name: cosign success
-      if: steps.cosign.outcome == 'success'
+    - name: notation success
+      if: steps.notation.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":black_nib: Cosign Success  "
+        SUMMARY: ":black_nib: Notation Success  "
 
-    - name: cosign error
-      if: failure() && steps.cosign.outcome == 'failure'
+    - name: notation error
+      if: failure() && steps.notation.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":x: Cosign Failure"
+        SUMMARY: ":x: Notation Failure"
 
     - name: test
       id: test
-      if: inputs.test-command != '' && steps.helm.outcome == 'success' && steps.cosign.outcome != 'failure'
+      if: inputs.test-command != '' && steps.helm.outcome == 'success' && steps.notation.outcome != 'failure'
       shell: bash
       run: |
         set -x

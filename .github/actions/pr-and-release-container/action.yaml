@@ -96,7 +96,7 @@ runs:
         name: ${{ inputs.name }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v2.3.0-pr-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v3.0.0-pr-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
@@ -119,7 +119,7 @@ runs:
 
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v3.2.0-release-container-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v4.0.0-release-container-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}

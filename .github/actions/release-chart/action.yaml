@@ -280,7 +280,7 @@ runs:
                     --new-bundle-format=false \
                     --use-signing-config=false \
                     --tlog-upload=false \
-                                        "${CHART_REPO}:${RELEASE_TAG}"
+                    "${CHART_REPO}:${RELEASE_TAG}"
 
     - name: cosign success
       if: steps.cosign-release.outcome == 'success'

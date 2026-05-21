@@ -114,7 +114,7 @@ runs:
       run: |
         set -euo pipefail
     
-        BASE_DIR="$HOME/.config/notation/localkeys"
+        BASE_DIR="./.notation/localkeys"
         mkdir -p "$BASE_DIR"
     
         CERT_FILE="$BASE_DIR/notation.crt"
@@ -123,19 +123,8 @@ runs:
         KEY_FILE="$BASE_DIR/notation.key"
         printf "%s" "$NOTATION_KEY" > "$KEY_FILE"
         chmod 600 "$KEY_FILE"
-    
-        cat > "$BASE_DIR/config.json" <<EOF
-        {
-          "default": "chi.swan.ac.uk",
-          "keys": [
-            {
-              "name": "chi.swan.ac.uk",
-              "keyPath": "$KEY_FILE",
-              "certPath": "$CERT_FILE"
-            }
-          ]
-        }
-        EOF
+        
+        notation key add "chi.swan.ac.uk" --key "$KEY_FILE" --cert "$CERT_FILE"
       env:
         NOTATION_CERT: ${{ inputs.notation-cert }}
         NOTATION_KEY: ${{ inputs.notation-key }}
@@ -290,7 +279,7 @@ runs:
         DIGEST: ${{ steps.build.outputs.digest }}
       shell: bash
       run: |
-        notation sign "${TAGS}@${DIGEST}"
+        notation sign chi.swan.ac.uk "${TAGS}@${DIGEST}"
         
     - name: notation success
       if: steps.notation.outcome == 'success'

@@ -82,18 +82,7 @@ runs:
         printf "%s" "$NOTATION_KEY" > "$KEY_FILE"
         chmod 600 "$KEY_FILE"
 
-        cat > "$BASE_DIR/config.json" <<EOF
-        {
-          "default": "chi.swan.ac.uk",
-          "keys": [
-            {
-              "name": "chi.swan.ac.uk",
-              "keyPath": "$KEY_FILE",
-              "certPath": "$CERT_FILE"
-            }
-          ]
-        }
-        EOF
+        notation key add "chi.swan.ac.uk" --key "$KEY_FILE" --cert "$CERT_FILE"
       env:
         NOTATION_CERT: ${{ inputs.notation-cert }}
         NOTATION_KEY: ${{ inputs.notation-key }}
@@ -210,7 +199,7 @@ runs:
       if: inputs.notation-cert != '' && steps.helm-rc.outcome == 'success'
       shell: bash
       run: |
-        notation sign "${CHART_REPO}:${RC_TAG}"
+        notation sign chi.swan.ac.uk "${CHART_REPO}:${RC_TAG}"
 
     - name: notation success
       if: steps.notation-rc.outcome == 'success'
@@ -286,7 +275,7 @@ runs:
       if: inputs.notation-cert != '' && steps.helm-release.outcome == 'success'
       shell: bash
       run: |
-        notation sign "${CHART_REPO}:${RELEASE_TAG}"
+        notation sign chi.swan.ac.uk "${CHART_REPO}:${RELEASE_TAG}"
 
     - name: notation success
       if: steps.notation-release.outcome == 'success'

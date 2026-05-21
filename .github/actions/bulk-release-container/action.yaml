@@ -88,13 +88,41 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install envsubst
-      shell: bash
-      run: sudo apt-get update && sudo apt-get install -y gettext
+    - name: Setup Notation
+      uses: notaryproject/notation-action/setup@b6fee73110795d6793253c673bd723f12bcf9bbb # v1.2.2
+      with:
+        version: "1.3.1"
 
-    - name: install cosign
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) && inputs.notation-cert != '' }}
-      uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
+    - name: Generate notation key config
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        BASE_DIR="$HOME/.config/notation/localkeys"
+        mkdir -p "$BASE_DIR"
+
+        CERT_FILE="$BASE_DIR/notation.crt"
+        printf "%s" "$NOTATION_CERT" > "$CERT_FILE"
+
+        KEY_FILE="$BASE_DIR/notation.key"
+        printf "%s" "$NOTATION_KEY" > "$KEY_FILE"
+        chmod 600 "$KEY_FILE"
+
+        cat > "$BASE_DIR/config.json" <<EOF
+        {
+          "default": "chi.swan.ac.uk",
+          "keys": [
+            {
+              "name": "chi.swan.ac.uk",
+              "keyPath": "$KEY_FILE",
+              "certPath": "$CERT_FILE"
+            }
+          ]
+        }
+        EOF
+      env:
+        NOTATION_CERT: ${{ inputs.notation-cert }}
+        NOTATION_KEY: ${{ inputs.notation-key }}
 
     - name: forward proxy settings
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
@@ -241,43 +269,35 @@ runs:
       env:
         SUMMARY: ":x: Build Failure"
 
-    - name: cosign image with key
-      id: cosign-rc
+    - name: notation image with key
+      id: notation-rc
       if: inputs.notation-cert != '' && steps.build-rc.outcome == 'success'
       env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.notation-key }}
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.notation-cert }}
         TAGS: ${{ steps.rc-meta.outputs.tags }}
         DIGEST: ${{ steps.build-rc.outputs.digest }}
       shell: bash
       run: |
-        cosign sign --yes \
-                    --key env://COSIGN_PRIVATE_KEY \
-                    --new-bundle-format=false \
-                    --use-signing-config=false \
-                    --tlog-upload=false \
-                    "${TAGS}@${DIGEST}"
+        notation sign "${TAGS}@${DIGEST}"
 
-    - name: cosign success
-      if: steps.cosign-rc.outcome == 'success'
+    - name: notation success
+      if: steps.notation-rc.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":black_nib: Cosign Success  "
+        SUMMARY: ":black_nib: Notation Success  "
 
-    - name: cosign error
-      if: failure() && steps.cosign-rc.outcome == 'failure'
+    - name: notation error
+      if: failure() && steps.notation-rc.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":x: Cosign Failure"
+        SUMMARY: ":x: Notation Failure"
 
     - name: test
       id: test
-      if: (inputs.test-flags != '' || inputs.test-args != '') && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure'
+      if: (inputs.test-flags != '' || inputs.test-args != '') && steps.build-rc.outcome == 'success' && steps.notation-rc.outcome != 'failure'
       shell: bash
       run: |
         docker run \
@@ -302,7 +322,7 @@ runs:
         SUMMARY: ":x: Test Failure"
 
     - name: create null extra tag
-      if: inputs.registry-extra-tag-command == '' && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      if: inputs.registry-extra-tag-command == '' && steps.build-rc.outcome == 'success' && steps.notation-rc.outcome != 'failure' && steps.test.outcome != 'failure'
       shell: bash
       run: |
         echo "EXTRA_TAG=" >> $GITHUB_ENV
@@ -310,7 +330,7 @@ runs:
 
     - name: create extra tag
       id: extra-tag
-      if: inputs.registry-extra-tag-command != '' && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      if: inputs.registry-extra-tag-command != '' && steps.build-rc.outcome == 'success' && steps.notation-rc.outcome != 'failure' && steps.test.outcome != 'failure'
       shell: bash
       run: |
         EXTRA_TAG=$(${{ inputs.registry-extra-tag-command }})
@@ -335,7 +355,7 @@ runs:
         SUMMARY: ":x: Extra Tag Command Failure"
 
     - name: build release container
-      if: steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure' && steps.extra-tag.outcome != 'failure'
+      if: steps.build-rc.outcome == 'success' && steps.notation-rc.outcome != 'failure' && steps.test.outcome != 'failure' && steps.extra-tag.outcome != 'failure'
       uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
       id: build-release
       with:
@@ -385,39 +405,31 @@ runs:
       env:
         SUMMARY: ":x: Release Build Failure"
 
-    - name: cosign image with key
-      id: cosign-release
+    - name: notation image with key
+      id: notation-release
       if: inputs.notation-cert != '' && steps.build-release.outcome == 'success'
       env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.notation-key }}
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.notation-cert }}
         TAGS: ${{ steps.meta.outputs.tags }}
         DIGEST: ${{ steps.build-release.outputs.digest }}
       shell: bash
       run: |
-        cosign sign --yes \
-                    --key env://COSIGN_PRIVATE_KEY \
-                    --new-bundle-format=false \
-                    --use-signing-config=false \
-                    --tlog-upload=false \
-                    "${TAGS}@${DIGEST}"
+        notation sign "${TAGS}@${DIGEST}"
 
-    - name: cosign success
-      if: steps.cosign-release.outcome == 'success'
+    - name: notation success
+      if: steps.notation-release.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":black_nib: Cosign Success  "
+        SUMMARY: ":black_nib: Notation Success  "
 
-    - name: cosign error
-      if: failure() && steps.cosign-release.outcome == 'failure'
+    - name: notation error
+      if: failure() && steps.notation-release.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":x: Cosign Failure"
+        SUMMARY: ":x: Notation Failure"
 
     - name: find pr comment
       uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3.1.0

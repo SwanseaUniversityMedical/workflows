@@ -104,10 +104,6 @@ runs:
             console.log(error);
           }
 
-    - name: Install envsubst
-      shell: bash
-      run: sudo apt-get update && sudo apt-get install -y gettext
-
     - name: Setup Notation
       uses: notaryproject/notation-action/setup@b6fee73110795d6793253c673bd723f12bcf9bbb # v1.2.2
       with:
@@ -302,7 +298,7 @@ runs:
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":black_nib: Cosign Success  "
+        SUMMARY: ":black_nib: Notation Success  "
 
     - name: notation error
       if: failure() && steps.notation.outcome == 'failure'
@@ -310,7 +306,7 @@ runs:
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":x: Cosign Failure"
+        SUMMARY: ":x: Notation Failure"
 
     - name: test
       id: test

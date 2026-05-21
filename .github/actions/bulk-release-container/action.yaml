@@ -96,19 +96,19 @@ runs:
     - name: Generate notation key config
       shell: bash
       run: |
-        set -euo pipefail
+        set -xeuo pipefail
 
         BASE_DIR="$HOME/.config/notation/localkeys"
         mkdir -p "$BASE_DIR"
 
-        CERT_FILE="$BASE_DIR/notation.crt"
+        CERT_FILE="$BASE_DIR/chi.swan.ac.uk.crt"
         printf "%s" "$NOTATION_CERT" > "$CERT_FILE"
 
-        KEY_FILE="$BASE_DIR/notation.key"
+        KEY_FILE="$BASE_DIR/chi.swan.ac.uk.key"
         printf "%s" "$NOTATION_KEY" > "$KEY_FILE"
         chmod 600 "$KEY_FILE"
 
-        cat > "$BASE_DIR/signingkeys.json" <<EOF
+        cat > "$HOME/.config/notation/signingkeys.json" <<EOF
         {
           "default": "chi.swan.ac.uk",
           "keys": [

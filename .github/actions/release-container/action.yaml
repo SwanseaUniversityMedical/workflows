@@ -303,7 +303,7 @@ runs:
         DIGEST: ${{ steps.build-rc.outputs.digest }}
       shell: bash
       run: |
-        notation sign chi.swan.ac.uk "${TAGS}@${DIGEST}"
+        notation sign --key="chi.swan.ac.uk" "${TAGS}@${DIGEST}"
 
     - name: notation success
       if: steps.notation-rc.outcome == 'success'
@@ -439,7 +439,7 @@ runs:
         DIGEST: ${{ steps.build-release.outputs.digest }}
       shell: bash
       run: |
-        notation sign chi.swan.ac.uk "${TAGS}@${DIGEST}"
+        notation sign --key="chi.swan.ac.uk" "${TAGS}@${DIGEST}"
 
     - name: notation success
       if: steps.notation-release.outcome == 'success'

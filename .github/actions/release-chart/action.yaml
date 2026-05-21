@@ -210,7 +210,7 @@ runs:
       if: inputs.notation-cert != '' && steps.helm-rc.outcome == 'success'
       shell: bash
       run: |
-        notation sign chi.swan.ac.uk "${CHART_REPO}:${RC_TAG}"
+        notation sign --key="chi.swan.ac.uk" "${CHART_REPO}:${RC_TAG}"
 
     - name: notation success
       if: steps.notation-rc.outcome == 'success'
@@ -286,7 +286,7 @@ runs:
       if: inputs.notation-cert != '' && steps.helm-release.outcome == 'success'
       shell: bash
       run: |
-        notation sign chi.swan.ac.uk "${CHART_REPO}:${RELEASE_TAG}"
+        notation sign --key="chi.swan.ac.uk" "${CHART_REPO}:${RELEASE_TAG}"
 
     - name: notation success
       if: steps.notation-release.outcome == 'success'

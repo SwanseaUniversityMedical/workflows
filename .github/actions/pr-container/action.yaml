@@ -290,7 +290,7 @@ runs:
         DIGEST: ${{ steps.build.outputs.digest }}
       shell: bash
       run: |
-        notation sign chi.swan.ac.uk "${TAGS}@${DIGEST}"
+        notation sign --key="chi.swan.ac.uk" "${TAGS}@${DIGEST}"
         
     - name: notation success
       if: steps.notation.outcome == 'success'

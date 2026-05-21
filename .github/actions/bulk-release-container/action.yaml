@@ -68,9 +68,9 @@ inputs:
     description: "Release information json blob."
     required: true
 
-  cosign-public-key:
-    description: "Public key for cosigning images."
-    required: false
+  notation-cert:
+    description: "Public key for notation signing images."
+    required: true
 
   platforms:
     description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
@@ -80,13 +80,10 @@ inputs:
     description: "Authentication token for the container registry."
     required: true
 
-  cosign-private-key:
-    description: "Private key for cosigning images."
+  notation-key:
+    description: "Private key for notation signing images."
     required: false
 
-  cosign-password:
-    description: "Private key password for cosigning images."
-    required: false
 
 runs:
   using: "composite"
@@ -96,7 +93,7 @@ runs:
       run: sudo apt-get update && sudo apt-get install -y gettext
 
     - name: install cosign
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) && inputs.cosign-public-key != '' }}
+      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) && inputs.notation-cert != '' }}
       uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
 
     - name: forward proxy settings
@@ -246,11 +243,11 @@ runs:
 
     - name: cosign image with key
       id: cosign-rc
-      if: inputs.cosign-public-key != '' && steps.build-rc.outcome == 'success'
+      if: inputs.notation-cert != '' && steps.build-rc.outcome == 'success'
       env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.notation-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        COSIGN_PUBLIC_KEY: ${{ inputs.notation-cert }}
         TAGS: ${{ steps.rc-meta.outputs.tags }}
         DIGEST: ${{ steps.build-rc.outputs.digest }}
       shell: bash
@@ -390,11 +387,11 @@ runs:
 
     - name: cosign image with key
       id: cosign-release
-      if: inputs.cosign-public-key != '' && steps.build-release.outcome == 'success'
+      if: inputs.notation-cert != '' && steps.build-release.outcome == 'success'
       env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.notation-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        COSIGN_PUBLIC_KEY: ${{ inputs.notation-cert }}
         TAGS: ${{ steps.meta.outputs.tags }}
         DIGEST: ${{ steps.build-release.outputs.digest }}
       shell: bash

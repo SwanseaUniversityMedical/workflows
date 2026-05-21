@@ -40,20 +40,16 @@ inputs:
     description: "Semantic-release Github release tag format."
     default: '${version}'
 
-  cosign-public-key:
-    description: "Public key for cosigning images."
-    required: false
+  notation-cert:
+    description: "Public key for notation signing images."
+    required: true
 
   registry-token:
     description: "Authentication token for the chart registry."
     required: true
 
-  cosign-private-key:
-    description: "Private key for cosigning charts."
-    required: false
-
-  cosign-password:
-    description: "Private key password for cosigning charts."
+  notation-key:
+    description: "Private key for notation signing charts."
     required: false
 
 runs:
@@ -71,11 +67,11 @@ runs:
       run: sudo apt-get update && sudo apt-get install -y gettext
 
     - name: install cosign
-      if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
+      if: steps.semantic.outputs.new-release-published == 'true' && inputs.notation-cert != ''
       uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
 
     - name: login to container registry for cosign
-      if: steps.semantic.outputs.new-release-published == 'true' && inputs.cosign-public-key != ''
+      if: steps.semantic.outputs.new-release-published == 'true' && inputs.notation-cert != ''
       uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
       with:
         registry: ${{ inputs.registry }}
@@ -183,11 +179,11 @@ runs:
 
     - name: cosign release candidate
       id: cosign-rc
-      if: inputs.cosign-public-key != '' && steps.helm-rc.outcome == 'success'
+      if: inputs.notation-cert != '' && steps.helm-rc.outcome == 'success'
       env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.notation-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        COSIGN_PUBLIC_KEY: ${{ inputs.notation-cert }}
       shell: bash
       run: |
         cosign sign --yes \
@@ -268,11 +264,11 @@ runs:
 
     - name: cosign release
       id: cosign-release
-      if: inputs.cosign-public-key != '' && steps.helm-release.outcome == 'success'
+      if: inputs.notation-cert != '' && steps.helm-release.outcome == 'success'
       env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PRIVATE_KEY: ${{ inputs.notation-key }}
         COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
+        COSIGN_PUBLIC_KEY: ${{ inputs.notation-cert }}
       shell: bash
       run: |
         cosign sign --yes \

@@ -64,20 +64,16 @@ inputs:
     description: "Repo within container registry project."
     required: true
 
-  cosign-public-key:
-    description: "Public key for cosigning images."
+  notation-cert:
+    description: "Public key for notation signing images."
     required: false
 
   registry-token:
     description: "Authentication token for the container registry."
     required: true
 
-  cosign-private-key:
-    description: "Private key for cosigning images."
-    required: false
-
-  cosign-password:
-    description: "Private key password for cosigning images."
+  notation-key:
+    description: "Private key for notation signing images."
     required: false
 
   platforms:
@@ -112,9 +108,41 @@ runs:
       shell: bash
       run: sudo apt-get update && sudo apt-get install -y gettext
 
-    - name: install cosign
-      if: inputs.cosign-public-key != ''
-      uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
+    - name: Setup Notation
+      uses: notaryproject/notation-action/setup@b6fee73110795d6793253c673bd723f12bcf9bbb # v1.2.2
+      with:
+        version: "1.3.2"
+    
+    - name: Generate notation key config
+      shell: bash
+      run: |
+        set -euo pipefail
+    
+        BASE_DIR="$HOME/.config/notation/localkeys"
+        mkdir -p "$BASE_DIR"
+    
+        CERT_FILE="$BASE_DIR/notation.crt"
+        printf "%s" "$NOTATION_CERT" > "$CERT_FILE"
+        
+        KEY_FILE="$BASE_DIR/notation.key"
+        printf "%s" "$NOTATION_KEY" > "$KEY_FILE"
+        chmod 600 "$KEY_FILE"
+    
+        cat > "$BASE_DIR/config.json" <<EOF
+        {
+          "default": "chi.swan.ac.uk",
+          "keys": [
+            {
+              "name": "chi.swan.ac.uk",
+              "keyPath": "$KEY_FILE",
+              "certPath": "$CERT_FILE"
+            }
+          ]
+        }
+        EOF
+      env:
+        NOTATION_CERT: ${{ inputs.notation-cert }}
+        NOTATION_KEY: ${{ inputs.notation-key }}
 
     - name: forward proxy settings
       shell: bash
@@ -258,34 +286,26 @@ runs:
           ${{ steps.build.outputs.digest }}
           ``` 
 
-    - name: cosign image with key
-      id: cosign
-      if: inputs.cosign-public-key != '' && steps.build.outcome == 'success'
+    - name: notation image with key
+      id: notation
+      if: inputs.notation-cert != '' && steps.build.outcome == 'success'
       env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         TAGS: ${{ steps.meta.outputs.tags }}
         DIGEST: ${{ steps.build.outputs.digest }}
       shell: bash
       run: |
-        cosign sign --yes \
-                    --key env://COSIGN_PRIVATE_KEY \
-                    --new-bundle-format=false \
-                    --use-signing-config=false \
-                    --tlog-upload=false \
-                    "${TAGS}@${DIGEST}"
-
-    - name: cosign success
-      if: steps.cosign.outcome == 'success'
+        notation sign "${TAGS}@${DIGEST}"
+        
+    - name: notation success
+      if: steps.notation.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
         SUMMARY: ":black_nib: Cosign Success  "
 
-    - name: cosign error
-      if: failure() && steps.cosign.outcome == 'failure'
+    - name: notation error
+      if: failure() && steps.notation.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -294,7 +314,7 @@ runs:
 
     - name: test
       id: test
-      if: (inputs.test-flags != '' || inputs.test-args != '') && steps.build.outcome == 'success' && steps.cosign.outcome != 'failure'
+      if: (inputs.test-flags != '' || inputs.test-args != '') && steps.build.outcome == 'success' && steps.notation.outcome != 'failure'
       shell: bash
       run: |
         docker run \

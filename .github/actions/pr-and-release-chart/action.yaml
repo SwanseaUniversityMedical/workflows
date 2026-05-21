@@ -58,12 +58,12 @@ runs:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - id: create-release-labels
-      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v3.0.1-create-release-labels-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@fix/cosign-tlog
       with:
         name: ${{ inputs.name }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v2.1.5-pr-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@fix/cosign-tlog
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
@@ -79,7 +79,7 @@ runs:
         registry-token: ${{ inputs.registry-token }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v3.0.8-release-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@fix/cosign-tlog
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}

@@ -76,7 +76,18 @@ runs:
         printf "%s" "$NOTATION_KEY" > "$KEY_FILE"
         chmod 600 "$KEY_FILE"
 
-        notation key add "chi.swan.ac.uk" --key "$KEY_FILE" --cert "$CERT_FILE"
+        cat > "$BASE_DIR/signingkeys.json" <<EOF
+        {
+          "default": "chi.swan.ac.uk",
+          "keys": [
+            {
+              "name": "chi.swan.ac.uk",
+              "keyPath": "$KEY_FILE",
+              "certPath": "$CERT_FILE"
+            }
+          ]
+        }
+        EOF
       env:
         NOTATION_CERT: ${{ inputs.notation-cert }}
         NOTATION_KEY: ${{ inputs.notation-key }}

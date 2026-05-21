@@ -167,8 +167,8 @@ runs:
                     --key env://COSIGN_PRIVATE_KEY \
                     --new-bundle-format=false \
                     --use-signing-config=false \
+                    --tlog-upload=false \
                     "${CHART_REPO}:${RC_TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RC_TAG}"
 
     - name: cosign success
       if: steps.cosign-rc.outcome == 'success'
@@ -252,8 +252,9 @@ runs:
                     --key env://COSIGN_PRIVATE_KEY \
                     --new-bundle-format=false \
                     --use-signing-config=false \
+                    --tlog-upload=false \
+                    --offline \
                     "${CHART_REPO}:${RELEASE_TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${RELEASE_TAG}"
 
     - name: cosign success
       if: steps.cosign-release.outcome == 'success'

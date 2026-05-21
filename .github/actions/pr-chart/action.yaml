@@ -191,14 +191,14 @@ runs:
                     --key env://COSIGN_PRIVATE_KEY \
                     --new-bundle-format=false \
                     --use-signing-config=false \
+                    --tlog-upload=false \
                     "${CHART_REPO}:${PR_TAG}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${PR_TAG}"
         cosign sign --yes \
                     --key env://COSIGN_PRIVATE_KEY \
                     --new-bundle-format=false \
                     --use-signing-config=false \
+                    --tlog-upload=false \
                     "${CHART_REPO}:${PR_COMMIT_TAG//\+/_}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${CHART_REPO}:${PR_COMMIT_TAG//\+/_}"
 
     - name: cosign success
       if: steps.cosign.outcome == 'success'

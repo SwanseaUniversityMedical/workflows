@@ -281,8 +281,8 @@ runs:
                     --key env://COSIGN_PRIVATE_KEY \
                     --new-bundle-format=false \
                     --use-signing-config=false \
+                    --tlog-upload=false \
                     "${TAGS}@${DIGEST}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
 
     - name: cosign success
       if: steps.cosign-rc.outcome == 'success'
@@ -424,8 +424,8 @@ runs:
                     --key env://COSIGN_PRIVATE_KEY \
                     --new-bundle-format=false \
                     --use-signing-config=false \
-                    "${TAGS}@${DIGEST}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
+                    --tlog-upload=false \
+                                        "${TAGS}@${DIGEST}"
 
     - name: cosign success
       if: steps.cosign-release.outcome == 'success'

@@ -41,11 +41,6 @@ inputs:
     description: "String name of the Dockerfile stage to build. Last stage if blank."
     default: ''
 
-  nuget-config:
-    description: "Contents of a NuGet.Config file to inject as a build secret file."
-    default: ''
-
-
   test-flags:
     description: "Arguments passed to docker run."
     default: ''

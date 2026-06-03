@@ -95,6 +95,7 @@ runs:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: prepare build context with nuget config override
+      if: ${{ inputs.nuget-config != '' }}
       id: prepare-build-context
       shell: bash
       env:
@@ -102,11 +103,6 @@ runs:
         ORIGINAL_BUILD_CONTEXT: ${{ inputs.build-context }}
       run: |
         ORIGINAL_CONTEXT_PATH="$GITHUB_WORKSPACE/$ORIGINAL_BUILD_CONTEXT"
-
-        if [[ -z "${NUGET_CONFIG_CONTENT:-}" ]]; then
-          echo "build-context=$ORIGINAL_CONTEXT_PATH" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
 
         OVERRIDE_CONTEXT_PATH="$RUNNER_TEMP/container-build-context"
         rm -rf "$OVERRIDE_CONTEXT_PATH"
@@ -130,7 +126,7 @@ runs:
         registry-repo: ${{ inputs.registry-repo }}
         registry-token: ${{ inputs.registry-token }}
         build-file: ${{ inputs.build-file }}
-        build-context: ${{ steps.prepare-build-context.outputs.build-context }}
+        build-context: ${{ steps.prepare-build-context.outputs.build-context || inputs.build-context }}
         build-args: ${{ inputs.build-args }}
         build-secrets: ${{ inputs.build-secrets }}
         build-secret-envs: ${{ inputs.build-secret-envs }}
@@ -155,7 +151,7 @@ runs:
         registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
         release-info: ${{ inputs.release-info }}
         build-file: ${{ inputs.build-file }}
-        build-context: ${{ steps.prepare-build-context.outputs.build-context }}
+        build-context: ${{ steps.prepare-build-context.outputs.build-context || inputs.build-context }}
         build-args: ${{ inputs.build-args }}
         build-secrets: ${{ inputs.build-secrets }}
         build-secret-envs: ${{ inputs.build-secret-envs }}

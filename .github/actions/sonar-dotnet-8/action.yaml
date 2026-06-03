@@ -29,6 +29,10 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        fetch-depth: 0
+
     - name: prepare build context with NuGet config
       id: prepare-build-context
       shell: bash
@@ -45,10 +49,6 @@ runs:
         fi
       env:
         NUGET_CONFIG: ${{ inputs.nuget-config }}
-
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      with:
-        fetch-depth: 0
 
     - name: determine project version
       id: version

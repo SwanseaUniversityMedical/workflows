@@ -1,4 +1,5 @@
 name: 'PR and Release Container'
+description: 'Builds and releases container images for PRs and tagged releases.'
 inputs:
   name:
     description: "Name of the release asset."
@@ -40,6 +41,9 @@ inputs:
     description: "String name of the Dockerfile stage to build. Last stage if blank."
     default: ''
 
+  nuget-config:
+    description: "Contents of a NuGet.Config file to inject into the build context."
+    default: ''
 
   test-flags:
     description: "Arguments passed to docker run."
@@ -90,6 +94,28 @@ runs:
   steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+    - name: prepare build context with nuget config override
+      if: ${{ inputs.nuget-config != '' }}
+      id: prepare-build-context
+      shell: bash
+      env:
+        NUGET_CONFIG_CONTENT: ${{ inputs.nuget-config }}
+        ORIGINAL_BUILD_CONTEXT: ${{ inputs.build-context }}
+      run: |
+        ORIGINAL_CONTEXT_PATH="$GITHUB_WORKSPACE/$ORIGINAL_BUILD_CONTEXT"
+
+        OVERRIDE_CONTEXT_PATH="$RUNNER_TEMP/container-build-context"
+        mkdir -p "$OVERRIDE_CONTEXT_PATH"
+
+        # Copy the original build context into a temporary overlay directory.
+        cp -a "$ORIGINAL_CONTEXT_PATH"/. "$OVERRIDE_CONTEXT_PATH"/
+
+        # Replace NuGet config files at the root of the build context.
+        printf '%s\n' "$NUGET_CONFIG_CONTENT" > "$OVERRIDE_CONTEXT_PATH/NuGet.Config"
+        printf '%s\n' "$NUGET_CONFIG_CONTENT" > "$OVERRIDE_CONTEXT_PATH/nuget.config"
+
+        echo "build-context=$OVERRIDE_CONTEXT_PATH" >> "$GITHUB_OUTPUT"
+
     - id: create-release-labels
       uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v3.0.1-create-release-labels-action
       with:
@@ -105,11 +131,11 @@ runs:
         registry-repo: ${{ inputs.registry-repo }}
         registry-token: ${{ inputs.registry-token }}
         build-file: ${{ inputs.build-file }}
-        build-context: ${{ inputs.build-context }}
         build-args: ${{ inputs.build-args }}
         build-secrets: ${{ inputs.build-secrets }}
         build-secret-envs: ${{ inputs.build-secret-envs }}
         build-secret-files: ${{ inputs.build-secret-files }}
+        build-context: ${{ steps.prepare-build-context.outputs.build-context || inputs.build-context }}
         build-target: ${{ inputs.build-target }}
         test-flags: ${{ inputs.test-flags }}
         test-args: ${{ inputs.test-args }}
@@ -130,11 +156,11 @@ runs:
         registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
         release-tag-format: ${{ inputs.release-tag-format }}
         build-file: ${{ inputs.build-file }}
-        build-context: ${{ inputs.build-context }}
         build-args: ${{ inputs.build-args }}
         build-secrets: ${{ inputs.build-secrets }}
         build-secret-envs: ${{ inputs.build-secret-envs }}
         build-secret-files: ${{ inputs.build-secret-files }}
+        build-context: ${{ steps.prepare-build-context.outputs.build-context || inputs.build-context }}
         build-target: ${{ inputs.build-target }}
         test-flags: ${{ inputs.test-flags }}
         test-args: ${{ inputs.test-args }}

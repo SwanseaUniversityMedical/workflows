@@ -86,6 +86,11 @@ on:
         description: "Public key for notation signing images."
         required: true
         type: string
+      
+      nuget-config:
+        description: "Contents of a NuGet.Config file to inject into the build context."
+        default: ''
+        type: string
 
       platforms:
         description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
@@ -129,6 +134,7 @@ jobs:
           build-secrets: ${{ secrets.build-secrets }}
           build-secret-envs: ${{ inputs.build-secret-envs }}
           build-secret-files: ${{ inputs.build-secret-files }}
+          nuget-config: ${{ inputs.nuget-config }}
           build-target: ${{ inputs.build-target }}
           platforms: ${{ inputs.platforms }}
           test-flags: ${{ inputs.test-flags }}

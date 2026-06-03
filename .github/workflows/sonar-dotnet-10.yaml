@@ -17,6 +17,11 @@ on:
         default: '.'
         type: string
 
+      nuget-config:
+        description: "NuGet configuration content to inject into the build."
+        default: ''
+        type: string
+
       sonar-url:
         description: "URL of the sonarqube sever."
         required: true
@@ -48,3 +53,4 @@ jobs:
           sonar-exclusions: ${{ inputs.sonar-exclusions }}
           sonar-url: ${{ inputs.sonar-url }}
           sonar-token: ${{ secrets.sonar-token }}
+          nuget-config: ${{ inputs.nuget-config }}

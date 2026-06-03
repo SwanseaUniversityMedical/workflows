@@ -46,11 +46,6 @@ on:
         description: "String name of the Dockerfile stage to build. Last stage if blank."
         default: ''
         type: string
-      
-      nuget-config:
-        description: "Contents of a NuGet.Config file to inject into the build context."
-        default: ''
-        type: string
 
       test-flags:
         description: "Arguments passed to docker run."

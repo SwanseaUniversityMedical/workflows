@@ -1,4 +1,5 @@
 name: 'Sonar DotNet 8'
+description: "Sonar DotNet 8 action"
 inputs:
 
   project-name:
@@ -28,6 +29,23 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: prepare build context with NuGet config
+      id: prepare-build-context
+      shell: bash
+      run: |
+        if [ -z "$NUGET_CONFIG" ]; then
+          echo "build-context=." >> $GITHUB_OUTPUT
+        else
+          BUILD_CONTEXT="$RUNNER_TEMP/sonar-build-context"
+          mkdir -p "$BUILD_CONTEXT"
+          cp -r . "$BUILD_CONTEXT/repo"
+          echo "$NUGET_CONFIG" > "$BUILD_CONTEXT/repo/NuGet.Config"
+          echo "$NUGET_CONFIG" > "$BUILD_CONTEXT/repo/nuget.config"
+          echo "build-context=$BUILD_CONTEXT/repo" >> $GITHUB_OUTPUT
+        fi
+      env:
+        NUGET_CONFIG: ${{ inputs.nuget-config }}
+
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         fetch-depth: 0
@@ -59,7 +77,7 @@ runs:
       shell: bash
       run: |
         for n in {1..3}; do
-          docker run --rm -v $(pwd):/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
+          docker run --rm -v "$BUILD_CONTEXT":/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
             bash -c " \
               dotnet /sonar-scanner/SonarScanner.MSBuild.dll begin \
                 /d:sonar.scanner.scanAll=false \
@@ -92,7 +110,7 @@ runs:
       shell: bash
       run: |
         for n in {1..3}; do
-          docker run --rm -v $(pwd):/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
+          docker run --rm -v "$BUILD_CONTEXT":/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
             bash -c " \
               dotnet /sonar-scanner/SonarScanner.MSBuild.dll begin \
                 /d:sonar.scanner.scanAll=false \

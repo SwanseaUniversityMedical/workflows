@@ -31,5 +31,5 @@ jobs:
   yamllint:
     uses: ./.github/workflows/yamllint.yaml
     with:
-      base-dir: .
+      config-file: .github/.yamllint.yaml
 

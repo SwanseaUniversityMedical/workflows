@@ -85,11 +85,11 @@ jobs:
           }
 
           if [[ "$EVENT_NAME" != 'pull_request' ]]; then
-            echo "Scanning full base directory: $ROOT_PATH"
+            echo "Scanning full base directory: $BASE_DIR"
             echo "has-targets=true" >> "$GITHUB_OUTPUT"
             {
               echo "target-paths<<EOF"
-              echo "$ROOT_PATH"
+              echo "$BASE_DIR"
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
             exit 0
@@ -123,12 +123,12 @@ jobs:
               continue
             fi
 
-            if [[ -n "${seen_dirs[$abs_dir_path]:-}" ]]; then
+            if [[ -n "${seen_dirs[$dir_path]:-}" ]]; then
               continue
             fi
 
-            seen_dirs[$abs_dir_path]=1
-            target_dirs+=("$abs_dir_path")
+            seen_dirs[$dir_path]=1
+            target_dirs+=("$dir_path")
           done
 
           if [[ ${#target_dirs[@]} -eq 0 ]]; then
@@ -156,6 +156,7 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
 
           REPORT_FILE="$RUNNER_TEMP/yamllint-report.txt"
           : > "$REPORT_FILE"
@@ -178,7 +179,7 @@ jobs:
               continue
             fi
 
-            IGNORE_PATTERNS+=("$GITHUB_WORKSPACE/$ignore_path")
+            IGNORE_PATTERNS+=("$ignore_path")
           done <<< "$EXCLUDE_PATHS_LIST"
 
           if [[ ${#IGNORE_PATTERNS[@]} -gt 0 ]]; then

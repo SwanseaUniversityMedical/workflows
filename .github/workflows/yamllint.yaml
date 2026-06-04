@@ -7,6 +7,11 @@ on:
         default: '.'
         type: string
 
+      config-file:
+        description: "Optional path to a yamllint config file relative to the repo root."
+        default: ''
+        type: string
+
 permissions:
   contents: read
   checks: write
@@ -112,6 +117,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           TARGET_PATHS: ${{ steps.targets.outputs.target-paths }}
+          CONFIG_FILE: ${{ inputs.config-file }}
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -119,13 +125,18 @@ jobs:
           REPORT_FILE="$RUNNER_TEMP/yamllint-report.txt"
           : > "$REPORT_FILE"
 
+          YAMLLINT_CONFIG_ARGS=()
+          if [[ -n "${CONFIG_FILE:-}" ]]; then
+            YAMLLINT_CONFIG_ARGS+=("-c" "$GITHUB_WORKSPACE/$CONFIG_FILE")
+          fi
+
           while IFS= read -r target_path; do
             if [[ -z "$target_path" ]]; then
               continue
             fi
 
             echo "Running yamllint on $target_path"
-            yamllint -f parsable "$target_path" >> "$REPORT_FILE" || true
+            yamllint "${YAMLLINT_CONFIG_ARGS[@]}" -f parsable "$target_path" >> "$REPORT_FILE" || true
           done <<< "$TARGET_PATHS"
 
           if [[ ! -s "$REPORT_FILE" ]]; then

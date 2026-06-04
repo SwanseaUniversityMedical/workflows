@@ -13,3 +13,5 @@ rules:
   new-line-at-end-of-file: disable
   empty-lines: disable
   trailing-spaces: disable
+  braces:
+    max-spaces-inside: 1

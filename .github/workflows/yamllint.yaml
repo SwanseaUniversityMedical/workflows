@@ -36,13 +36,10 @@ jobs:
       - name: install reviewdog
         uses: reviewdog/action-setup@v1
 
-      - name: install uv
-        uses: astral-sh/setup-uv@v5
-
       - name: install yamllint
         shell: bash
         run: |
-          uv pip install yamllint
+          pip install yamllint
 
       - name: determine lint targets
         id: targets

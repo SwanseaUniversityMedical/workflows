@@ -11,6 +11,7 @@ on:
         description: "Optional path to a yamllint config file relative to the repo root."
         default: ''
         type: string
+        required: true
 
 permissions:
   contents: read

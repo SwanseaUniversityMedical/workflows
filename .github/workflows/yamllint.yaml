@@ -1,0 +1,148 @@
+on:
+  workflow_call:
+    inputs:
+
+      base-dir:
+        description: "Path to the base dir for the scan."
+        default: '.'
+        type: string
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  scan:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: linting
+    steps:
+      - name: clone repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis.
+
+      - name: install python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.14'
+
+      - name: install reviewdog
+        uses: reviewdog/action-setup@v1
+
+      - name: install yamllint
+        shell: bash
+        run: |
+          pip install yamllint
+
+      - name: determine lint targets
+        id: targets
+        shell: bash
+        env:
+          BASE_DIR: ${{ inputs.base-dir }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          ROOT_PATH="$GITHUB_WORKSPACE/$BASE_DIR"
+
+          if [[ "$EVENT_NAME" != 'pull_request' ]]; then
+            echo "Scanning full base directory: $ROOT_PATH"
+            echo "has-targets=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "target-paths<<EOF"
+              echo "$ROOT_PATH"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMR "$PR_BASE_SHA" "$PR_HEAD_SHA" -- "$BASE_DIR")
+
+          if [[ ${#changed_files[@]} -eq 0 ]]; then
+            echo "No files changed under $BASE_DIR"
+            echo "has-targets=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          declare -A seen_dirs=()
+          target_dirs=()
+
+          for file in "${changed_files[@]}"; do
+            dir_path="$(dirname "$file")"
+
+            if [[ "$dir_path" == '.' ]]; then
+              dir_path="$BASE_DIR"
+            fi
+
+            abs_dir_path="$GITHUB_WORKSPACE/$dir_path"
+
+            if [[ ! -d "$abs_dir_path" ]]; then
+              continue
+            fi
+
+            if [[ -n "${seen_dirs[$abs_dir_path]:-}" ]]; then
+              continue
+            fi
+
+            seen_dirs[$abs_dir_path]=1
+            target_dirs+=("$abs_dir_path")
+          done
+
+          if [[ ${#target_dirs[@]} -eq 0 ]]; then
+            echo "No lintable directories found under changed files."
+            echo "has-targets=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          printf 'Lint targets:\n%s\n' "${target_dirs[*]}"
+          echo "has-targets=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "target-paths<<EOF"
+            printf '%s\n' "${target_dirs[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Yaml Lint
+        if: ${{ steps.targets.outputs.has-targets == 'true' }}
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TARGET_PATHS: ${{ steps.targets.outputs.target-paths }}
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          REPORT_FILE="$RUNNER_TEMP/yamllint-report.txt"
+          : > "$REPORT_FILE"
+
+          while IFS= read -r target_path; do
+            if [[ -z "$target_path" ]]; then
+              continue
+            fi
+
+            echo "Running yamllint on $target_path"
+            yamllint -f parsable "$target_path" >> "$REPORT_FILE" || true
+          done <<< "$TARGET_PATHS"
+
+          if [[ ! -s "$REPORT_FILE" ]]; then
+            echo "No YAML lint issues found."
+            exit 0
+          fi
+
+          if [[ "$EVENT_NAME" == 'pull_request' ]]; then
+            cat "$REPORT_FILE" | reviewdog -f=yamllint -name='yamllint' -reporter=github-pr-check -fail-level=warning
+            cat "$REPORT_FILE" | reviewdog -f=yamllint -name='yamllint-review' -reporter=github-pr-review -filter-mode=nofilter -fail-level=warning
+          else
+            cat "$REPORT_FILE" | reviewdog -f=yamllint -name='yamllint' -reporter=github-check -fail-level=warning
+          fi
+
+          exit 1
+
+      - name: no changed directories to lint
+        if: ${{ steps.targets.outputs.has-targets != 'true' }}
+        shell: bash
+        run: echo "No changed directories found under ${{ inputs.base-dir }}; skipping yamllint."

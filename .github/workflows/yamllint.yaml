@@ -71,6 +71,7 @@ jobs:
               pattern="${pattern#${pattern%%[![:space:]]*}}"
               pattern="${pattern%${pattern##*[![:space:]]}}"
               pattern="${pattern#./}"
+              pattern="${pattern%/}"
 
               if [[ -z "$pattern" ]]; then
                 continue
@@ -173,6 +174,7 @@ jobs:
             ignore_path="${ignore_path#${ignore_path%%[![:space:]]*}}"
             ignore_path="${ignore_path%${ignore_path##*[![:space:]]}}"
             ignore_path="${ignore_path#./}"
+            ignore_path="${ignore_path%/}"
 
             if [[ -z "$ignore_path" ]]; then
               continue

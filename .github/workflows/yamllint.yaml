@@ -181,12 +181,12 @@ jobs:
             IGNORE_PATTERNS+=("$ignore_path")
           done <<< "$EXCLUDE_PATHS_LIST"
 
+          lint_files=()
           while IFS= read -r target_path; do
             if [[ -z "$target_path" ]]; then
               continue
             fi
 
-            echo "Running yamllint on $target_path"
             while IFS= read -r yaml_file; do
               rel_file="${yaml_file#"$GITHUB_WORKSPACE"/}"
               rel_file="${rel_file#./}"
@@ -200,10 +200,15 @@ jobs:
               done
 
               if [[ "$excluded" == false ]]; then
-                yamllint "${YAMLLINT_CONFIG_ARGS[@]}" -f parsable "$yaml_file" >> "$REPORT_FILE" || true
+                lint_files+=("$yaml_file")
               fi
             done < <(find "$GITHUB_WORKSPACE/$target_path" -type f \( -name '*.yaml' -o -name '*.yml' \) 2>/dev/null)
           done <<< "$TARGET_PATHS"
+
+          if [[ ${#lint_files[@]} -gt 0 ]]; then
+            echo "Running yamllint on ${#lint_files[@]} file(s)"
+            yamllint "${YAMLLINT_CONFIG_ARGS[@]}" -f parsable "${lint_files[@]}" >> "$REPORT_FILE" || true
+          fi
 
           if [[ ! -s "$REPORT_FILE" ]]; then
             echo "No YAML lint issues found."

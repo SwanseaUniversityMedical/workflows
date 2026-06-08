@@ -96,6 +96,7 @@ runs:
           break;
         done
       env:
+        BUILD_CONTEXT: ${{ steps.prepare-build-context.outputs.build-context }}
         SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet-8:1.0.0
         PROJECT_NAME: ${{ inputs.project-name }}
         PROJECT_FILE: ${{ inputs.project-file }}
@@ -132,6 +133,7 @@ runs:
           break;
         done
       env:
+        BUILD_CONTEXT: ${{ steps.prepare-build-context.outputs.build-context }}
         SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet-8:1.0.0
         PROJECT_NAME: ${{ inputs.project-name }}
         PROJECT_FILE: ${{ inputs.project-file }}

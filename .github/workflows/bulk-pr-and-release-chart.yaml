@@ -88,7 +88,7 @@ jobs:
       labels: [ self-hosted, linux, x64 ]
       group: heavy
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-pr-and-release-chart@v3.0.0-bulk-pr-and-release-chart-action
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-pr-and-release-chart@feat/kubeconform
         with:
           name: ${{ inputs.job-name }}
           comment-pr: ${{ inputs.comment-pr }}

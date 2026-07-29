@@ -124,11 +124,15 @@ runs:
         # With -ignore-missing-schemas a total loss of schema egress looks
         # exactly like a clean run, every resource skipped and nothing invalid.
         # Flag it rather than reporting a green build that validated nothing.
+        #
+        # This is legitimate for a chart that only ships crds/, because
+        # CustomResourceDefinition itself has no schema in the default registry.
+        # For anything else it means schemas are not being resolved.
         NO_SCHEMAS=''
         if [[ "$RESULT" != 'error' ]] \
           && grep -qE 'Valid: 0,' "$REPORT" \
           && grep -qE 'Skipped: [1-9]' "$REPORT"; then
-          NO_SCHEMAS='No schemas resolved for any resource, check runner egress to the schema locations'
+          NO_SCHEMAS='Nothing was validated, every resource was skipped for want of a schema. Expected for a CRD-only chart, otherwise check runner egress to the schema locations'
           echo "::warning title=kubeconform::${NO_SCHEMAS}"
         fi
 

@@ -5,5 +5,16 @@
   ],
   "schedule": [
     "* * * * *"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/actions/kubeconform/action\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>.+?)\\s+KUBECONFORM_VERSION='(?<currentValue>[^']+)'"
+      ]
+    }
   ]
 }

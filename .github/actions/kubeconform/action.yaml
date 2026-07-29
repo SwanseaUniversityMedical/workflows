@@ -1,0 +1,172 @@
+name: 'Kubeconform'
+inputs:
+  chart:
+    description: "Path to the helm chart to render, either a chart directory or a packaged .tgz."
+    required: true
+
+  enforce:
+    description: "Fail the build when kubeconform reports validation errors."
+    default: "false"
+
+  kubeconform-args:
+    description: "Extra arguments appended to the kubeconform invocation, for example '-kubernetes-version 1.31.0 -skip CustomResourceDefinition'."
+    default: ''
+
+  helm-template-args:
+    description: "Extra arguments passed to helm template when rendering the chart, for example '--values ci/lint-values.yaml'."
+    default: ''
+
+outputs:
+  result:
+    description: "Validation outcome, one of success, issues or error."
+    value: ${{ steps.kubeconform.outputs.result }}
+
+  summary-line:
+    description: "The kubeconform summary line, or an empty string if validation did not run."
+    value: ${{ steps.kubeconform.outputs.summary-line }}
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: install kubeconform
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Renovate bumps the version but cannot recompute the digest, so a
+        # version bump without a matching digest update fails here on purpose.
+        # renovate: datasource=github-releases depName=yannh/kubeconform
+        KUBECONFORM_VERSION='v0.8.0'
+        KUBECONFORM_SHA256='9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883'
+
+        if ! command -v helm > /dev/null; then
+          echo "::error title=kubeconform::helm is not on PATH, install it before this action"
+          exit 1
+        fi
+
+        BIN_DIR="$RUNNER_TEMP/kubeconform-bin"
+        TARBALL="$RUNNER_TEMP/kubeconform.tar.gz"
+
+        curl -fsSL \
+          "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+          -o "$TARBALL"
+        echo "${KUBECONFORM_SHA256}  ${TARBALL}" | sha256sum -c -
+
+        mkdir -p "$BIN_DIR"
+        tar -xzf "$TARBALL" -C "$BIN_DIR" kubeconform
+        echo "$BIN_DIR" >> "$GITHUB_PATH"
+
+    - name: validate chart
+      id: kubeconform
+      shell: bash
+      run: |
+        # Deliberately no `set -e`, the exit status of each tool is inspected
+        # below rather than aborting the step.
+        set -uo pipefail
+
+        WORK_DIR="$RUNNER_TEMP/kubeconform"
+        mkdir -p "$WORK_DIR/cache"
+        MANIFESTS="$WORK_DIR/manifests.yaml"
+        REPORT="$WORK_DIR/report.txt"
+
+        # --include-crds so a chart's crds/ directory is validated too, it
+        # renders to nothing without this. --skip-tests because templates/tests
+        # are throwaway hooks and failing on them is noise.
+        if ! helm template "$CHART" --include-crds --skip-tests $HELM_TEMPLATE_ARGS \
+            > "$MANIFESTS" 2> "$REPORT"; then
+          RESULT='error'
+
+        # 'default' must be passed explicitly to keep the built in schema
+        # registry alongside the CRDs catalog. The {{...}} placeholders are
+        # kubeconform's own templating, not GitHub expressions.
+        elif kubeconform \
+            -ignore-missing-schemas \
+            -strict \
+            -summary \
+            -output text \
+            -cache "$WORK_DIR/cache" \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            $KUBECONFORM_ARGS \
+            "$MANIFESTS" > "$REPORT" 2>&1; then
+          RESULT='success'
+
+        else
+          RESULT='issues'
+        fi
+
+        cat "$REPORT"
+
+        SUMMARY_LINE="$(grep -m1 '^Summary:' "$REPORT" || true)"
+
+        case "$RESULT" in
+          success)
+            BADGE=':mag: Validation Success'
+            ;;
+          issues)
+            BADGE='Validation Issues'
+            ;;
+          error)
+            BADGE='Chart Failed To Render'
+            ;;
+        esac
+
+        # A non-success only earns the :x: marker when it is actually blocking.
+        if [[ "$RESULT" != 'success' ]]; then
+          if [[ "$ENFORCE" == 'true' ]]; then
+            BADGE=":x: ${BADGE}"
+          else
+            BADGE=":warning: ${BADGE} (not enforced)"
+          fi
+        fi
+
+        # With -ignore-missing-schemas a total loss of schema egress looks
+        # exactly like a clean run, every resource skipped and nothing invalid.
+        # Flag it rather than reporting a green build that validated nothing.
+        NO_SCHEMAS=''
+        if [[ "$RESULT" != 'error' ]] \
+          && grep -qE 'Valid: 0,' "$REPORT" \
+          && grep -qE 'Skipped: [1-9]' "$REPORT"; then
+          NO_SCHEMAS='No schemas resolved for any resource, check runner egress to the schema locations'
+          echo "::warning title=kubeconform::${NO_SCHEMAS}"
+        fi
+
+        {
+          echo "result=$RESULT"
+          echo "summary-line=${SUMMARY_LINE}"
+        } >> "$GITHUB_OUTPUT"
+
+        # On success the summary line is the whole story. Otherwise show the
+        # report, truncated so a badly broken chart cannot blow the 1MiB cap.
+        {
+          echo "${BADGE}  "
+          if [[ -n "$NO_SCHEMAS" ]]; then
+            echo ":satellite: ${NO_SCHEMAS}  "
+          fi
+          if [[ "$RESULT" == 'success' ]]; then
+            if [[ -n "$SUMMARY_LINE" ]]; then
+              echo '```'
+              echo "$SUMMARY_LINE"
+              echo '```'
+            fi
+          else
+            echo '```'
+            head -c 60000 "$REPORT"
+            echo
+            echo '```'
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [[ "$RESULT" != 'success' ]]; then
+          if [[ "$ENFORCE" == 'true' ]]; then
+            echo "::error title=kubeconform::Validation failed for ${CHART}"
+            exit 1
+          fi
+          echo "::warning title=kubeconform::Validation problems in ${CHART}, set kubeconform-enforce to 'true' to make this blocking"
+        fi
+      env:
+        CHART: ${{ inputs.chart }}
+        ENFORCE: ${{ inputs.enforce }}
+        KUBECONFORM_ARGS: ${{ inputs.kubeconform-args }}
+        HELM_TEMPLATE_ARGS: ${{ inputs.helm-template-args }}

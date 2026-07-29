@@ -25,20 +25,41 @@ outputs:
     description: "The kubeconform summary line, or an empty string if validation did not run."
     value: ${{ steps.kubeconform.outputs.summary-line }}
 
+  skipped-count:
+    description: "Number of resources that had no schema available and were therefore not validated."
+    value: ${{ steps.kubeconform.outputs.skipped-count }}
+
 runs:
   using: "composite"
   steps:
 
-    - name: install kubeconform
+    # Version lives in its own step so both the installer and the cache key can
+    # read it from one place.
+    - name: resolve kubeconform version
+      id: kc
       shell: bash
       run: |
         set -euo pipefail
 
         # Renovate bumps the version but cannot recompute the digest, so a
-        # version bump without a matching digest update fails here on purpose.
+        # version bump without a matching digest update fails on purpose.
         # renovate: datasource=github-releases depName=yannh/kubeconform
         KUBECONFORM_VERSION='v0.8.0'
         KUBECONFORM_SHA256='9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883'
+
+        {
+          echo "version=${KUBECONFORM_VERSION}"
+          echo "sha256=${KUBECONFORM_SHA256}"
+          # Args can change which schemas are fetched, so they belong in the key.
+          echo "args-hash=$(printf '%s' "${KUBECONFORM_ARGS}" | sha256sum | cut -c1-12)"
+        } >> "$GITHUB_OUTPUT"
+      env:
+        KUBECONFORM_ARGS: ${{ inputs.kubeconform-args }}
+
+    - name: install kubeconform
+      shell: bash
+      run: |
+        set -euo pipefail
 
         if ! command -v helm > /dev/null; then
           echo "::error title=kubeconform::helm is not on PATH, install it before this action"
@@ -56,6 +77,78 @@ runs:
         mkdir -p "$BIN_DIR"
         tar -xzf "$TARBALL" -C "$BIN_DIR" kubeconform
         echo "$BIN_DIR" >> "$GITHUB_PATH"
+      env:
+        KUBECONFORM_VERSION: ${{ steps.kc.outputs.version }}
+        KUBECONFORM_SHA256: ${{ steps.kc.outputs.sha256 }}
+
+    # Without this every job refetches every schema over the network. All the
+    # self-hosted runners share one egress IP, so that concentrates enough
+    # unauthenticated traffic on raw.githubusercontent.com to risk throttling,
+    # which -ignore-missing-schemas would silently turn into a passing build.
+    - name: cache schemas
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: ${{ runner.temp }}/kubeconform-schema-cache
+        key: kubeconform-schemas-${{ steps.kc.outputs.version }}-${{ steps.kc.outputs.args-hash }}
+        restore-keys: |
+          kubeconform-schemas-${{ steps.kc.outputs.version }}-
+
+    - name: render chart
+      id: render
+      shell: bash
+      run: |
+        # No `set -e`, a render failure is reported by the validate step rather
+        # than aborting here, so warn mode stays non-blocking.
+        set -uo pipefail
+
+        WORK_DIR="$RUNNER_TEMP/kubeconform"
+        mkdir -p "$WORK_DIR"
+
+        # --include-crds so a chart's crds/ directory is rendered too, it
+        # produces nothing without this. --skip-tests because templates/tests
+        # are throwaway hooks and failing on them is noise.
+        if helm template "$CHART" --include-crds --skip-tests $HELM_TEMPLATE_ARGS \
+            > "$WORK_DIR/manifests.yaml" 2> "$WORK_DIR/render.log"; then
+          echo "rendered=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "rendered=false" >> "$GITHUB_OUTPUT"
+          cat "$WORK_DIR/render.log"
+        fi
+
+        # Only pay for python when the chart actually ships CRDs.
+        if grep -qE '^kind: CustomResourceDefinition$' "$WORK_DIR/manifests.yaml" 2> /dev/null; then
+          echo "has-crds=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has-crds=false" >> "$GITHUB_OUTPUT"
+        fi
+      env:
+        CHART: ${{ inputs.chart }}
+        HELM_TEMPLATE_ARGS: ${{ inputs.helm-template-args }}
+
+    - name: install python
+      if: steps.render.outputs.has-crds == 'true'
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: '3.14'
+
+    # kubeconform never reads CRDs from its input, so without this a chart that
+    # ships both a CRD and a custom resource of it has that resource silently
+    # skipped. Generating schemas from the chart's own CRDs validates in-house
+    # custom resources with no network access at all.
+    - name: generate schemas from chart crds
+      id: crd-schemas
+      if: steps.render.outputs.has-crds == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        pip install --quiet pyyaml
+
+        SCHEMA_DIR="$RUNNER_TEMP/kubeconform/crd-schemas"
+        python "$GITHUB_ACTION_PATH/crd2schema.py" \
+          "$RUNNER_TEMP/kubeconform/manifests.yaml" "$SCHEMA_DIR"
+
+        echo "dir=$SCHEMA_DIR" >> "$GITHUB_OUTPUT"
 
     - name: validate chart
       id: kubeconform
@@ -66,28 +159,36 @@ runs:
         set -uo pipefail
 
         WORK_DIR="$RUNNER_TEMP/kubeconform"
-        mkdir -p "$WORK_DIR/cache"
+        CACHE_DIR="$RUNNER_TEMP/kubeconform-schema-cache"
+        mkdir -p "$CACHE_DIR"
         MANIFESTS="$WORK_DIR/manifests.yaml"
         REPORT="$WORK_DIR/report.txt"
 
-        # --include-crds so a chart's crds/ directory is validated too, it
-        # renders to nothing without this. --skip-tests because templates/tests
-        # are throwaway hooks and failing on them is noise.
-        if ! helm template "$CHART" --include-crds --skip-tests $HELM_TEMPLATE_ARGS \
-            > "$MANIFESTS" 2> "$REPORT"; then
-          RESULT='error'
+        # The chart's own CRD schemas go first so they win over the network
+        # locations. 'default' must be listed explicitly to keep the built in
+        # registry once any other location is given. The {{...}} placeholders
+        # are kubeconform's own templating, not GitHub expressions.
+        SCHEMA_ARGS=()
+        if [[ -n "${CRD_SCHEMA_DIR:-}" && -d "${CRD_SCHEMA_DIR:-}" ]]; then
+          SCHEMA_ARGS+=( -schema-location "$CRD_SCHEMA_DIR/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json" )
+        fi
+        SCHEMA_ARGS+=( -schema-location default )
+        SCHEMA_ARGS+=( -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' )
 
-        # 'default' must be passed explicitly to keep the built in schema
-        # registry alongside the CRDs catalog. The {{...}} placeholders are
-        # kubeconform's own templating, not GitHub expressions.
+        if [[ "$RENDERED" != 'true' ]]; then
+          RESULT='error'
+          cp "$WORK_DIR/render.log" "$REPORT"
+
+        # -verbose prints a line per resource, which is what makes skipped
+        # kinds visible. Valid lines are filtered out of the summary below.
         elif kubeconform \
             -ignore-missing-schemas \
             -strict \
             -summary \
+            -verbose \
             -output text \
-            -cache "$WORK_DIR/cache" \
-            -schema-location default \
-            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            -cache "$CACHE_DIR" \
+            "${SCHEMA_ARGS[@]}" \
             $KUBECONFORM_ARGS \
             "$MANIFESTS" > "$REPORT" 2>&1; then
           RESULT='success'
@@ -99,6 +200,11 @@ runs:
         cat "$REPORT"
 
         SUMMARY_LINE="$(grep -m1 '^Summary:' "$REPORT" || true)"
+
+        SKIPPED_COUNT="$(sed -n 's/.*Skipped: \([0-9][0-9]*\).*/\1/p' <<< "${SUMMARY_LINE}")"
+        SKIPPED_COUNT="${SKIPPED_COUNT:-0}"
+        SKIPPED_KINDS="$(sed -n 's/^.* - \([^ ]*\) .*[Ss]kipped$/\1/p' "$REPORT" \
+          | sort -u | paste -sd, - | sed 's/,/, /g')"
 
         case "$RESULT" in
           success)
@@ -121,17 +227,17 @@ runs:
           fi
         fi
 
-        # With -ignore-missing-schemas a total loss of schema egress looks
+        # With -ignore-missing-schemas a total loss of schema resolution looks
         # exactly like a clean run, every resource skipped and nothing invalid.
         # Flag it rather than reporting a green build that validated nothing.
         #
-        # This is legitimate for a chart that only ships crds/, because
+        # Legitimate for a chart that only ships crds/, because
         # CustomResourceDefinition itself has no schema in the default registry.
-        # For anything else it means schemas are not being resolved.
+        # For anything else it means schemas are not being resolved, most likely
+        # blocked or throttled egress.
         NO_SCHEMAS=''
-        if [[ "$RESULT" != 'error' ]] \
-          && grep -qE 'Valid: 0,' "$REPORT" \
-          && grep -qE 'Skipped: [1-9]' "$REPORT"; then
+        if [[ "$RESULT" != 'error' && "$SKIPPED_COUNT" -gt 0 ]] \
+          && grep -qE 'Valid: 0,' "$REPORT"; then
           NO_SCHEMAS='Nothing was validated, every resource was skipped for want of a schema. Expected for a CRD-only chart, otherwise check runner egress to the schema locations'
           echo "::warning title=kubeconform::${NO_SCHEMAS}"
         fi
@@ -139,15 +245,27 @@ runs:
         {
           echo "result=$RESULT"
           echo "summary-line=${SUMMARY_LINE}"
+          echo "skipped-count=${SKIPPED_COUNT}"
         } >> "$GITHUB_OUTPUT"
 
-        # On success the summary line is the whole story. Otherwise show the
-        # report, truncated so a badly broken chart cannot blow the 1MiB cap.
         {
           echo "${BADGE}  "
+
           if [[ -n "$NO_SCHEMAS" ]]; then
             echo ":satellite: ${NO_SCHEMAS}  "
+          elif [[ "$SKIPPED_COUNT" -gt 0 ]]; then
+            # Partial skipping is invisible otherwise, and it is the signature
+            # of intermittent schema throttling as well as of unknown CRDs.
+            if [[ -n "$SKIPPED_KINDS" ]]; then
+              echo ":heavy_minus_sign: ${SKIPPED_COUNT} resource(s) not validated, no schema found for: ${SKIPPED_KINDS}  "
+            else
+              echo ":heavy_minus_sign: ${SKIPPED_COUNT} resource(s) not validated, no schema found  "
+            fi
           fi
+
+          # On success the summary line is the whole story. Otherwise show the
+          # report, minus the per-resource valid lines that -verbose adds, and
+          # truncated so a badly broken chart cannot blow the 1MiB cap.
           if [[ "$RESULT" == 'success' ]]; then
             if [[ -n "$SUMMARY_LINE" ]]; then
               echo '```'
@@ -156,7 +274,7 @@ runs:
             fi
           else
             echo '```'
-            head -c 60000 "$REPORT"
+            grep -vE ' is valid$' "$REPORT" | head -c 60000
             echo
             echo '```'
           fi
@@ -173,4 +291,5 @@ runs:
         CHART: ${{ inputs.chart }}
         ENFORCE: ${{ inputs.enforce }}
         KUBECONFORM_ARGS: ${{ inputs.kubeconform-args }}
-        HELM_TEMPLATE_ARGS: ${{ inputs.helm-template-args }}
+        RENDERED: ${{ steps.render.outputs.rendered }}
+        CRD_SCHEMA_DIR: ${{ steps.crd-schemas.outputs.dir }}

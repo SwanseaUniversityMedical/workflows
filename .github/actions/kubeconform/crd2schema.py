@@ -53,7 +53,16 @@ def sanitise(node):
 
 
 def schema_for(raw):
-    """Wrap a CRD's openAPIV3Schema so a whole manifest validates against it."""
+    """Wrap a CRD's openAPIV3Schema so a whole manifest validates against it.
+
+    Deliberately emits no "$schema" key, matching the shape of the schemas in
+    datreeio/CRDs-catalog that kubeconform is known to work with. kubeconform
+    compiles with DefaultDraft(Draft4) and its own resource loader, so declaring
+    a draft here makes the compiler resolve that meta-schema through a loader
+    that only knows kubeconform's own schema locations. Doing so produced a
+    schema that compiled but stopped enforcing "type", silently passing a string
+    where the CRD declared an integer.
+    """
     schema = sanitise(raw)
     schema.setdefault("type", "object")
 
@@ -66,7 +75,6 @@ def schema_for(raw):
         properties.setdefault("kind", {"type": "string"})
         properties.setdefault("metadata", {"type": "object"})
 
-    schema["$schema"] = "http://json-schema.org/draft-07/schema#"
     return schema
 
 

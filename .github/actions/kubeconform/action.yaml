@@ -37,9 +37,9 @@ runs:
   using: "composite"
   steps:
 
-    # Version lives in its own step so both the installer and the cache key can
-    # read it from one place.
-    - name: resolve kubeconform version
+    # Pins live in one step so the installer, the cache key, the fetch and the
+    # verification all read the same values.
+    - name: resolve versions
       id: kc
       shell: bash
       run: |
@@ -51,11 +51,43 @@ runs:
         KUBECONFORM_VERSION='v0.8.0'
         KUBECONFORM_SHA256='9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883'
 
+        # renovate: datasource=git-refs depName=https://github.com/yannh/kubernetes-json-schema branch=master
+        K8S_SCHEMA_SHA='c8f4e61c63bc529749125ac566bccc6986e08d45'
+
+        # renovate: datasource=git-refs depName=https://github.com/datreeio/CRDs-catalog branch=main
+        CRDS_CATALOG_SHA='dcaa31aa03082906c0325a7a0ee7d5191e9cbe24'
+
+        # Mirror how kubeconform builds its default schema path so the local
+        # clone can be addressed with the very same template. It normalises a
+        # semver to a leading v and leaves 'master' alone, and appends -strict to
+        # the standalone directory unless strict validation is turned off.
+        K8S_VERSION="$(sed -n 's/.*-kubernetes-version[= ]\+\([^ ]\+\).*/\1/p' <<< "$KUBECONFORM_ARGS")"
+        K8S_VERSION="${K8S_VERSION:-master}"
+        if [[ "$K8S_VERSION" =~ ^[0-9] ]]; then
+          NORMALISED="v${K8S_VERSION}"
+        else
+          NORMALISED="$K8S_VERSION"
+        fi
+
+        if [[ "$KUBECONFORM_ARGS" == *'-strict=false'* ]]; then
+          STRICT_SUFFIX=''
+        else
+          STRICT_SUFFIX='-strict'
+        fi
+
         {
           echo "version=${KUBECONFORM_VERSION}"
           echo "sha256=${KUBECONFORM_SHA256}"
-          # Args can change which schemas are fetched, so they belong in the key.
-          echo "args-hash=$(printf '%s' "${KUBECONFORM_ARGS}" | sha256sum | cut -c1-12)"
+          echo "k8s-schema-sha=${K8S_SCHEMA_SHA}"
+          echo "crds-catalog-sha=${CRDS_CATALOG_SHA}"
+          # Both strict variants are fetched, so toggling -strict needs no refetch
+          # and the cache key does not depend on it.
+          echo "sparse-plain=${NORMALISED}-standalone"
+          echo "sparse-strict=${NORMALISED}-standalone-strict"
+          # The directory kubeconform will actually read, used to verify the
+          # fetch produced something before trusting a green result.
+          echo "expect-dir=${NORMALISED}-standalone${STRICT_SUFFIX}"
+          echo "cache-key=kubeconform-schemas-${NORMALISED}-${K8S_SCHEMA_SHA:0:12}-${CRDS_CATALOG_SHA:0:12}"
         } >> "$GITHUB_OUTPUT"
       env:
         KUBECONFORM_ARGS: ${{ inputs.kubeconform-args }}
@@ -85,17 +117,95 @@ runs:
         KUBECONFORM_VERSION: ${{ steps.kc.outputs.version }}
         KUBECONFORM_SHA256: ${{ steps.kc.outputs.sha256 }}
 
-    # Without this every job refetches every schema over the network. All the
-    # self-hosted runners share one egress IP, so that concentrates enough
-    # unauthenticated traffic on raw.githubusercontent.com to risk throttling,
-    # which -ignore-missing-schemas would silently turn into a passing build.
+    # Schemas are read from a local checkout rather than fetched per resource.
+    # All the self-hosted runners share one egress IP, and enough unauthenticated
+    # traffic to raw.githubusercontent.com risks throttling, which
+    # -ignore-missing-schemas would silently turn into a passing build.
     - name: cache schemas
+      id: schema-cache
       uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
       with:
-        path: ${{ runner.temp }}/kubeconform-schema-cache
-        key: kubeconform-schemas-${{ steps.kc.outputs.version }}-${{ steps.kc.outputs.args-hash }}
-        restore-keys: |
-          kubeconform-schemas-${{ steps.kc.outputs.version }}-
+        path: ${{ runner.temp }}/kubeconform-schemas
+        key: ${{ steps.kc.outputs.cache-key }}
+
+    - name: fetch schemas
+      if: steps.schema-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Blobless partial clone plus sparse checkout, at a pinned commit. Only
+        # the requested paths are ever downloaded, which matters because a full
+        # checkout of kubernetes-json-schema is several GB: it holds a directory
+        # per Kubernetes release.
+        sparse_clone() {
+          local url="$1" sha="$2" dir="$3"
+          shift 3
+
+          rm -rf "$dir"
+          mkdir -p "$dir"
+          git -C "$dir" init --quiet
+          git -C "$dir" remote add origin "$url"
+          git -C "$dir" config extensions.partialClone origin
+          if [[ $# -gt 0 ]]; then
+            git -C "$dir" sparse-checkout init --cone
+            git -C "$dir" sparse-checkout set "$@"
+          fi
+          git -C "$dir" fetch --quiet --depth 1 --filter=blob:none origin "$sha"
+          git -C "$dir" checkout --quiet FETCH_HEAD
+        }
+
+        sparse_clone 'https://github.com/yannh/kubernetes-json-schema.git' \
+          "$K8S_SCHEMA_SHA" "$SCHEMA_ROOT/kubernetes-json-schema" \
+          "$SPARSE_PLAIN" "$SPARSE_STRICT"
+
+        # Small enough to take whole, and every directory is potentially needed
+        # because it is keyed by CRD group rather than by Kubernetes version.
+        sparse_clone 'https://github.com/datreeio/CRDs-catalog.git' \
+          "$CRDS_CATALOG_SHA" "$SCHEMA_ROOT/crds-catalog"
+
+        # Drop the git metadata, it is dead weight in the cache.
+        find "$SCHEMA_ROOT" -maxdepth 2 -name '.git' -type d -prune -exec rm -rf {} +
+      env:
+        SCHEMA_ROOT: ${{ runner.temp }}/kubeconform-schemas
+        K8S_SCHEMA_SHA: ${{ steps.kc.outputs.k8s-schema-sha }}
+        CRDS_CATALOG_SHA: ${{ steps.kc.outputs.crds-catalog-sha }}
+        SPARSE_PLAIN: ${{ steps.kc.outputs.sparse-plain }}
+        SPARSE_STRICT: ${{ steps.kc.outputs.sparse-strict }}
+
+    # Without network locations, an empty schema tree means every resource is
+    # skipped and the build goes green having validated nothing. Fail loudly
+    # instead, regardless of the enforce setting, because this is a fault in the
+    # action rather than a problem with the chart.
+    - name: verify schemas
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        K8S_DIR="$SCHEMA_ROOT/kubernetes-json-schema/$EXPECT_DIR"
+        CRDS_DIR="$SCHEMA_ROOT/crds-catalog"
+
+        # Check the directories exist before counting. A find over a missing path
+        # fails, and with pipefail that would abort before the message below.
+        k8s_count=0
+        crds_count=0
+        if [[ -d "$K8S_DIR" ]]; then
+          k8s_count="$(find "$K8S_DIR" -name '*.json' | wc -l)"
+        fi
+        if [[ -d "$CRDS_DIR" ]]; then
+          crds_count="$(find "$CRDS_DIR" -name '*.json' | wc -l)"
+        fi
+
+        echo "kubernetes schemas: ${k8s_count} in ${EXPECT_DIR}"
+        echo "crd catalog schemas: ${crds_count}"
+
+        if [[ "$k8s_count" -eq 0 ]]; then
+          echo "::error title=kubeconform::No Kubernetes schemas found in ${EXPECT_DIR}. Either the schema fetch failed or that Kubernetes version does not exist upstream."
+          exit 1
+        fi
+      env:
+        SCHEMA_ROOT: ${{ runner.temp }}/kubeconform-schemas
+        EXPECT_DIR: ${{ steps.kc.outputs.expect-dir }}
 
     - name: render chart
       id: render
@@ -138,7 +248,7 @@ runs:
     # kubeconform never reads CRDs from its input, so without this a chart that
     # ships both a CRD and a custom resource of it has that resource silently
     # skipped. Generating schemas from the chart's own CRDs validates in-house
-    # custom resources with no network access at all.
+    # custom resources that no public catalog could know about.
     - name: generate schemas from chart crds
       id: crd-schemas
       if: steps.render.outputs.has-crds == 'true'
@@ -163,21 +273,20 @@ runs:
         set -uo pipefail
 
         WORK_DIR="$RUNNER_TEMP/kubeconform"
-        CACHE_DIR="$RUNNER_TEMP/kubeconform-schema-cache"
-        mkdir -p "$CACHE_DIR"
         MANIFESTS="$WORK_DIR/manifests.yaml"
         REPORT="$WORK_DIR/report.txt"
 
-        # The chart's own CRD schemas go first so they win over the network
-        # locations. 'default' must be listed explicitly to keep the built in
-        # registry once any other location is given. The {{...}} placeholders
-        # are kubeconform's own templating, not GitHub expressions.
+        # Every location is a local path, so a normal run makes no outbound
+        # requests at all. The chart's own CRD schemas go first so they win, then
+        # the Kubernetes registry, then the CRD catalog. The {{...}} placeholders
+        # are kubeconform's own templating, not GitHub expressions, and the
+        # Kubernetes one is the default template with a local prefix.
         SCHEMA_ARGS=()
         if [[ -n "${CRD_SCHEMA_DIR:-}" && -d "${CRD_SCHEMA_DIR:-}" ]]; then
           SCHEMA_ARGS+=( -schema-location "$CRD_SCHEMA_DIR/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json" )
         fi
-        SCHEMA_ARGS+=( -schema-location default )
-        SCHEMA_ARGS+=( -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' )
+        SCHEMA_ARGS+=( -schema-location "$SCHEMA_ROOT/kubernetes-json-schema/{{.NormalizedKubernetesVersion}}-standalone{{.StrictSuffix}}/{{.ResourceKind}}{{.KindSuffix}}.json" )
+        SCHEMA_ARGS+=( -schema-location "$SCHEMA_ROOT/crds-catalog/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json" )
 
         if [[ "$RENDERED" != 'true' ]]; then
           RESULT='error'
@@ -191,7 +300,6 @@ runs:
             -summary \
             -verbose \
             -output text \
-            -cache "$CACHE_DIR" \
             "${SCHEMA_ARGS[@]}" \
             $KUBECONFORM_ARGS \
             "$MANIFESTS" > "$REPORT" 2>&1; then
@@ -233,8 +341,6 @@ runs:
 
         # An unvalidated resource is a gap whether one slipped through or all of
         # them did, so build the note first and decide how loudly to say it.
-        # Partial skipping is the signature of intermittent schema throttling as
-        # well as of unknown CRDs, and used to be invisible.
         SKIPPED_NOTE=''
         if [[ "$RESULT" != 'error' && "$SKIPPED_COUNT" -gt 0 ]]; then
           if [[ -n "$SKIPPED_KINDS" ]]; then
@@ -244,15 +350,12 @@ runs:
           fi
         fi
 
-        # With -ignore-missing-schemas a total loss of schema resolution looks
-        # exactly like a clean run, every resource skipped and nothing invalid.
-        # Legitimate for a chart that only ships crds/, because
-        # CustomResourceDefinition itself has no schema in the default registry.
-        # For anything else it means schemas are not being resolved, most likely
-        # blocked or throttled egress, so say something stronger.
+        # Nothing validated at all is worth a stronger message. Legitimate for a
+        # chart that only ships crds/, because CustomResourceDefinition itself
+        # has no schema in the Kubernetes registry.
         NO_SCHEMAS=''
         if [[ -n "$SKIPPED_NOTE" ]] && grep -qE 'Valid: 0,' "$REPORT"; then
-          NO_SCHEMAS='Nothing was validated, every resource was skipped for want of a schema. Expected for a CRD-only chart, otherwise check runner egress to the schema locations'
+          NO_SCHEMAS='Nothing was validated, every resource was skipped for want of a schema. Expected for a CRD-only chart, otherwise the pinned schema set does not cover these kinds'
         fi
 
         if [[ -n "$NO_SCHEMAS" ]]; then
@@ -315,3 +418,4 @@ runs:
         KUBECONFORM_ARGS: ${{ inputs.kubeconform-args }}
         RENDERED: ${{ steps.render.outputs.rendered }}
         CRD_SCHEMA_DIR: ${{ steps.crd-schemas.outputs.dir }}
+        SCHEMA_ROOT: ${{ runner.temp }}/kubeconform-schemas

@@ -218,6 +218,15 @@ runs:
         WORK_DIR="$RUNNER_TEMP/kubeconform"
         mkdir -p "$WORK_DIR"
 
+        # A missing path makes helm fall back to treating the argument as a
+        # repo/chart reference, which fails with the baffling "repo <x> not
+        # found". This is a configuration fault rather than a chart defect, so
+        # say so plainly and fail whatever the enforce setting is.
+        if [[ ! -e "$CHART" ]]; then
+          echo "::error title=kubeconform::Chart not found at '${CHART}' (looked in $(pwd))"
+          exit 1
+        fi
+
         # --include-crds so a chart's crds/ directory is rendered too, it
         # produces nothing without this. --skip-tests because templates/tests
         # are throwaway hooks and failing on them is noise.

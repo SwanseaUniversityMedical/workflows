@@ -132,6 +132,14 @@ def main():
         print(f"generated {len(written)} schema(s) from the chart's own CRDs:")
         for item in sorted(written):
             print(f"  {item}")
+        # Dump the bodies. A schema that compiles but fails to constrain looks
+        # identical to a correct one in the validation report, so the only way to
+        # tell them apart after the fact is to see what was actually written.
+        for item in sorted(written):
+            body = open(os.path.join(out_dir, item), encoding="utf-8").read()
+            print(f"::group::schema {item}")
+            print(body[:20000])
+            print("::endgroup::")
     else:
         print("no schemas generated from chart CRDs")
 

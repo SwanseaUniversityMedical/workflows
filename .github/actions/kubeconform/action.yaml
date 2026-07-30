@@ -29,6 +29,10 @@ outputs:
     description: "Number of resources that had no schema available and were therefore not validated."
     value: ${{ steps.kubeconform.outputs.skipped-count }}
 
+  comment:
+    description: "Single line summarising the validation outcome, including any unvalidated resources, for embedding in a PR comment."
+    value: ${{ steps.kubeconform.outputs.comment }}
+
 runs:
   using: "composite"
   steps:
@@ -227,25 +231,49 @@ runs:
           fi
         fi
 
+        # An unvalidated resource is a gap whether one slipped through or all of
+        # them did, so build the note first and decide how loudly to say it.
+        # Partial skipping is the signature of intermittent schema throttling as
+        # well as of unknown CRDs, and used to be invisible.
+        SKIPPED_NOTE=''
+        if [[ "$RESULT" != 'error' && "$SKIPPED_COUNT" -gt 0 ]]; then
+          if [[ -n "$SKIPPED_KINDS" ]]; then
+            SKIPPED_NOTE="${SKIPPED_COUNT} resource(s) not validated, no schema found for: ${SKIPPED_KINDS}"
+          else
+            SKIPPED_NOTE="${SKIPPED_COUNT} resource(s) not validated, no schema found"
+          fi
+        fi
+
         # With -ignore-missing-schemas a total loss of schema resolution looks
         # exactly like a clean run, every resource skipped and nothing invalid.
-        # Flag it rather than reporting a green build that validated nothing.
-        #
         # Legitimate for a chart that only ships crds/, because
         # CustomResourceDefinition itself has no schema in the default registry.
         # For anything else it means schemas are not being resolved, most likely
-        # blocked or throttled egress.
+        # blocked or throttled egress, so say something stronger.
         NO_SCHEMAS=''
-        if [[ "$RESULT" != 'error' && "$SKIPPED_COUNT" -gt 0 ]] \
-          && grep -qE 'Valid: 0,' "$REPORT"; then
+        if [[ -n "$SKIPPED_NOTE" ]] && grep -qE 'Valid: 0,' "$REPORT"; then
           NO_SCHEMAS='Nothing was validated, every resource was skipped for want of a schema. Expected for a CRD-only chart, otherwise check runner egress to the schema locations'
+        fi
+
+        if [[ -n "$NO_SCHEMAS" ]]; then
           echo "::warning title=kubeconform::${NO_SCHEMAS}"
+        elif [[ -n "$SKIPPED_NOTE" ]]; then
+          echo "::warning title=kubeconform::${SKIPPED_NOTE}"
+        fi
+
+        # Single line so it drops cleanly into the chart actions' PR comment.
+        COMMENT="$BADGE"
+        if [[ -n "$NO_SCHEMAS" ]]; then
+          COMMENT="${COMMENT} - ${NO_SCHEMAS}"
+        elif [[ -n "$SKIPPED_NOTE" ]]; then
+          COMMENT="${COMMENT} - ${SKIPPED_NOTE}"
         fi
 
         {
           echo "result=$RESULT"
           echo "summary-line=${SUMMARY_LINE}"
           echo "skipped-count=${SKIPPED_COUNT}"
+          echo "comment=${COMMENT}"
         } >> "$GITHUB_OUTPUT"
 
         {
@@ -253,14 +281,8 @@ runs:
 
           if [[ -n "$NO_SCHEMAS" ]]; then
             echo ":satellite: ${NO_SCHEMAS}  "
-          elif [[ "$SKIPPED_COUNT" -gt 0 ]]; then
-            # Partial skipping is invisible otherwise, and it is the signature
-            # of intermittent schema throttling as well as of unknown CRDs.
-            if [[ -n "$SKIPPED_KINDS" ]]; then
-              echo ":heavy_minus_sign: ${SKIPPED_COUNT} resource(s) not validated, no schema found for: ${SKIPPED_KINDS}  "
-            else
-              echo ":heavy_minus_sign: ${SKIPPED_COUNT} resource(s) not validated, no schema found  "
-            fi
+          elif [[ -n "$SKIPPED_NOTE" ]]; then
+            echo ":heavy_minus_sign: ${SKIPPED_NOTE}  "
           fi
 
           # On success the summary line is the whole story. Otherwise show the

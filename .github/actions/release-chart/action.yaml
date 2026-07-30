@@ -426,6 +426,7 @@ runs:
           ${{ steps.semantic.outputs.git-tag }}
           ${{ env.CHART_REPO }}:${{ env.RELEASE_TAG }}
           ```
+          ${{ steps.kubeconform.outputs.comment }}
 
     - name: error
       if: failure()

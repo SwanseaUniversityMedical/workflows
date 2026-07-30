@@ -228,7 +228,8 @@ runs:
           ```
           ${{ env.CHART_REPO }}:${{ env.PR_TAG }}
           ${{ env.CHART_REPO }}:${{ env.PR_COMMIT_TAG }}
-          ``` 
+          ```
+          ${{ steps.kubeconform.outputs.comment }}
 
     - name: notation chart
       id: notation

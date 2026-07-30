@@ -331,6 +331,7 @@ runs:
           ${{ fromJSON(inputs.release-info).git-tag }}
           ${{ env.CHART_REPO }}:${{ env.RELEASE_TAG }}
           ```
+          ${{ steps.kubeconform.outputs.comment }}
 
     - name: error
       if: failure()

@@ -319,11 +319,16 @@ runs:
 
         # -verbose prints a line per resource, which is what makes skipped
         # kinds visible. Valid lines are filtered out of the summary below.
+        # -debug reports which schema location was tried and which was used for
+        # each resource. Temporary: it is here to explain why a resource can be
+        # reported valid against a schema that should reject it. Drop it once
+        # that is resolved, it is noisy on large charts.
         elif kubeconform \
             -ignore-missing-schemas \
             -strict \
             -summary \
             -verbose \
+            -debug \
             -output text \
             "${SCHEMA_ARGS[@]}" \
             $KUBECONFORM_ARGS \

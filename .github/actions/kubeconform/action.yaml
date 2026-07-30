@@ -242,40 +242,9 @@ runs:
           cat "$WORK_DIR/render.log"
         fi
 
-        # Only pay for python when the chart actually ships CRDs.
-        if grep -qE '^kind: CustomResourceDefinition$' "$WORK_DIR/manifests.yaml" 2> /dev/null; then
-          echo "has-crds=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "has-crds=false" >> "$GITHUB_OUTPUT"
-        fi
       env:
         CHART: ${{ inputs.chart }}
         HELM_TEMPLATE_ARGS: ${{ inputs.helm-template-args }}
-
-    - name: install python
-      if: steps.render.outputs.has-crds == 'true'
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-      with:
-        python-version: '3.14'
-
-    # kubeconform never reads CRDs from its input, so without this a chart that
-    # ships both a CRD and a custom resource of it has that resource silently
-    # skipped. Generating schemas from the chart's own CRDs validates in-house
-    # custom resources that no public catalog could know about.
-    - name: generate schemas from chart crds
-      id: crd-schemas
-      if: steps.render.outputs.has-crds == 'true'
-      shell: bash
-      run: |
-        set -euo pipefail
-
-        pip install --quiet pyyaml
-
-        SCHEMA_DIR="$RUNNER_TEMP/kubeconform/crd-schemas"
-        python "$GITHUB_ACTION_PATH/crd2schema.py" \
-          "$RUNNER_TEMP/kubeconform/manifests.yaml" "$SCHEMA_DIR"
-
-        echo "dir=$SCHEMA_DIR" >> "$GITHUB_OUTPUT"
 
     - name: validate chart
       id: kubeconform
@@ -290,27 +259,18 @@ runs:
         REPORT="$WORK_DIR/report.txt"
 
         # Every location is a local path, so a normal run makes no outbound
-        # requests at all. The chart's own CRD schemas go first so they win, then
-        # the Kubernetes registry, then the CRD catalog. The {{...}} placeholders
-        # are kubeconform's own templating, not GitHub expressions, and the
-        # Kubernetes one is the default template with a local prefix.
-        SCHEMA_ARGS=()
-        if [[ -n "${CRD_SCHEMA_DIR:-}" && -d "${CRD_SCHEMA_DIR:-}" ]]; then
-          SCHEMA_ARGS+=( -schema-location "$CRD_SCHEMA_DIR/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json" )
-        fi
-        SCHEMA_ARGS+=( -schema-location "$SCHEMA_ROOT/kubernetes-json-schema/{{.NormalizedKubernetesVersion}}-standalone{{.StrictSuffix}}/{{.ResourceKind}}{{.KindSuffix}}.json" )
-        SCHEMA_ARGS+=( -schema-location "$SCHEMA_ROOT/crds-catalog/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json" )
+        # requests at all. The {{...}} placeholders are kubeconform's own
+        # templating, not GitHub expressions, and the Kubernetes one is its
+        # default template with a local prefix.
+        SCHEMA_ARGS=(
+          -schema-location "$SCHEMA_ROOT/kubernetes-json-schema/{{.NormalizedKubernetesVersion}}-standalone{{.StrictSuffix}}/{{.ResourceKind}}{{.KindSuffix}}.json"
+          -schema-location "$SCHEMA_ROOT/crds-catalog/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
+        )
 
         # A resource silently skipped for want of a schema is the failure mode
         # that is hardest to diagnose after the fact, so record what was on offer.
         echo "::group::schema locations"
         printf '%s\n' "${SCHEMA_ARGS[@]}" | grep -v '^-schema-location$'
-        if [[ -n "${CRD_SCHEMA_DIR:-}" && -d "${CRD_SCHEMA_DIR:-}" ]]; then
-          echo "generated from this chart's CRDs:"
-          find "$CRD_SCHEMA_DIR" -name '*.json' | sed "s|$CRD_SCHEMA_DIR/|  |"
-        else
-          echo "no schemas generated from chart CRDs (dir='${CRD_SCHEMA_DIR:-}')"
-        fi
         echo "::endgroup::"
 
         if [[ "$RENDERED" != 'true' ]]; then
@@ -319,16 +279,13 @@ runs:
 
         # -verbose prints a line per resource, which is what makes skipped
         # kinds visible. Valid lines are filtered out of the summary below.
-        # -debug reports which schema location was tried and which was used for
-        # each resource. Temporary: it is here to explain why a resource can be
-        # reported valid against a schema that should reject it. Drop it once
-        # that is resolved, it is noisy on large charts.
+        # No -debug: it is only wired into the HTTP registry, and every location
+        # here is local, so it can never print anything.
         elif kubeconform \
             -ignore-missing-schemas \
             -strict \
             -summary \
             -verbose \
-            -debug \
             -output text \
             "${SCHEMA_ARGS[@]}" \
             $KUBECONFORM_ARGS \
@@ -451,5 +408,4 @@ runs:
         ENFORCE: ${{ inputs.enforce }}
         KUBECONFORM_ARGS: ${{ inputs.kubeconform-args }}
         RENDERED: ${{ steps.render.outputs.rendered }}
-        CRD_SCHEMA_DIR: ${{ steps.crd-schemas.outputs.dir }}
         SCHEMA_ROOT: ${{ runner.temp }}/kubeconform-schemas

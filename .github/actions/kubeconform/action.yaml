@@ -330,35 +330,34 @@ runs:
         fi
 
         # An unvalidated resource is a gap whether one slipped through or all of
-        # them did, so build the note first and decide how loudly to say it.
+        # them did, and naming the kinds is what makes it actionable, so say them
+        # in both cases. NOTHING_VALIDATED only changes how loudly it is said.
         SKIPPED_NOTE=''
+        NOTHING_VALIDATED=''
         if [[ "$RESULT" != 'error' && "$SKIPPED_COUNT" -gt 0 ]]; then
           if [[ -n "$SKIPPED_KINDS" ]]; then
-            SKIPPED_NOTE="${SKIPPED_COUNT} resource(s) not validated, no schema found for: ${SKIPPED_KINDS}"
+            SKIPPED_WHAT="no schema found for: ${SKIPPED_KINDS}"
           else
-            SKIPPED_NOTE="${SKIPPED_COUNT} resource(s) not validated, no schema found"
+            SKIPPED_WHAT='no schema found'
           fi
-        fi
 
-        # Nothing validated at all is worth a stronger message. Legitimate for a
-        # chart that only ships crds/, because CustomResourceDefinition itself
-        # has no schema in the Kubernetes registry.
-        NO_SCHEMAS=''
-        if [[ -n "$SKIPPED_NOTE" ]] && grep -qE 'Valid: 0,' "$REPORT"; then
-          NO_SCHEMAS='Nothing was validated, every resource was skipped for want of a schema. Expected for a CRD-only chart, otherwise the pinned schema set does not cover these kinds'
-        fi
+          # Nothing validated at all deserves a stronger note. It is legitimate
+          # whenever every kind in the chart falls outside the pinned schema set,
+          # which covers both a chart shipping only CRDs and one shipping in-house
+          # custom resources that no public catalog knows about.
+          if grep -qE 'Valid: 0,' "$REPORT"; then
+            NOTHING_VALIDATED='true'
+            SKIPPED_NOTE="Nothing was validated, all ${SKIPPED_COUNT} resource(s) skipped, ${SKIPPED_WHAT}. The pinned schema set does not cover these kinds"
+          else
+            SKIPPED_NOTE="${SKIPPED_COUNT} resource(s) not validated, ${SKIPPED_WHAT}"
+          fi
 
-        if [[ -n "$NO_SCHEMAS" ]]; then
-          echo "::warning title=kubeconform::${NO_SCHEMAS}"
-        elif [[ -n "$SKIPPED_NOTE" ]]; then
           echo "::warning title=kubeconform::${SKIPPED_NOTE}"
         fi
 
         # Single line so it drops cleanly into the chart actions' PR comment.
         COMMENT="$BADGE"
-        if [[ -n "$NO_SCHEMAS" ]]; then
-          COMMENT="${COMMENT} - ${NO_SCHEMAS}"
-        elif [[ -n "$SKIPPED_NOTE" ]]; then
+        if [[ -n "$SKIPPED_NOTE" ]]; then
           COMMENT="${COMMENT} - ${SKIPPED_NOTE}"
         fi
 
@@ -373,10 +372,12 @@ runs:
         {
           echo "${BADGE}  "
 
-          if [[ -n "$NO_SCHEMAS" ]]; then
-            echo ":satellite: ${NO_SCHEMAS}  "
-          elif [[ -n "$SKIPPED_NOTE" ]]; then
-            echo ":heavy_minus_sign: ${SKIPPED_NOTE}  "
+          if [[ -n "$SKIPPED_NOTE" ]]; then
+            if [[ -n "$NOTHING_VALIDATED" ]]; then
+              echo ":satellite: ${SKIPPED_NOTE}  "
+            else
+              echo ":heavy_minus_sign: ${SKIPPED_NOTE}  "
+            fi
           fi
 
           # On success the summary line is the whole story. Otherwise show the

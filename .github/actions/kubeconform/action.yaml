@@ -340,7 +340,10 @@ runs:
 
         SKIPPED_COUNT="$(sed -n 's/.*Skipped: \([0-9][0-9]*\).*/\1/p' <<< "${SUMMARY_LINE}")"
         SKIPPED_COUNT="${SKIPPED_COUNT:-0}"
-        SKIPPED_KINDS="$(sed -n 's/^.* - \([^ ]*\) .*[Ss]kipped$/\1/p' "$REPORT" \
+        # kubeconform's text output prints "<path> - <kind> <name> is valid" but
+        # "<path> - <name> <kind> skipped", so on a skipped line the kind is the
+        # second to last field, not the first after the dash.
+        SKIPPED_KINDS="$(awk '$NF == "skipped" { print $(NF - 1) }' "$REPORT" \
           | sort -u | paste -sd, - | sed 's/,/, /g')"
 
         case "$RESULT" in

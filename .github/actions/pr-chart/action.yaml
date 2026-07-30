@@ -170,7 +170,7 @@ runs:
     # checked is exactly what gets pushed, .helmignore and all.
     - name: validate chart
       id: kubeconform
-      uses: SwanseaUniversityMedical/workflows/.github/actions/kubeconform@feat/kubeconform
+      uses: SwanseaUniversityMedical/workflows/.github/actions/kubeconform@v1.0.0-kubeconform-action
       with:
         chart: ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz
         enforce: ${{ inputs.kubeconform-enforce }}
@@ -185,7 +185,7 @@ runs:
         helm push ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
 
     - name: build success
-      if: steps.helm-package.outcome == 'success'
+      if: steps.helm.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -199,7 +199,7 @@ runs:
           :hammer_and_wrench: Build Success  
 
     - name: build failure
-      if: failure() && (steps.helm-package.outcome == 'failure' || steps.helm-package.outcome == 'failure')
+      if: failure() && (steps.helm-package.outcome == 'failure' || steps.helm.outcome == 'failure')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -208,7 +208,7 @@ runs:
 
     - name: find pr comment
       uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3.1.0
-      if: inputs.comment-enabled == 'true' && steps.helm-package.outcome == 'success'
+      if: inputs.comment-enabled == 'true' && steps.helm.outcome == 'success'
       id: find-pr-comment
       with:
         issue-number: ${{ github.event.pull_request.number }}
@@ -217,7 +217,7 @@ runs:
 
     - name: comment on build success
       id: build-pr-comment
-      if: inputs.comment-enabled == 'true' && steps.helm-package.outcome == 'success'
+      if: inputs.comment-enabled == 'true' && steps.helm.outcome == 'success'
       uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
@@ -233,7 +233,7 @@ runs:
 
     - name: notation chart
       id: notation
-      if: inputs.notation-cert != '' && steps.helm-package.outcome == 'success'
+      if: inputs.notation-cert != '' && steps.helm.outcome == 'success'
       shell: bash
       run: |
         notation sign --key="chi.swan.ac.uk" "${CHART_REPO}:${PR_TAG}"
@@ -257,7 +257,7 @@ runs:
 
     - name: test
       id: test
-      if: inputs.test-command != '' && steps.helm-package.outcome == 'success' && steps.notation.outcome != 'failure'
+      if: inputs.test-command != '' && steps.helm.outcome == 'success' && steps.notation.outcome != 'failure'
       shell: bash
       run: |
         set -x

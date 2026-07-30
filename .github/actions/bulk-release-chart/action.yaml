@@ -175,7 +175,7 @@ runs:
     - name: validate chart
       id: kubeconform
       if: contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)
-      uses: SwanseaUniversityMedical/workflows/.github/actions/kubeconform@feat/kubeconform
+      uses: SwanseaUniversityMedical/workflows/.github/actions/kubeconform@v1.0.0-kubeconform-action
       with:
         chart: ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz
         enforce: ${{ inputs.kubeconform-enforce }}
@@ -190,7 +190,7 @@ runs:
         helm push ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
 
     - name: build success
-      if: steps.helm-rc-package.outcome == 'success'
+      if: steps.helm-rc.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -202,7 +202,7 @@ runs:
           :hammer_and_wrench: Build Success  
 
     - name: build failure
-      if: failure() && (steps.helm-rc-package.outcome == 'failure' || steps.helm-rc-package.outcome == 'failure')
+      if: failure() && (steps.helm-rc-package.outcome == 'failure' || steps.helm-rc.outcome == 'failure')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -211,7 +211,7 @@ runs:
 
     - name: notation release candidate
       id: notation-rc
-      if: inputs.notation-cert != '' && steps.helm-rc-package.outcome == 'success'
+      if: inputs.notation-cert != '' && steps.helm-rc.outcome == 'success'
       shell: bash
       run: |
         notation sign --key="chi.swan.ac.uk" "${CHART_REPO}:${RC_TAG}"
@@ -234,7 +234,7 @@ runs:
 
     - name: test release candidate
       id: test
-      if: inputs.test-command != '' && steps.helm-rc-package.outcome == 'success' && steps.notation-rc.outcome != 'failure'
+      if: inputs.test-command != '' && steps.helm-rc.outcome == 'success' && steps.notation-rc.outcome != 'failure'
       shell: bash
       run: |
         set -x
@@ -259,7 +259,7 @@ runs:
 
     - name: build release chart
       id: helm-release
-      if: steps.helm-rc-package.outcome == 'success' && steps.notation-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      if: steps.helm-rc.outcome == 'success' && steps.notation-rc.outcome != 'failure' && steps.test.outcome != 'failure'
       shell: bash
       run: |
         helm package ${{ inputs.chart }} --version ${{ env.RELEASE_TAG }}

@@ -29,6 +29,10 @@ outputs:
     description: "Number of resources that had no schema available and were therefore not validated."
     value: ${{ steps.kubeconform.outputs.skipped-count }}
 
+  skipped-kinds:
+    description: "Comma separated kinds that had no schema available, for diagnosing coverage gaps."
+    value: ${{ steps.kubeconform.outputs.skipped-kinds }}
+
   comment:
     description: "Single line summarising the validation outcome, including any unvalidated resources, for embedding in a PR comment."
     value: ${{ steps.kubeconform.outputs.comment }}
@@ -297,6 +301,18 @@ runs:
         SCHEMA_ARGS+=( -schema-location "$SCHEMA_ROOT/kubernetes-json-schema/{{.NormalizedKubernetesVersion}}-standalone{{.StrictSuffix}}/{{.ResourceKind}}{{.KindSuffix}}.json" )
         SCHEMA_ARGS+=( -schema-location "$SCHEMA_ROOT/crds-catalog/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json" )
 
+        # A resource silently skipped for want of a schema is the failure mode
+        # that is hardest to diagnose after the fact, so record what was on offer.
+        echo "::group::schema locations"
+        printf '%s\n' "${SCHEMA_ARGS[@]}" | grep -v '^-schema-location$'
+        if [[ -n "${CRD_SCHEMA_DIR:-}" && -d "${CRD_SCHEMA_DIR:-}" ]]; then
+          echo "generated from this chart's CRDs:"
+          find "$CRD_SCHEMA_DIR" -name '*.json' | sed "s|$CRD_SCHEMA_DIR/|  |"
+        else
+          echo "no schemas generated from chart CRDs (dir='${CRD_SCHEMA_DIR:-}')"
+        fi
+        echo "::endgroup::"
+
         if [[ "$RENDERED" != 'true' ]]; then
           RESULT='error'
           cp "$WORK_DIR/render.log" "$REPORT"
@@ -385,6 +401,7 @@ runs:
           echo "result=$RESULT"
           echo "summary-line=${SUMMARY_LINE}"
           echo "skipped-count=${SKIPPED_COUNT}"
+          echo "skipped-kinds=${SKIPPED_KINDS}"
           echo "comment=${COMMENT}"
         } >> "$GITHUB_OUTPUT"
 

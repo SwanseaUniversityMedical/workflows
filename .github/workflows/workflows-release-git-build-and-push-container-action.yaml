@@ -1,0 +1,30 @@
+name: Git Build and Push Container Action
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/workflows-release-git-build-and-push-container-action.yaml'
+      - '.github/actions/git-build-and-push-container/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/workflows-release-git-build-and-push-container-action.yaml'
+      - '.github/actions/git-build-and-push-container/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  git-build-and-push-container-action:
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.1.2-repo
+    with:
+      job-name: git-build-and-push-container-action
+      comment-release: true
+      release-tag-format: 'v${version}-git-build-and-push-container-action'

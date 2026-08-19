@@ -1,0 +1,30 @@
+name: Bitnami PR and Release Chart Action
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/workflows-release-bitnami-pr-and-release-chart-action.yaml'
+      - '.github/actions/bitnami-pr-and-release-chart/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/workflows-release-bitnami-pr-and-release-chart-action.yaml'
+      - '.github/actions/bitnami-pr-and-release-chart/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  bitnami-pr-and-release-chart-action:
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.1.2-repo
+    with:
+      job-name: bitnami-pr-and-release-chart-action
+      comment-release: true
+      release-tag-format: 'v${version}-bitnami-pr-and-release-chart-action'

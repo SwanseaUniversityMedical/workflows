@@ -1,22 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-
-  "extends": [":enableRenovate"],
-
-  "schedule": ["* * * * *"],
-
-  "packageRules": [
-    {
-      "matchDepTypes": ["action"],
-      "pinDigests": true
-    },
-    {
-      "matchDepTypes": ["action"],
-      "matchPackageNames": ["SwanseaUniversityMedical/workflows"],
-      "pinDigests": false,
-      "additionalBranchPrefix": "{{ compatibility }}-",
-      "commitMessageAction": "{{ compatibility }} - Update",
-      "labels": ["{{ compatibility }}"]
-    }
+  "extends": [
+    ":enableRenovate"
+  ],
+  "schedule": [
+    "* * * * *"
   ]
 }

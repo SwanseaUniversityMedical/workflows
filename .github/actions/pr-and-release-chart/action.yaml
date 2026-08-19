@@ -40,34 +40,30 @@ inputs:
     description: "Semantic-release Github release tag format."
     default: '${version}'
 
-  cosign-public-key:
-    description: "Public key for cosigning images."
-    required: false
+  notation-cert:
+    description: "Public key for notation signing images."
+    required: true
 
   registry-token:
     description: "Authentication token for the chart registry."
     required: true
 
-  cosign-private-key:
-    description: "Private key for cosigning charts."
-    required: false
-
-  cosign-password:
-    description: "Private key password for cosigning charts."
+  notation-key:
+    description: "Private key for notation signing charts."
     required: false
 
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - id: create-release-labels
-      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v3.0.0-create-release-labels-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v3.0.1-create-release-labels-action
       with:
         name: ${{ inputs.name }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v2.1.0-pr-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v3.0.0-pr-chart-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-pr }}
@@ -75,15 +71,15 @@ runs:
         registry-user: ${{ inputs.registry-user }}
         registry-project: ${{ inputs.registry-project }}
         registry-repo: ${{ inputs.registry-repo }}
-        cosign-public-key: ${{ inputs.cosign-public-key }}
+        notation-cert: ${{ inputs.notation-cert }}
         chart: ${{ inputs.chart }}
         test-command: ${{ inputs.test-command }}
-        cosign-private-key: ${{ inputs.cosign-private-key }}
-        cosign-password: ${{ inputs.cosign-password }}
+        notation-key: ${{ inputs.notation-key }}
+
         registry-token: ${{ inputs.registry-token }}
 
     - if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v3.0.0-release-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-chart@v4.0.0-release-chart-action
       with:
         name: ${{ inputs.name }}
         comment-enabled: ${{ inputs.comment-release }}
@@ -91,10 +87,10 @@ runs:
         registry-user: ${{ inputs.registry-user }}
         registry-project: ${{ inputs.registry-project }}
         registry-repo: ${{ inputs.registry-repo }}
-        cosign-public-key: ${{ inputs.cosign-public-key }}
+        notation-cert: ${{ inputs.notation-cert }}
         chart: ${{ inputs.chart }}
         test-command: ${{ inputs.test-command }}
         release-tag-format: ${{ inputs.release-tag-format }}
-        cosign-private-key: ${{ inputs.cosign-private-key }}
-        cosign-password: ${{ inputs.cosign-password }}
+        notation-key: ${{ inputs.notation-key }}
+
         registry-token: ${{ inputs.registry-token }}

@@ -1,0 +1,36 @@
+name: Yaml Linter Release Workflow
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/workflows-release-yamllint-workflow.yaml'
+      - '.github/workflows/yamllint.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/workflows-release-yamllint-workflow.yaml'
+      - '.github/workflows/yamllint.yaml'
+
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel early on pull requests if new commits are added,
+  # Don't cancel on release pushes
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  yaml-linting-workflow:
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.1.2-repo
+    with:
+      job-name: yaml-linting
+      comment-release: true
+      release-tag-format: 'v${version}-yaml-linting'

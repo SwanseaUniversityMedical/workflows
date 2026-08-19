@@ -1,0 +1,106 @@
+name: Notify Slack on PR Review Request
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        required: true
+        type: string
+      pr_title:
+        required: true
+        type: string
+      pr_url:
+        required: true
+        type: string
+      requester:
+        required: true
+        type: string
+      reviewers:
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
+
+jobs:
+  notify-slack:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: light
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Read Slack - GitHub username mapping file
+        id: read-map
+        run: |
+          if [ -f ".github/username-mappings.yaml" ]; then
+            echo "Found .github/username-mappings.yaml"
+          else
+            echo ".github/username-mappings.yaml not found"
+            echo "{}" > temp_mappings.yaml
+          fi
+      - name: Setup yq
+        run: |
+          sudo apt-get update && sudo apt-get install -y wget
+          sudo wget -qO /usr/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/bin/yq
+
+      - name: Delay the workflow in case of cancellation
+        run: |
+          sleep 60
+
+      - name: Send Slack notifications
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          echo "Preparing Slack notifications..."
+          requester="${{ inputs.requester }}"
+          IFS=',' read -r -a reviewers <<< "${{ inputs.reviewers }}"
+          
+          # Skip if triggered by marvin
+          if [ "$requester" = "marvin-serp-bot" ]; then
+            echo "Requester is Marvin, skipping notification."
+            exit 0
+          fi
+
+          # Check if only requesting review from themselves
+          if [ ${#reviewers[@]} -eq 1 ]; then
+            single_reviewer=$(echo "${reviewers[0]}" | xargs | tr -d '\r\n')
+            if [ "$single_reviewer" = "$requester" ]; then
+              echo "Requester '$requester' is only requesting review from themselves. Skipping notification."
+              exit 0
+            fi
+          fi
+
+          echo "Proceeding with notification - not a self-only review request."
+
+          mapping_file=".github/username-mappings.yaml"
+          [ ! -f "$mapping_file" ] && mapping_file="temp_mappings.yaml"
+
+          yq -r 'keys | .[]' "$mapping_file"
+          
+          slack_mentions=()
+          
+          for reviewer in "${reviewers[@]}"; do
+            reviewer=$(echo "$reviewer" | xargs | tr -d '\r\n')
+            slack_user=$(yq e ".\"$reviewer\"" "$mapping_file" 2>/dev/null || echo "null")
+      
+            if [ "$slack_user" != "null" ] && [ -n "$slack_user" ]; then
+              echo "Mapped Slack user: '$slack_user'"
+              slack_mentions+=("$slack_user")
+            else
+              echo "No Slack mapping found for '$reviewer'"
+            fi
+          done
+          
+          if [ ${#slack_mentions[@]} -gt 0 ]; then
+            mentions=$(IFS=' '; echo "${slack_mentions[*]}")
+            message="Hey $mentions - *${{ inputs.requester }}* requested your review on <${{ inputs.pr_url }}|PR #${{ inputs.pr_number }}>: *${{ inputs.pr_title }}*"
+            echo "Sending Slack message: $message"
+            curl -X POST -H 'Content-type: application/json' \
+              --data "{\"text\": \"$message\"}" \
+              "$SLACK_WEBHOOK_URL"
+          else
+            echo "No valid or new Slack users to notify."
+          fi

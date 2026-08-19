@@ -36,6 +36,10 @@ inputs:
     description: "KEY=VALUE build secrets from files as a multiline string."
     default: ''
 
+  build-target:
+    description: "String name of the Dockerfile stage to build. Last stage if blank."
+    default: ''
+
   test-flags:
     description: "Arguments passed to docker run."
     default: ''
@@ -64,29 +68,61 @@ inputs:
     description: "Release information json blob."
     required: true
 
-  cosign-public-key:
-    description: "Public key for cosigning images."
-    required: false
+  notation-cert:
+    description: "Public key for notation signing images."
+    required: true
+
+  platforms:
+    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+    default: "linux/amd64"
 
   registry-token:
     description: "Authentication token for the container registry."
     required: true
 
-  cosign-private-key:
-    description: "Private key for cosigning images."
+  notation-key:
+    description: "Private key for notation signing images."
     required: false
 
-  cosign-password:
-    description: "Private key password for cosigning images."
-    required: false
 
 runs:
   using: "composite"
   steps:
+    - name: Setup Notation
+      uses: notaryproject/notation-action/setup@b6fee73110795d6793253c673bd723f12bcf9bbb # v1.2.2
+      with:
+        version: "1.3.1"
 
-    - name: install cosign
-      if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) && inputs.cosign-public-key != '' }}
-      uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159 # v3.9.2
+    - name: Generate notation key config
+      shell: bash
+      run: |
+        set -xeuo pipefail
+
+        BASE_DIR="$HOME/.config/notation/localkeys"
+        mkdir -p "$BASE_DIR"
+
+        CERT_FILE="$BASE_DIR/chi.swan.ac.uk.crt"
+        printf "%s" "$NOTATION_CERT" > "$CERT_FILE"
+
+        KEY_FILE="$BASE_DIR/chi.swan.ac.uk.key"
+        printf "%s" "$NOTATION_KEY" > "$KEY_FILE"
+        chmod 600 "$KEY_FILE"
+
+        cat > "$HOME/.config/notation/signingkeys.json" <<EOF
+        {
+          "default": "chi.swan.ac.uk",
+          "keys": [
+            {
+              "name": "chi.swan.ac.uk",
+              "keyPath": "$KEY_FILE",
+              "certPath": "$CERT_FILE"
+            }
+          ]
+        }
+        EOF
+      env:
+        NOTATION_CERT: ${{ inputs.notation-cert }}
+        NOTATION_KEY: ${{ inputs.notation-key }}
 
     - name: forward proxy settings
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
@@ -98,7 +134,7 @@ runs:
 
     - name: install buildx
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
-      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
+      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
       with:
         driver-opts: |
           env.http_proxy=${{ env.HTTP_PROXY }}
@@ -113,10 +149,11 @@ runs:
             mirrors = ["https://harbor.ukserp.ac.uk/ghcrcache"]
           [registry."mcr.microsoft.com"]
             mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
+        platforms: ${{ inputs.platforms }}
 
     - name: login to container registry
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
-      uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
+      uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}
@@ -144,7 +181,7 @@ runs:
 
     - name: rc cache container metadata
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
-      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+      uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
       id: rc-recent-meta
       with:
         images: |
@@ -154,7 +191,7 @@ runs:
 
     - name: rc container metadata
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
-      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+      uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
       id: rc-meta
       with:
         images: |
@@ -164,7 +201,7 @@ runs:
 
     - name: release container metadata
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published)  }}
-      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+      uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
       id: meta
       with:
         images: |
@@ -174,7 +211,7 @@ runs:
 
     - name: pr container metadata
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
-      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+      uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
       id: pr-meta
       with:
         images: |
@@ -184,11 +221,12 @@ runs:
 
     - name: build rc container
       if: ${{ contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+      uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
       id: build-rc
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
+        platforms: ${{ inputs.platforms }}
         build-args: |
           ${{ inputs.build-args }}
         secrets: |
@@ -197,6 +235,7 @@ runs:
           ${{ inputs.build-secret-envs }}
         secret-files: |
           ${{ inputs.build-secret-files }}
+        target: ${{ inputs.build-target }}
         tags: |
           ${{ steps.rc-meta.outputs.tags }}
           ${{ steps.rc-recent-meta.outputs.tags }}
@@ -230,39 +269,35 @@ runs:
       env:
         SUMMARY: ":x: Build Failure"
 
-    - name: cosign image with key
-      id: cosign-rc
-      if: inputs.cosign-public-key != '' && steps.build-rc.outcome == 'success'
+    - name: notation image with key
+      id: notation-rc
+      if: inputs.notation-cert != '' && steps.build-rc.outcome == 'success'
       env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         TAGS: ${{ steps.rc-meta.outputs.tags }}
         DIGEST: ${{ steps.build-rc.outputs.digest }}
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
+        notation sign --key="chi.swan.ac.uk" "${TAGS}@${DIGEST}"
 
-    - name: cosign success
-      if: steps.cosign-rc.outcome == 'success'
+    - name: notation success
+      if: steps.notation-rc.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":black_nib: Cosign Success  "
+        SUMMARY: ":black_nib: Notation Success  "
 
-    - name: cosign error
-      if: failure() && steps.cosign-rc.outcome == 'failure'
+    - name: notation error
+      if: failure() && steps.notation-rc.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":x: Cosign Failure"
+        SUMMARY: ":x: Notation Failure"
 
     - name: test
       id: test
-      if: (inputs.test-flags != '' || inputs.test-args != '') && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure'
+      if: (inputs.test-flags != '' || inputs.test-args != '') && steps.build-rc.outcome == 'success' && steps.notation-rc.outcome != 'failure'
       shell: bash
       run: |
         docker run \
@@ -287,7 +322,7 @@ runs:
         SUMMARY: ":x: Test Failure"
 
     - name: create null extra tag
-      if: inputs.registry-extra-tag-command == '' && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      if: inputs.registry-extra-tag-command == '' && steps.build-rc.outcome == 'success' && steps.notation-rc.outcome != 'failure' && steps.test.outcome != 'failure'
       shell: bash
       run: |
         echo "EXTRA_TAG=" >> $GITHUB_ENV
@@ -295,7 +330,7 @@ runs:
 
     - name: create extra tag
       id: extra-tag
-      if: inputs.registry-extra-tag-command != '' && steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure'
+      if: inputs.registry-extra-tag-command != '' && steps.build-rc.outcome == 'success' && steps.notation-rc.outcome != 'failure' && steps.test.outcome != 'failure'
       shell: bash
       run: |
         EXTRA_TAG=$(${{ inputs.registry-extra-tag-command }})
@@ -320,12 +355,13 @@ runs:
         SUMMARY: ":x: Extra Tag Command Failure"
 
     - name: build release container
-      if: steps.build-rc.outcome == 'success' && steps.cosign-rc.outcome != 'failure' && steps.test.outcome != 'failure' && steps.extra-tag.outcome != 'failure'
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+      if: steps.build-rc.outcome == 'success' && steps.notation-rc.outcome != 'failure' && steps.test.outcome != 'failure' && steps.extra-tag.outcome != 'failure'
+      uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
       id: build-release
       with:
         file: ${{ inputs.build-file }}
         context: ${{ inputs.build-context }}
+        platforms: ${{ inputs.platforms }}
         build-args: |
           ${{ inputs.build-args }}
         secrets: |
@@ -334,6 +370,7 @@ runs:
           ${{ inputs.build-secret-envs }}
         secret-files: |
           ${{ inputs.build-secret-files }}
+        target: ${{ inputs.build-target }}
         tags: |
           ${{ steps.meta.outputs.tags }}
           ${{ env.EXTRA_META }}
@@ -368,38 +405,34 @@ runs:
       env:
         SUMMARY: ":x: Release Build Failure"
 
-    - name: cosign image with key
-      id: cosign-release
-      if: inputs.cosign-public-key != '' && steps.build-release.outcome == 'success'
+    - name: notation image with key
+      id: notation-release
+      if: inputs.notation-cert != '' && steps.build-release.outcome == 'success'
       env:
-        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
-        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
-        COSIGN_PUBLIC_KEY: ${{ inputs.cosign-public-key }}
         TAGS: ${{ steps.meta.outputs.tags }}
         DIGEST: ${{ steps.build-release.outputs.digest }}
       shell: bash
       run: |
-        cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${TAGS}@${DIGEST}"
-        cosign verify --key env://COSIGN_PUBLIC_KEY "${TAGS}@${DIGEST}"
+        notation sign --key="chi.swan.ac.uk" "${TAGS}@${DIGEST}"
 
-    - name: cosign success
-      if: steps.cosign-release.outcome == 'success'
+    - name: notation success
+      if: steps.notation-release.outcome == 'success'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":black_nib: Cosign Success  "
+        SUMMARY: ":black_nib: Notation Success  "
 
-    - name: cosign error
-      if: failure() && steps.cosign-release.outcome == 'failure'
+    - name: notation error
+      if: failure() && steps.notation-release.outcome == 'failure'
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
       env:
-        SUMMARY: ":x: Cosign Failure"
+        SUMMARY: ":x: Notation Failure"
 
     - name: find pr comment
-      uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3
+      uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3.1.0
       if: ${{ inputs.comment-enabled == 'true' && contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
       id: find-pr-comment
       with:
@@ -410,7 +443,7 @@ runs:
     - name: comment on release success
       id: release-pr-comment
       if: ${{ inputs.comment-enabled == 'true' && contains(fromJSON('["true"]'), fromJSON(inputs.release-info).new-release-published) }}
-      uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4
+      uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
       with:
         comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
         issue-number: ${{ fromJSON(inputs.release-info).pr-number }}

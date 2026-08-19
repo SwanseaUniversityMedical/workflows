@@ -20,20 +20,16 @@ inputs:
     description: "Project within chart registry."
     required: true
 
-  cosign-public-key:
-    description: "Public key for cosigning images."
-    required: false
+  notation-cert:
+    description: "Public key for notation signing images."
+    required: true
 
   registry-token:
     description: "Authentication token for the chart registry."
     required: true
 
-  cosign-private-key:
-    description: "Private key for cosigning charts."
-    required: false
-
-  cosign-password:
-    description: "Private key password for cosigning charts."
+  notation-key:
+    description: "Private key for notation signing images."
     required: false
 
 runs:
@@ -55,7 +51,7 @@ runs:
         REF: ${{ inputs.ref }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v1.0.4-pr-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v3.0.0-pr-chart-action
       with:
         name: ${{ env.BITNAMI_NAME }}-chart
         comment-enabled: "true"
@@ -64,9 +60,8 @@ runs:
         registry-project: ${{ inputs.registry-project }}
         registry-repo: ${{ env.BITNAMI_NAME }}
         registry-token: ${{ inputs.registry-token }}
-        cosign-public-key: ${{ inputs.cosign-public-key }}
-        cosign-private-key: ${{ inputs.cosign-private-key }}
-        cosign-password: ${{ inputs.cosign-password }}
+        notation-cert: ${{ inputs.notation-cert }}
+        notation-key: ${{ inputs.notation-key }}
         chart: "bitnami/${{ env.BITNAMI_NAME }}"
         test-command: ${{ inputs.test-command }}
 
@@ -81,7 +76,6 @@ runs:
         registry-project: ${{ inputs.registry-project }}
         registry-repo: ${{ env.BITNAMI_NAME }}
         registry-token: ${{ inputs.registry-token }}
-        cosign-public-key: ${{ inputs.cosign-public-key }}
-        cosign-private-key: ${{ inputs.cosign-private-key }}
-        cosign-password: ${{ inputs.cosign-password }}
+        notation-cert: ${{ inputs.notation-cert }}
+        notation-key: ${{ inputs.notation-key }}
         chart: "bitnami/${{ env.BITNAMI_NAME }}"

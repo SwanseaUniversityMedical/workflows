@@ -20,6 +20,18 @@ inputs:
     description: "Command to test the chart named $CHART."
     default: ''
 
+  kubeconform-enforce:
+    description: "Fail the build when kubeconform reports validation errors."
+    default: "false"
+
+  kubeconform-args:
+    description: "Extra arguments appended to the kubeconform invocation, for example '-kubernetes-version 1.31.0 -skip CustomResourceDefinition'."
+    default: ''
+
+  helm-template-args:
+    description: "Extra arguments passed to helm template when rendering the chart for validation, for example '--values ci/lint-values.yaml'."
+    default: ''
+
   registry:
     description: "URL of the chart registry."
     required: true
@@ -74,6 +86,9 @@ runs:
         notation-cert: ${{ inputs.notation-cert }}
         chart: ${{ inputs.chart }}
         test-command: ${{ inputs.test-command }}
+        kubeconform-enforce: ${{ inputs.kubeconform-enforce }}
+        kubeconform-args: ${{ inputs.kubeconform-args }}
+        helm-template-args: ${{ inputs.helm-template-args }}
         notation-key: ${{ inputs.notation-key }}
 
         registry-token: ${{ inputs.registry-token }}
@@ -90,6 +105,9 @@ runs:
         notation-cert: ${{ inputs.notation-cert }}
         chart: ${{ inputs.chart }}
         test-command: ${{ inputs.test-command }}
+        kubeconform-enforce: ${{ inputs.kubeconform-enforce }}
+        kubeconform-args: ${{ inputs.kubeconform-args }}
+        helm-template-args: ${{ inputs.helm-template-args }}
         release-tag-format: ${{ inputs.release-tag-format }}
         notation-key: ${{ inputs.notation-key }}
 

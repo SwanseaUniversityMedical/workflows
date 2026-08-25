@@ -30,6 +30,10 @@ inputs:
     description: "NuGet configuration content to inject into the build."
     default: ''
 
+  test-project-file:
+    description: "Path to the test csproj/sln to run with coverage, relative to project-context. Requires coverlet.collector to be referenced by the test project."
+    default: ''
+
 runs:
   using: "composite"
   steps:
@@ -80,6 +84,12 @@ runs:
       if: ${{ github.event_name != 'pull_request' }}
       shell: bash
       run: |
+        COVERAGE_ARG=""
+        TEST_CMD=""
+        if [ -n "$TEST_PROJECT_FILE" ]; then
+          COVERAGE_ARG="/d:sonar.cs.opencover.reportsPaths=\"/repo/$PROJECT_CONTEXT/coverage/**/coverage.opencover.xml\""
+          TEST_CMD="dotnet test \"$TEST_PROJECT_FILE\" -c Release --results-directory \"/repo/$PROJECT_CONTEXT/coverage\" --collect:\"XPlat Code Coverage;Format=opencover\" && "
+        fi
         for n in {1..3}; do
             docker run --rm -v "$BUILD_CONTEXT":/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
               bash -c " \
@@ -92,9 +102,11 @@ runs:
                   /d:sonar.projectBaseDir=\"/repo/$PROJECT_CONTEXT\" \
                   /d:sonar.exclusions=\"$SONAR_EXCLUSIONS\" \
                   /d:sonar.host.url=\"$SONAR_URL\" \
+                  $COVERAGE_ARG \
                   /d:sonar.token=\"$SONAR_TOKEN\" && \
                 dotnet restore \"$PROJECT_FILE\" && \
                 dotnet build \"$PROJECT_FILE\" -c Release && \
+                $TEST_CMD \
                 dotnet /sonar-scanner/SonarScanner.MSBuild.dll end \
                   /d:sonar.token=\"$SONAR_TOKEN\"" && \
             break;
@@ -109,11 +121,18 @@ runs:
         SONAR_EXCLUSIONS: ${{ inputs.sonar-exclusions }}
         SONAR_URL: ${{ inputs.sonar-url }}
         SONAR_TOKEN: ${{ inputs.sonar-token }}
+        TEST_PROJECT_FILE: ${{ inputs.test-project-file }}
 
     - name: scan project PR
       if: ${{ github.event_name == 'pull_request' }}
       shell: bash
       run: |
+        COVERAGE_ARG=""
+        TEST_CMD=""
+        if [ -n "$TEST_PROJECT_FILE" ]; then
+          COVERAGE_ARG="/d:sonar.cs.opencover.reportsPaths=\"/repo/$PROJECT_CONTEXT/coverage/**/coverage.opencover.xml\""
+          TEST_CMD="dotnet test \"$TEST_PROJECT_FILE\" -c Release --results-directory \"/repo/$PROJECT_CONTEXT/coverage\" --collect:\"XPlat Code Coverage;Format=opencover\" && "
+        fi
         for n in {1..3}; do
           docker run --rm -v "$BUILD_CONTEXT":/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
             bash -c " \
@@ -129,16 +148,18 @@ runs:
                 /d:sonar.pullrequest.key=\"${{ github.event.number }}\" \
                 /d:sonar.pullrequest.branch=\"${{ github.head_ref }}\" \
                 /d:sonar.pullrequest.base=\"${{ github.base_ref }}\" \
+                $COVERAGE_ARG \
                 /d:sonar.token=\"$SONAR_TOKEN\" && \
               dotnet restore \"$PROJECT_FILE\" && \
               dotnet build \"$PROJECT_FILE\" -c Release && \
+              $TEST_CMD \
               dotnet /sonar-scanner/SonarScanner.MSBuild.dll end \
                 /d:sonar.token=\"$SONAR_TOKEN\"" && \
           break;
         done
       env:
         BUILD_CONTEXT: ${{ steps.prepare-build-context.outputs.build-context }}
-        SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet-8:1.0.0
+        SONAR_IMAGE: harbor.ukserp.ac.uk/github-workflows/sonar-dotnet-7:2.0.1
         PROJECT_NAME: ${{ inputs.project-name }}
         PROJECT_FILE: ${{ inputs.project-file }}
         PROJECT_CONTEXT: ${{ inputs.project-context }}
@@ -146,3 +167,4 @@ runs:
         SONAR_EXCLUSIONS: ${{ inputs.sonar-exclusions }}
         SONAR_URL: ${{ inputs.sonar-url }}
         SONAR_TOKEN: ${{ inputs.sonar-token }}
+        TEST_PROJECT_FILE: ${{ inputs.test-project-file }}

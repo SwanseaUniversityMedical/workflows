@@ -64,6 +64,10 @@ inputs:
     description: "Private key for notation signing images."
     required: false
 
+  platforms:
+    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+    default: "linux/amd64,linux/arm64"
+
 runs:
   using: "composite"
   steps:
@@ -124,7 +128,7 @@ runs:
         echo "NO_PROXY=$NO_PROXY" >> $GITHUB_ENV
 
     - name: install buildx
-      uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3
+      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
       with:
         driver-opts: |
           env.http_proxy=${{ env.HTTP_PROXY }}
@@ -139,6 +143,7 @@ runs:
             mirrors = ["https://harbor.ukserp.ac.uk/ghcrcache"]
           [registry."mcr.microsoft.com"]
             mirrors = ["https://harbor.ukserp.ac.uk/microsoftcache"]
+        platforms: ${{ inputs.platforms }}
 
     - name: login to container registry
       uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
@@ -167,7 +172,7 @@ runs:
 
     # TODO determine if workflow run commit ref has a pull request associated with it and cache-from that pr-<number> tag too
     - name: build release container
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+      uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
       id: build-release
       with:
         file: tmp/${{ inputs.git-repo }}/${{ inputs.git-ref }}/${{ inputs.build-file }}
@@ -183,6 +188,7 @@ runs:
         tags: |
           ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        platforms: ${{ inputs.platforms }}
         push: true
         github-token: ${{ github.token }}
         provenance: true

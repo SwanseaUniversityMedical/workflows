@@ -1,0 +1,54 @@
+on:
+  workflow_call:
+    inputs:
+
+      job-name:
+        description: "Name of the test job, shown as the check name."
+        default: 'dotnet-test'
+        type: string
+
+      project-file:
+        description: "Path to the sln or csproj file to test, relative to project-context."
+        required: true
+        type: string
+
+      project-context:
+        description: "Path to the root dir of the project."
+        default: '.'
+        type: string
+
+      configuration:
+        description: "Build configuration to test."
+        default: 'Release'
+        type: string
+
+      dotnet-image:
+        description: "Docker image with the dotnet SDK used to restore and test."
+        default: 'harbor.ukserp.ac.uk/github-workflows/sonar-dotnet-10:1.0.1'
+        type: string
+
+      nuget-config:
+        description: "NuGet configuration content to inject into the build."
+        default: ''
+        type: string
+
+      runner-group:
+        description: "Self-hosted runner group to execute the job on."
+        default: 'heavy'
+        type: string
+
+jobs:
+  test:
+    name: ${{ inputs.job-name }}
+    runs-on:
+      labels: [self-hosted, linux, x64]
+      group: ${{ inputs.runner-group }}
+
+    steps:
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/dotnet-test@feat/add-dotnet-test-runner
+        with:
+          project-file: ${{ inputs.project-file }}
+          project-context: ${{ inputs.project-context }}
+          configuration: ${{ inputs.configuration }}
+          dotnet-image: ${{ inputs.dotnet-image }}
+          nuget-config: ${{ inputs.nuget-config }}

@@ -14,7 +14,7 @@ on:
 
       comment-pr:
         description: "PR comment creation and update."
-        default: "false"
+        default: "true"
         type: string
 
       comment-release:

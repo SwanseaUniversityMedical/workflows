@@ -86,7 +86,7 @@ jobs:
   chart:
     runs-on:
       labels: [ self-hosted, linux, x64 ]
-      group: heavy
+      group: vcluster
     steps:
       - uses: SwanseaUniversityMedical/workflows/.github/actions/bulk-pr-and-release-chart@v4.0.0-bulk-pr-and-release-chart-action
         with:

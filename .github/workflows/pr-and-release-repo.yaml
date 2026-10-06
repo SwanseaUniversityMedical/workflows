@@ -42,7 +42,7 @@ jobs:
   repo:
     runs-on:
       labels: [ self-hosted, linux, x64 ]
-      group: heavy
+      group: vcluster
     outputs:
       release-info: ${{ steps.release.outputs.release-info }}
       new-release-published: ${{ steps.release.outputs.new-release-published }}

@@ -31,7 +31,7 @@ jobs:
   pr-lint:
     runs-on:
       labels: [self-hosted, linux, x64]
-      group: light
+      group: vcluster
     steps:
       - uses: SwanseaUniversityMedical/workflows/.github/actions/pr-lint@v1.0.8-pr-lint-action
         with:

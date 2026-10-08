@@ -118,7 +118,7 @@ runs:
     - name: build
       id: build
       if: steps.semantic.outputs.new-release-published == 'true'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/build-keycloakify@v1.0.0-build-keycloakify-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/build-keycloakify@test/keycloakify
       with:
         working-directory: ${{ inputs.working-directory }}
         node-version: ${{ inputs.node-version }}

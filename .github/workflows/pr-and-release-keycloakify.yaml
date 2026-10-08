@@ -86,7 +86,7 @@ jobs:
       pr-number: ${{ steps.release.outputs.pr-number }}
     steps:
       - id: release
-        uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-keycloakify@v1.0.0-pr-and-release-keycloakify-action
+        uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-keycloakify@test/keycloakify
         with:
           name: ${{ inputs.job-name }}
           working-directory: ${{ inputs.working-directory }}

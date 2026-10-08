@@ -11,7 +11,6 @@ on:
         description: "Optional path to a yamllint config file relative to the repo root."
         default: ''
         type: string
-        required: true
 
       exclude-paths:
         description: "Optional comma-separated list of files, directories, or glob patterns to exclude from scans (relative to repo root)."
@@ -59,7 +58,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          ROOT_PATH="$GITHUB_WORKSPACE/$BASE_DIR"
           EXCLUDE_PATHS_LIST="$(printf '%s' "${EXCLUDE_PATHS:-}" | tr ',' '\n')"
 
           is_excluded() {
@@ -68,8 +66,8 @@ jobs:
 
             while IFS= read -r pattern; do
               pattern="${pattern%$'\r'}"
-              pattern="${pattern#${pattern%%[![:space:]]*}}"
-              pattern="${pattern%${pattern##*[![:space:]]}}"
+              pattern="${pattern#"${pattern%%[![:space:]]*}"}"
+              pattern="${pattern%"${pattern##*[![:space:]]}"}"
               pattern="${pattern#./}"
               pattern="${pattern%/}"
 
@@ -77,9 +75,11 @@ jobs:
                 continue
               fi
 
-              if [[ "$rel_path" == "$pattern" || "$rel_path" == "$pattern"/* || "$rel_path" == $pattern ]]; then
-                return 0
-              fi
+              case "$rel_path" in
+                "$pattern" | "$pattern"/* | $pattern)
+                  return 0
+                  ;;
+              esac
             done <<< "$EXCLUDE_PATHS_LIST"
 
             return 1
@@ -171,8 +171,8 @@ jobs:
           IGNORE_PATTERNS=()
           while IFS= read -r ignore_path; do
             ignore_path="${ignore_path%$'\r'}"
-            ignore_path="${ignore_path#${ignore_path%%[![:space:]]*}}"
-            ignore_path="${ignore_path%${ignore_path##*[![:space:]]}}"
+            ignore_path="${ignore_path#"${ignore_path%%[![:space:]]*}"}"
+            ignore_path="${ignore_path%"${ignore_path##*[![:space:]]}"}"
             ignore_path="${ignore_path#./}"
             ignore_path="${ignore_path%/}"
 
@@ -195,10 +195,12 @@ jobs:
 
               excluded=false
               for ignore_path in "${IGNORE_PATTERNS[@]}"; do
-                if [[ "$rel_file" == "$ignore_path" || "$rel_file" == "$ignore_path"/* || "$rel_file" == $ignore_path ]]; then
-                  excluded=true
-                  break
-                fi
+                case "$rel_file" in
+                  "$ignore_path" | "$ignore_path"/* | $ignore_path)
+                    excluded=true
+                    break
+                    ;;
+                esac
               done
 
               if [[ "$excluded" == false ]]; then
@@ -218,10 +220,10 @@ jobs:
           fi
 
           if [[ "$EVENT_NAME" == 'pull_request' ]]; then
-            cat "$REPORT_FILE" | reviewdog -f=yamllint -name='yamllint' -reporter=github-pr-check -fail-level=warning
-            cat "$REPORT_FILE" | reviewdog -f=yamllint -name='yamllint-review' -reporter=github-pr-review -filter-mode=nofilter -fail-level=warning
+            reviewdog -f=yamllint -name='yamllint' -reporter=github-pr-check -fail-level=warning < "$REPORT_FILE"
+            reviewdog -f=yamllint -name='yamllint-review' -reporter=github-pr-review -filter-mode=nofilter -fail-level=warning < "$REPORT_FILE"
           else
-            cat "$REPORT_FILE" | reviewdog -f=yamllint -name='yamllint' -reporter=github-check -fail-level=warning
+            reviewdog -f=yamllint -name='yamllint' -reporter=github-check -fail-level=warning < "$REPORT_FILE"
           fi
 
           exit 1

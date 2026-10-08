@@ -1,0 +1,137 @@
+name: 'PR Keycloakify'
+inputs:
+  name:
+    description: "Name of the release asset."
+    required: true
+
+  working-directory:
+    description: "Directory containing the Keycloakify package.json."
+    default: "."
+
+  node-version:
+    description: "Node version used to build the theme."
+    default: "24"
+
+  java-version:
+    description: "Java version used by the Keycloakify jar build."
+    default: "21"
+
+  test-script:
+    description: "Name of an npm script to run before the build. Empty skips it."
+    default: ""
+
+  build-command:
+    description: "Command that builds the theme jar."
+    default: "npx keycloakify build"
+
+  jar-glob:
+    description: "Glob, relative to the working directory, matching the built jar."
+    default: "dist_keycloak/**/*.jar"
+
+  comment-header:
+    description: "Header line for the PR comment."
+    default: ":art: :hammer_and_wrench: PR Keycloakify"
+
+  comment-enabled:
+    description: "PR comment creation and update."
+    default: "true"
+
+  error-lines:
+    description: "Number of trailing log lines shown in the error comment."
+    default: "80"
+
+outputs:
+  jar-path:
+    description: "Path to the built jar."
+    value: ${{ steps.build.outputs.jar-path }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - id: build
+      continue-on-error: true
+      uses: SwanseaUniversityMedical/workflows/.github/actions/build-keycloakify@test/keycloakify
+      with:
+        working-directory: ${{ inputs.working-directory }}
+        node-version: ${{ inputs.node-version }}
+        java-version: ${{ inputs.java-version }}
+        test-script: ${{ inputs.test-script }}
+        build-command: ${{ inputs.build-command }}
+        jar-glob: ${{ inputs.jar-glob }}
+
+    - name: create comment body
+      id: comment-body
+      if: always()
+      shell: bash
+      run: |
+        body="${RUNNER_TEMP}/keycloakify-comment.md"
+        if [ "$OUTCOME" = "success" ]; then
+          printf '#### %s - %s - :heavy_check_mark: Build success! - :label: Commit: %s - :gear: Workflow: [%s](%s)\n' \
+            "$HEADER" "$NAME" "$SHA" "$RUN_ID" "$RUN_URL" > "$body"
+        else
+          {
+            printf '#### %s - %s - :x: Build error in stage `%s`! - :label: Commit: %s - :gear: Workflow: [%s](%s)\n' \
+              "$HEADER" "$NAME" "${FAILED_STAGE:-unknown}" "$SHA" "$RUN_ID" "$RUN_URL"
+            echo '```'
+            if [ -f "$LOG_FILE" ]; then
+              tail -n "$ERROR_LINES" "$LOG_FILE" | sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g'
+            fi
+            echo '```'
+          } > "$body"
+        fi
+        cat "$body" >> "$GITHUB_STEP_SUMMARY"
+        echo "body-path=${body}" >> "$GITHUB_OUTPUT"
+      env:
+        OUTCOME: ${{ steps.build.outcome }}
+        FAILED_STAGE: ${{ steps.build.outputs.failed-stage }}
+        LOG_FILE: ${{ steps.build.outputs.log-file }}
+        HEADER: ${{ inputs.comment-header }}
+        NAME: ${{ inputs.name }}
+        SHA: ${{ github.sha }}
+        RUN_ID: ${{ github.run_id }}
+        RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        ERROR_LINES: ${{ inputs.error-lines }}
+
+    - name: find pr comment
+      uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3.1.0
+      if: always() && inputs.comment-enabled == 'true' && github.event_name == 'pull_request'
+      id: find-pr-comment
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        body-includes: ${{ inputs.comment-header }} - ${{ inputs.name }}
+        comment-author: "github-actions[bot]"
+
+    - name: create or update pr comment
+      uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
+      if: always() && inputs.comment-enabled == 'true' && github.event_name == 'pull_request'
+      with:
+        comment-id: ${{ steps.find-pr-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        edit-mode: replace
+        body-path: ${{ steps.comment-body.outputs.body-path }}
+
+    - name: upload jar
+      if: steps.build.outcome == 'success'
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ inputs.name }}-jar
+        path: ${{ steps.build.outputs.jar-path }}
+        if-no-files-found: error
+
+    - name: fail on build error
+      if: steps.build.outcome == 'failure'
+      shell: bash
+      run: |
+        exit 1
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: Keycloakify validation failed! Check the workflow run logs for details!

@@ -1,0 +1,100 @@
+on:
+  workflow_call:
+    inputs:
+
+      job-name:
+        description: "Name of the release asset."
+        required: true
+        type: string
+
+      working-directory:
+        description: "Directory containing the Keycloakify package.json."
+        default: "."
+        type: string
+
+      node-version:
+        description: "Node version used to build the theme."
+        default: "24"
+        type: string
+
+      java-version:
+        description: "Java version used by the Keycloakify jar build."
+        default: "21"
+        type: string
+
+      test-script:
+        description: "Name of an npm script to run before the build. Empty skips it."
+        default: ""
+        type: string
+
+      build-command:
+        description: "Command that builds the theme jar."
+        default: "npx keycloakify build"
+        type: string
+
+      jar-glob:
+        description: "Glob, relative to the working directory, matching the built jar."
+        default: "dist_keycloak/**/*.jar"
+        type: string
+
+      comment-pr:
+        description: "PR build comment creation and update."
+        default: "true"
+        type: string
+
+      comment-release:
+        description: "Release comment creation and update."
+        default: "true"
+        type: string
+
+      release-tag-format:
+        description: "Semantic-release Github release tag format."
+        default: '${version}'
+        type: string
+
+    outputs:
+      release-info:
+        description: "All release info in one json blob."
+        value: ${{ jobs.keycloakify.outputs.release-info }}
+
+      new-release-published:
+        description: "Semantic release output."
+        value: ${{ jobs.keycloakify.outputs.new-release-published }}
+
+      release-version:
+        description: "Semantic release output."
+        value: ${{ jobs.keycloakify.outputs.release-version }}
+
+      git-tag:
+        description: "Semantic release output."
+        value: ${{ jobs.keycloakify.outputs.git-tag }}
+
+      pr-number:
+        description: "Release PR number."
+        value: ${{ jobs.keycloakify.outputs.pr-number }}
+
+jobs:
+  keycloakify:
+    runs-on:
+      labels: [ self-hosted, linux, x64 ]
+      group: heavy
+    outputs:
+      release-info: ${{ steps.release.outputs.release-info }}
+      new-release-published: ${{ steps.release.outputs.new-release-published }}
+      release-version: ${{ steps.release.outputs.release-version }}
+      git-tag: ${{ steps.release.outputs.git-tag }}
+      pr-number: ${{ steps.release.outputs.pr-number }}
+    steps:
+      - id: release
+        uses: SwanseaUniversityMedical/workflows/.github/actions/pr-and-release-keycloakify@v1.0.0-pr-and-release-keycloakify-action
+        with:
+          name: ${{ inputs.job-name }}
+          working-directory: ${{ inputs.working-directory }}
+          node-version: ${{ inputs.node-version }}
+          java-version: ${{ inputs.java-version }}
+          test-script: ${{ inputs.test-script }}
+          build-command: ${{ inputs.build-command }}
+          jar-glob: ${{ inputs.jar-glob }}
+          comment-pr: ${{ inputs.comment-pr }}
+          comment-release: ${{ inputs.comment-release }}
+          release-tag-format: ${{ inputs.release-tag-format }}

@@ -1,0 +1,115 @@
+name: 'Build Keycloakify'
+inputs:
+  working-directory:
+    description: "Directory containing the Keycloakify package.json."
+    default: "."
+
+  node-version:
+    description: "Node version used to build the theme."
+    default: "24"
+
+  java-version:
+    description: "Java version used by the Keycloakify jar build."
+    default: "21"
+
+  test-script:
+    description: "Name of an npm script to run before the build. Empty skips it."
+    default: ""
+
+  build-command:
+    description: "Command that builds the theme jar."
+    default: "npx keycloakify build"
+
+  jar-glob:
+    description: "Glob, relative to the working directory, matching the built jar."
+    default: "dist_keycloak/**/*.jar"
+
+outputs:
+  failed-stage:
+    description: "Name of the stage that failed. Empty on success."
+    value: ${{ steps.build.outputs.failed-stage }}
+
+  log-file:
+    description: "Path to the combined build log."
+    value: ${{ steps.build.outputs.log-file }}
+
+  jar-path:
+    description: "Path to the built jar."
+    value: ${{ steps.build.outputs.jar-path }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: install node
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: install java
+      uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+
+    - name: cache node and maven modules
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: |
+          ~/.npm
+          ~/.m2/repository
+        key: ${{ github.workflow }}-keycloakify-${{ hashFiles(format('{0}/package-lock.json', inputs.working-directory)) }}
+        restore-keys: |
+          ${{ github.workflow }}-keycloakify-
+
+    - name: build
+      id: build
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      continue-on-error: true
+      run: |
+        log="${RUNNER_TEMP}/keycloakify-build.log"
+        : > "$log"
+        echo "log-file=${log}" >> "$GITHUB_OUTPUT"
+
+        run_stage() {
+          local stage="$1"
+          shift
+          echo "::group::${stage}"
+          echo "$ $*" | tee -a "$log"
+          set +e
+          "$@" 2>&1 | tee -a "$log"
+          local status=${PIPESTATUS[0]}
+          set -e
+          echo "::endgroup::"
+          if [ "$status" -ne 0 ]; then
+            echo "failed-stage=${stage}" >> "$GITHUB_OUTPUT"
+            echo "::error title=Keycloakify ${stage} failed::see the log for details"
+            exit "$status"
+          fi
+        }
+
+        run_stage install npm ci
+        run_stage typecheck npx tsc --noEmit
+        if [ -n "$TEST_SCRIPT" ]; then
+          run_stage test npm run "$TEST_SCRIPT"
+        fi
+        run_stage build bash -c "$BUILD_COMMAND"
+
+        shopt -s globstar nullglob
+        jars=( $JAR_GLOB )
+        if [ "${#jars[@]}" -eq 0 ]; then
+          echo "no jar matched ${JAR_GLOB}" | tee -a "$log"
+          echo "failed-stage=locate-jar" >> "$GITHUB_OUTPUT"
+          exit 1
+        fi
+        echo "jar-path=${PWD}/${jars[0]}" >> "$GITHUB_OUTPUT"
+      env:
+        TEST_SCRIPT: ${{ inputs.test-script }}
+        BUILD_COMMAND: ${{ inputs.build-command }}
+        JAR_GLOB: ${{ inputs.jar-glob }}
+
+    - name: fail on build error
+      if: steps.build.outcome == 'failure'
+      shell: bash
+      run: |
+        exit 1

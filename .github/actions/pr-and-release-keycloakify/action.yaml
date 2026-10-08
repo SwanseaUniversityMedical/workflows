@@ -1,0 +1,123 @@
+name: 'PR and Release Keycloakify'
+inputs:
+  name:
+    description: "Name of the release asset."
+    required: true
+
+  working-directory:
+    description: "Directory containing the Keycloakify package.json."
+    default: "."
+
+  node-version:
+    description: "Node version used to build the theme."
+    default: "24"
+
+  java-version:
+    description: "Java version used by the Keycloakify jar build."
+    default: "21"
+
+  test-script:
+    description: "Name of an npm script to run before the build. Empty skips it."
+    default: ""
+
+  build-command:
+    description: "Command that builds the theme jar."
+    default: "npx keycloakify build"
+
+  jar-glob:
+    description: "Glob, relative to the working directory, matching the built jar."
+    default: "dist_keycloak/**/*.jar"
+
+  comment-pr:
+    description: "PR build comment creation and update."
+    default: "true"
+
+  comment-release:
+    description: "Release comment creation and update."
+    default: "true"
+
+  release-tag-format:
+    description: "Semantic-release Github release tag format."
+    default: '${version}'
+
+outputs:
+  release-info:
+    description: "All release info in one json blob."
+    value: ${{ steps.release.outputs.release-info }}
+
+  new-release-published:
+    description: "Semantic release output."
+    value: ${{ steps.release.outputs.new-release-published }}
+
+  release-version:
+    description: "Semantic release output."
+    value: ${{ steps.release.outputs.release-version }}
+
+  git-tag:
+    description: "Semantic release output."
+    value: ${{ steps.release.outputs.git-tag }}
+
+  pr-number:
+    description: "Release PR number."
+    value: ${{ steps.release.outputs.pr-number }}
+
+  jar-path:
+    description: "Path to the built jar."
+    value: ${{ steps.pr.outputs.jar-path || steps.release.outputs.jar-path }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - id: create-release-labels
+      uses: SwanseaUniversityMedical/workflows/.github/actions/create-release-labels@v3.0.1-create-release-labels-action
+      with:
+        name: ${{ inputs.name }}
+
+    - name: add eligible label
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+      with:
+        script: |
+          var inputs = ${{ toJSON(inputs) }};
+          var asset = inputs['name'];
+          var eligible = `eligible: ${asset}`;
+
+          try {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.pull_request.number }},
+              labels: [eligible]
+            });
+          } catch (error) {
+            console.log(error);
+          }
+
+    - id: pr
+      if: github.event_name == 'pull_request'
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-keycloakify@v1.0.0-pr-keycloakify-action
+      with:
+        name: ${{ inputs.name }}
+        working-directory: ${{ inputs.working-directory }}
+        node-version: ${{ inputs.node-version }}
+        java-version: ${{ inputs.java-version }}
+        test-script: ${{ inputs.test-script }}
+        build-command: ${{ inputs.build-command }}
+        jar-glob: ${{ inputs.jar-glob }}
+        comment-enabled: ${{ inputs.comment-pr }}
+
+    - id: release
+      if: github.event_name == 'push'
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-keycloakify@v1.0.0-release-keycloakify-action
+      with:
+        name: ${{ inputs.name }}
+        working-directory: ${{ inputs.working-directory }}
+        node-version: ${{ inputs.node-version }}
+        java-version: ${{ inputs.java-version }}
+        test-script: ${{ inputs.test-script }}
+        build-command: ${{ inputs.build-command }}
+        jar-glob: ${{ inputs.jar-glob }}
+        comment-enabled: ${{ inputs.comment-release }}
+        release-tag-format: ${{ inputs.release-tag-format }}

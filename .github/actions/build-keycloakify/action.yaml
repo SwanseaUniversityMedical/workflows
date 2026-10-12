@@ -28,6 +28,10 @@ inputs:
     description: "Base image the jar is copied into."
     default: "busybox:1.37"
 
+  jar-version:
+    description: "Version appended to the jar filename inside the image. Empty keeps the original name."
+    default: ""
+
 outputs:
   failed-stage:
     description: "Name of the stage that failed. Empty on success."
@@ -117,6 +121,12 @@ runs:
           echo "failed-stage=locate-jar" >> "$GITHUB_OUTPUT"
           exit 1
         fi
+        if [ "${#jars[@]}" -gt 1 ]; then
+          echo "multiple jars matched ${JAR_GLOB}, narrow jar-glob:" | tee -a "$log"
+          for jar in "${jars[@]}"; do echo "$jar" | tee -a "$log"; done
+          echo "failed-stage=locate-jar" >> "$GITHUB_OUTPUT"
+          exit 1
+        fi
         echo "jar-path=${PWD}/${jars[0]}" >> "$GITHUB_OUTPUT"
       env:
         TEST_SCRIPT: ${{ inputs.test-script }}
@@ -136,13 +146,18 @@ runs:
         context="${RUNNER_TEMP}/keycloakify-image"
         rm -rf "$context"
         mkdir -p "$context"
-        cp "$JAR_PATH" "$context/"
+        jar_name="$(basename "$JAR_PATH")"
+        if [ -n "$JAR_VERSION" ]; then
+          jar_name="${jar_name%.jar}-${JAR_VERSION}.jar"
+        fi
+        cp "$JAR_PATH" "$context/$jar_name"
         {
           echo "FROM ${BASE_IMAGE}"
-          echo "COPY $(basename "$JAR_PATH") /"
+          echo "COPY ${jar_name} /"
         } > "$context/Dockerfile"
         echo "build-context=${context}" >> "$GITHUB_OUTPUT"
         echo "build-file=${context}/Dockerfile" >> "$GITHUB_OUTPUT"
       env:
         JAR_PATH: ${{ steps.build.outputs.jar-path }}
         BASE_IMAGE: ${{ inputs.base-image }}
+        JAR_VERSION: ${{ inputs.jar-version }}

@@ -93,6 +93,7 @@ runs:
         build-command: ${{ inputs.build-command }}
         jar-glob: ${{ inputs.jar-glob }}
         base-image: ${{ inputs.base-image }}
+        jar-version: pr-${{ github.event.pull_request.number }}
 
     - name: create comment body
       id: comment-body

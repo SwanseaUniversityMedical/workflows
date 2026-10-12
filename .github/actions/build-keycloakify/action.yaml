@@ -18,7 +18,7 @@ inputs:
 
   build-command:
     description: "Command that builds the theme jar."
-    default: "npx keycloakify build"
+    default: "npm run build-keycloak-theme"
 
   jar-glob:
     description: "Glob, relative to the working directory, matching the built jar."
@@ -50,6 +50,9 @@ runs:
       with:
         distribution: temurin
         java-version: ${{ inputs.java-version }}
+
+    - name: install maven
+      uses: stCarolas/setup-maven@12eb41b233df95d49b0c11fc1b5bc8312e5d4ce0 # v5.1
 
     - name: cache node and maven modules
       uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4

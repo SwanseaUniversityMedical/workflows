@@ -29,7 +29,7 @@ on:
 
       build-command:
         description: "Command that builds the theme jar."
-        default: "npx keycloakify build"
+        default: "npm run build-keycloak-theme"
         type: string
 
       jar-glob:

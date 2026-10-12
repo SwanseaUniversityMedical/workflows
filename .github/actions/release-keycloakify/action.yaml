@@ -22,7 +22,7 @@ inputs:
 
   build-command:
     description: "Command that builds the theme jar."
-    default: "npx keycloakify build"
+    default: "npm run build-keycloak-theme"
 
   jar-glob:
     description: "Glob, relative to the working directory, matching the built jar."

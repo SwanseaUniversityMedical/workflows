@@ -40,6 +40,42 @@ inputs:
     description: "Semantic-release Github release tag format."
     default: '${version}'
 
+  base-image:
+    description: "Base image the jar is copied into."
+    default: "busybox:1.37"
+
+  registry:
+    description: "URL of the container registry."
+    required: true
+
+  registry-user:
+    description: "Username for the container registry."
+    required: true
+
+  registry-repo:
+    description: "Repo within container registry project."
+    required: true
+
+  registry-token:
+    description: "Authentication token for the container registry."
+    required: true
+
+  notation-cert:
+    description: "Public key for notation signing images."
+    required: true
+
+  notation-key:
+    description: "Private key for notation signing images."
+    required: false
+
+  platforms:
+    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+    default: "linux/amd64"
+
+  registry-extra-tag-command:
+    description: "Extra tag to push release container."
+    default: ""
+
 outputs:
   release-info:
     description: "All release info in one json blob."
@@ -63,7 +99,7 @@ outputs:
 
   jar-path:
     description: "Path to the built jar."
-    value: ${{ steps.pr.outputs.jar-path || steps.release.outputs.jar-path }}
+    value: ${{ steps.pr.outputs.jar-path }}
 
 runs:
   using: "composite"
@@ -106,7 +142,15 @@ runs:
         test-script: ${{ inputs.test-script }}
         build-command: ${{ inputs.build-command }}
         jar-glob: ${{ inputs.jar-glob }}
+        base-image: ${{ inputs.base-image }}
         comment-enabled: ${{ inputs.comment-pr }}
+        registry: ${{ inputs.registry }}
+        registry-user: ${{ inputs.registry-user }}
+        registry-repo: ${{ inputs.registry-repo }}
+        registry-token: ${{ inputs.registry-token }}
+        platforms: ${{ inputs.platforms }}
+        notation-cert: ${{ inputs.notation-cert }}
+        notation-key: ${{ inputs.notation-key }}
 
     - id: release
       if: github.event_name == 'push'
@@ -119,5 +163,14 @@ runs:
         test-script: ${{ inputs.test-script }}
         build-command: ${{ inputs.build-command }}
         jar-glob: ${{ inputs.jar-glob }}
+        base-image: ${{ inputs.base-image }}
         comment-enabled: ${{ inputs.comment-release }}
         release-tag-format: ${{ inputs.release-tag-format }}
+        registry: ${{ inputs.registry }}
+        registry-user: ${{ inputs.registry-user }}
+        registry-repo: ${{ inputs.registry-repo }}
+        registry-token: ${{ inputs.registry-token }}
+        registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
+        platforms: ${{ inputs.platforms }}
+        notation-cert: ${{ inputs.notation-cert }}
+        notation-key: ${{ inputs.notation-key }}

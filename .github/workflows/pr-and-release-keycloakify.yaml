@@ -37,6 +37,41 @@ on:
         default: "dist_keycloak/**/*.jar"
         type: string
 
+      base-image:
+        description: "Base image the jar is copied into."
+        default: "busybox:1.37"
+        type: string
+
+      registry:
+        description: "URL of the container registry."
+        required: true
+        type: string
+
+      registry-user:
+        description: "Username for the container registry."
+        required: true
+        type: string
+
+      registry-repo:
+        description: "Repo within container registry project."
+        required: true
+        type: string
+
+      registry-extra-tag-command:
+        description: "Extra tag to push release container."
+        default: ''
+        type: string
+
+      notation-cert:
+        description: "Public key for notation signing images."
+        required: true
+        type: string
+
+      platforms:
+        description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+        default: "linux/amd64"
+        type: string
+
       comment-pr:
         description: "PR build comment creation and update."
         default: "true"
@@ -51,6 +86,16 @@ on:
         description: "Semantic-release Github release tag format."
         default: '${version}'
         type: string
+
+    secrets:
+
+      registry-token:
+        description: "Authentication token for the container registry."
+        required: true
+
+      notation-key:
+        description: "Private key for notation signing images."
+        required: false
 
     outputs:
       release-info:
@@ -95,6 +140,15 @@ jobs:
           test-script: ${{ inputs.test-script }}
           build-command: ${{ inputs.build-command }}
           jar-glob: ${{ inputs.jar-glob }}
+          base-image: ${{ inputs.base-image }}
+          registry: ${{ inputs.registry }}
+          registry-user: ${{ inputs.registry-user }}
+          registry-repo: ${{ inputs.registry-repo }}
+          registry-token: ${{ secrets.registry-token }}
+          registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
+          platforms: ${{ inputs.platforms }}
+          notation-cert: ${{ inputs.notation-cert }}
+          notation-key: ${{ secrets.notation-key }}
           comment-pr: ${{ inputs.comment-pr }}
           comment-release: ${{ inputs.comment-release }}
           release-tag-format: ${{ inputs.release-tag-format }}

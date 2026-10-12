@@ -40,6 +40,38 @@ inputs:
     description: "Number of trailing log lines shown in the error comment."
     default: "80"
 
+  base-image:
+    description: "Base image the jar is copied into."
+    default: "busybox:1.37"
+
+  registry:
+    description: "URL of the container registry."
+    required: true
+
+  registry-user:
+    description: "Username for the container registry."
+    required: true
+
+  registry-repo:
+    description: "Repo within container registry project."
+    required: true
+
+  registry-token:
+    description: "Authentication token for the container registry."
+    required: true
+
+  notation-cert:
+    description: "Public key for notation signing images."
+    required: true
+
+  notation-key:
+    description: "Private key for notation signing images."
+    required: false
+
+  platforms:
+    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+    default: "linux/amd64"
+
 outputs:
   jar-path:
     description: "Path to the built jar."
@@ -60,6 +92,7 @@ runs:
         test-script: ${{ inputs.test-script }}
         build-command: ${{ inputs.build-command }}
         jar-glob: ${{ inputs.jar-glob }}
+        base-image: ${{ inputs.base-image }}
 
     - name: create comment body
       id: comment-body
@@ -112,13 +145,22 @@ runs:
         edit-mode: replace
         body-path: ${{ steps.comment-body.outputs.body-path }}
 
-    - name: upload jar
+    - name: build and push container
       if: steps.build.outcome == 'success'
-      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-container@v3.0.0-pr-container-action
       with:
-        name: ${{ inputs.name }}-jar
-        path: ${{ steps.build.outputs.jar-path }}
-        if-no-files-found: error
+        name: ${{ inputs.name }}
+        comment-enabled: ${{ inputs.comment-enabled }}
+        label-eligible: "false"
+        registry: ${{ inputs.registry }}
+        registry-user: ${{ inputs.registry-user }}
+        registry-repo: ${{ inputs.registry-repo }}
+        registry-token: ${{ inputs.registry-token }}
+        build-file: ${{ steps.build.outputs.build-file }}
+        build-context: ${{ steps.build.outputs.build-context }}
+        platforms: ${{ inputs.platforms }}
+        notation-cert: ${{ inputs.notation-cert }}
+        notation-key: ${{ inputs.notation-key }}
 
     - name: fail on build error
       if: steps.build.outcome == 'failure'

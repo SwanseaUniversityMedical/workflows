@@ -24,6 +24,10 @@ inputs:
     description: "Glob, relative to the working directory, matching the built jar."
     default: "dist_keycloak/**/*.jar"
 
+  base-image:
+    description: "Base image the jar is copied into."
+    default: "busybox:1.37"
+
 outputs:
   failed-stage:
     description: "Name of the stage that failed. Empty on success."
@@ -36,6 +40,14 @@ outputs:
   jar-path:
     description: "Path to the built jar."
     value: ${{ steps.build.outputs.jar-path }}
+
+  build-file:
+    description: "Path to the generated container file."
+    value: ${{ steps.image.outputs.build-file }}
+
+  build-context:
+    description: "Path to the generated container build context."
+    value: ${{ steps.image.outputs.build-context }}
 
 runs:
   using: "composite"
@@ -116,3 +128,21 @@ runs:
       shell: bash
       run: |
         exit 1
+
+    - name: stage container build context
+      id: image
+      shell: bash
+      run: |
+        context="${RUNNER_TEMP}/keycloakify-image"
+        rm -rf "$context"
+        mkdir -p "$context"
+        cp "$JAR_PATH" "$context/"
+        {
+          echo "FROM ${BASE_IMAGE}"
+          echo "COPY $(basename "$JAR_PATH") /"
+        } > "$context/Dockerfile"
+        echo "build-context=${context}" >> "$GITHUB_OUTPUT"
+        echo "build-file=${context}/Dockerfile" >> "$GITHUB_OUTPUT"
+      env:
+        JAR_PATH: ${{ steps.build.outputs.jar-path }}
+        BASE_IMAGE: ${{ inputs.base-image }}

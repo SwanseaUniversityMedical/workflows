@@ -28,10 +28,6 @@ inputs:
     description: "Base image the jar is copied into."
     default: "busybox:1.37"
 
-  jar-version:
-    description: "Version appended to the jar filename inside the image. Empty keeps the original name."
-    default: ""
-
 outputs:
   failed-stage:
     description: "Name of the stage that failed. Empty on success."
@@ -146,10 +142,7 @@ runs:
         context="${RUNNER_TEMP}/keycloakify-image"
         rm -rf "$context"
         mkdir -p "$context"
-        jar_name="$(basename "$JAR_PATH")"
-        if [ -n "$JAR_VERSION" ]; then
-          jar_name="${jar_name%.jar}-${JAR_VERSION}.jar"
-        fi
+        jar_name="serp-keycloak-themes.jar"
         cp "$JAR_PATH" "$context/$jar_name"
         {
           echo "FROM ${BASE_IMAGE}"
@@ -160,4 +153,3 @@ runs:
       env:
         JAR_PATH: ${{ steps.build.outputs.jar-path }}
         BASE_IMAGE: ${{ inputs.base-image }}
-        JAR_VERSION: ${{ inputs.jar-version }}

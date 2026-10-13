@@ -75,6 +75,7 @@ jobs:
                 continue
               fi
 
+              # shellcheck disable=SC2254
               case "$rel_path" in
                 "$pattern" | "$pattern"/* | $pattern)
                   return 0
@@ -195,6 +196,7 @@ jobs:
 
               excluded=false
               for ignore_path in "${IGNORE_PATTERNS[@]}"; do
+                # shellcheck disable=SC2254
                 case "$rel_file" in
                   "$ignore_path" | "$ignore_path"/* | $ignore_path)
                     excluded=true

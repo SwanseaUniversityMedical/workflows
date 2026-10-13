@@ -133,7 +133,7 @@ runs:
 
     - id: pr
       if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-keycloakify@test/keycloakify
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-keycloakify@v1.0.0-pr-keycloakify-action
       with:
         name: ${{ inputs.name }}
         working-directory: ${{ inputs.working-directory }}
@@ -154,7 +154,7 @@ runs:
 
     - id: release
       if: github.event_name == 'push'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/release-keycloakify@test/keycloakify
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-keycloakify@v1.0.0-release-keycloakify-action
       with:
         name: ${{ inputs.name }}
         working-directory: ${{ inputs.working-directory }}

@@ -45,7 +45,7 @@ jobs:
       group: ${{ inputs.runner-group }}
 
     steps:
-      - uses: SwanseaUniversityMedical/workflows/.github/actions/dotnet-test@feat/add-dotnet-test-runner
+      - uses: SwanseaUniversityMedical/workflows/.github/actions/dotnet-test@v1.0.0-dotnet-test-action
         with:
           project-file: ${{ inputs.project-file }}
           project-context: ${{ inputs.project-context }}

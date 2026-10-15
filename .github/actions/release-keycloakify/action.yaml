@@ -1,0 +1,160 @@
+name: 'Release Keycloakify'
+inputs:
+  name:
+    description: "Name of the release asset."
+    required: true
+
+  working-directory:
+    description: "Directory containing the Keycloakify package.json."
+    default: "."
+
+  node-version:
+    description: "Node version used to build the theme."
+    default: "24"
+
+  java-version:
+    description: "Java version used by the Keycloakify jar build."
+    default: "21"
+
+  test-script:
+    description: "Name of an npm script to run before the build. Empty skips it."
+    default: ""
+
+  build-command:
+    description: "Command that builds the theme jar."
+    default: "npm run build-keycloak-theme"
+
+  jar-glob:
+    description: "Glob, relative to the working directory, matching the built jar."
+    default: "dist_keycloak/**/*.jar"
+
+  comment-enabled:
+    description: "Release comment creation and update."
+    default: "true"
+
+  release-tag-format:
+    description: "Semantic-release Github release tag format."
+    default: '${version}'
+
+  registry-extra-tag-command:
+    description: "Extra tag to push release container."
+    default: ''
+
+  base-image:
+    description: "Base image the jar is copied into."
+    default: "busybox:1.37"
+
+  registry:
+    description: "URL of the container registry."
+    required: true
+
+  registry-user:
+    description: "Username for the container registry."
+    required: true
+
+  registry-repo:
+    description: "Repo within container registry project."
+    required: true
+
+  registry-token:
+    description: "Authentication token for the container registry."
+    required: true
+
+  notation-cert:
+    description: "Public key for notation signing images."
+    required: true
+
+  notation-key:
+    description: "Private key for notation signing images."
+    required: false
+
+  platforms:
+    description: "Comma-separated list of platforms to build for (e.g., linux/amd64,linux/arm64)"
+    default: "linux/amd64"
+
+outputs:
+  release-info:
+    description: "All release info in one json blob."
+    value: ${{ toJSON(steps.semantic.outputs) }}
+
+  new-release-published:
+    description: "Semantic release output."
+    value: ${{ steps.semantic.outputs.new-release-published }}
+
+  release-version:
+    description: "Semantic release output."
+    value: ${{ steps.semantic.outputs.release-version }}
+
+  git-tag:
+    description: "Semantic release output."
+    value: ${{ steps.semantic.outputs.git-tag }}
+
+  pr-number:
+    description: "Release PR number."
+    value: ${{ steps.semantic.outputs.pr-number }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: determine release
+      id: semantic
+      uses: SwanseaUniversityMedical/workflows/.github/actions/determine-bump@v2.0.3-determine-bump-action
+      with:
+        name: ${{ inputs.name }}
+        release-tag-format: ${{ inputs.release-tag-format }}
+
+    - name: build
+      id: build
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: SwanseaUniversityMedical/workflows/.github/actions/build-keycloakify@v1.0.0-build-keycloakify-action
+      with:
+        working-directory: ${{ inputs.working-directory }}
+        node-version: ${{ inputs.node-version }}
+        java-version: ${{ inputs.java-version }}
+        test-script: ${{ inputs.test-script }}
+        build-command: ${{ inputs.build-command }}
+        jar-glob: ${{ inputs.jar-glob }}
+        base-image: ${{ inputs.base-image }}
+
+    - name: release build failure
+      if: failure() && steps.build.outcome == 'failure'
+      shell: bash
+      run: |
+        {
+          echo ":x: Keycloakify build failure in stage \`${FAILED_STAGE:-unknown}\`"
+          if [ -f "$LOG_FILE" ]; then
+            echo '```'
+            tail -n 80 "$LOG_FILE" | sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g'
+            echo '```'
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+      env:
+        FAILED_STAGE: ${{ steps.build.outputs.failed-stage }}
+        LOG_FILE: ${{ steps.build.outputs.log-file }}
+
+    - name: release container
+      uses: SwanseaUniversityMedical/workflows/.github/actions/release-container@v4.0.0-release-container-action
+      with:
+        name: ${{ inputs.name }}
+        comment-enabled: ${{ inputs.comment-enabled }}
+        registry: ${{ inputs.registry }}
+        registry-user: ${{ inputs.registry-user }}
+        registry-repo: ${{ inputs.registry-repo }}
+        registry-token: ${{ inputs.registry-token }}
+        registry-extra-tag-command: ${{ inputs.registry-extra-tag-command }}
+        release-tag-format: ${{ inputs.release-tag-format }}
+        build-file: ${{ steps.build.outputs.build-file || 'Dockerfile' }}
+        build-context: ${{ steps.build.outputs.build-context || '.' }}
+        platforms: ${{ inputs.platforms }}
+        notation-cert: ${{ inputs.notation-cert }}
+        notation-key: ${{ inputs.notation-key }}
+
+    - name: error
+      if: failure()
+      shell: bash
+      run: |
+        echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        SUMMARY: |
+          ---
+          :x: An error occurred during execution! Check the workflow run logs for details!

@@ -1,0 +1,412 @@
+name: 'Kubeconform'
+inputs:
+  chart:
+    description: "Path to the helm chart to render, either a chart directory or a packaged .tgz."
+    required: true
+
+  enforce:
+    description: "Fail the build when kubeconform reports validation errors."
+    default: "false"
+
+  kubeconform-args:
+    description: "Extra arguments appended to the kubeconform invocation, for example '-kubernetes-version 1.31.0 -skip CustomResourceDefinition'."
+    default: ''
+
+  helm-template-args:
+    description: "Extra arguments passed to helm template when rendering the chart, for example '--values ci/lint-values.yaml'."
+    default: ''
+
+outputs:
+  result:
+    description: "Validation outcome, one of success, issues or error."
+    value: ${{ steps.kubeconform.outputs.result }}
+
+  summary-line:
+    description: "The kubeconform summary line, or an empty string if validation did not run."
+    value: ${{ steps.kubeconform.outputs.summary-line }}
+
+  skipped-count:
+    description: "Number of resources that had no schema available and were therefore not validated."
+    value: ${{ steps.kubeconform.outputs.skipped-count }}
+
+  skipped-kinds:
+    description: "Comma separated kinds that had no schema available, for diagnosing coverage gaps."
+    value: ${{ steps.kubeconform.outputs.skipped-kinds }}
+
+  comment:
+    description: "Single line summarising the validation outcome, including any unvalidated resources, for embedding in a PR comment."
+    value: ${{ steps.kubeconform.outputs.comment }}
+
+runs:
+  using: "composite"
+  steps:
+
+    # Pins live in one step so the installer, the cache key, the fetch and the
+    # verification all read the same values.
+    - name: resolve versions
+      id: kc
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Renovate bumps the version but cannot recompute the digest, so a
+        # version bump without a matching digest update fails on purpose.
+        # renovate: datasource=github-releases depName=yannh/kubeconform
+        KUBECONFORM_VERSION='v0.8.0'
+        KUBECONFORM_SHA256='9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883'
+
+        # renovate: datasource=git-refs depName=https://github.com/yannh/kubernetes-json-schema branch=master
+        K8S_SCHEMA_SHA='c8f4e61c63bc529749125ac566bccc6986e08d45'
+
+        # renovate: datasource=git-refs depName=https://github.com/datreeio/CRDs-catalog branch=main
+        CRDS_CATALOG_SHA='dcaa31aa03082906c0325a7a0ee7d5191e9cbe24'
+
+        # Mirror how kubeconform builds its default schema path so the local
+        # clone can be addressed with the very same template. It normalises a
+        # semver to a leading v and leaves 'master' alone, and appends -strict to
+        # the standalone directory unless strict validation is turned off.
+        K8S_VERSION="$(sed -n 's/.*-kubernetes-version[= ]\+\([^ ]\+\).*/\1/p' <<< "$KUBECONFORM_ARGS")"
+        K8S_VERSION="${K8S_VERSION:-master}"
+        if [[ "$K8S_VERSION" =~ ^[0-9] ]]; then
+          NORMALISED="v${K8S_VERSION}"
+        else
+          NORMALISED="$K8S_VERSION"
+        fi
+
+        if [[ "$KUBECONFORM_ARGS" == *'-strict=false'* ]]; then
+          STRICT_SUFFIX=''
+        else
+          STRICT_SUFFIX='-strict'
+        fi
+
+        {
+          echo "version=${KUBECONFORM_VERSION}"
+          echo "sha256=${KUBECONFORM_SHA256}"
+          echo "k8s-schema-sha=${K8S_SCHEMA_SHA}"
+          echo "crds-catalog-sha=${CRDS_CATALOG_SHA}"
+          # Both strict variants are fetched, so toggling -strict needs no refetch
+          # and the cache key does not depend on it.
+          echo "sparse-plain=${NORMALISED}-standalone"
+          echo "sparse-strict=${NORMALISED}-standalone-strict"
+          # The directory kubeconform will actually read, used to verify the
+          # fetch produced something before trusting a green result.
+          echo "expect-dir=${NORMALISED}-standalone${STRICT_SUFFIX}"
+          echo "cache-key=kubeconform-schemas-${NORMALISED}-${K8S_SCHEMA_SHA:0:12}-${CRDS_CATALOG_SHA:0:12}"
+        } >> "$GITHUB_OUTPUT"
+      env:
+        KUBECONFORM_ARGS: ${{ inputs.kubeconform-args }}
+
+    - name: install kubeconform
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        if ! command -v helm > /dev/null; then
+          echo "::error title=kubeconform::helm is not on PATH, install it before this action"
+          exit 1
+        fi
+
+        BIN_DIR="$RUNNER_TEMP/kubeconform-bin"
+        TARBALL="$RUNNER_TEMP/kubeconform.tar.gz"
+
+        curl -fsSL \
+          "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+          -o "$TARBALL"
+        echo "${KUBECONFORM_SHA256}  ${TARBALL}" | sha256sum -c -
+
+        mkdir -p "$BIN_DIR"
+        tar -xzf "$TARBALL" -C "$BIN_DIR" kubeconform
+        echo "$BIN_DIR" >> "$GITHUB_PATH"
+      env:
+        KUBECONFORM_VERSION: ${{ steps.kc.outputs.version }}
+        KUBECONFORM_SHA256: ${{ steps.kc.outputs.sha256 }}
+
+    # Schemas are read from a local checkout rather than fetched per resource.
+    # All the self-hosted runners share one egress IP, and enough unauthenticated
+    # traffic to raw.githubusercontent.com risks throttling, which
+    # -ignore-missing-schemas would silently turn into a passing build.
+    - name: cache schemas
+      id: schema-cache
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: ${{ runner.temp }}/kubeconform-schemas
+        key: ${{ steps.kc.outputs.cache-key }}
+
+    - name: fetch schemas
+      if: steps.schema-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Blobless partial clone plus sparse checkout, at a pinned commit. Only
+        # the requested paths are ever downloaded, which matters because a full
+        # checkout of kubernetes-json-schema is several GB: it holds a directory
+        # per Kubernetes release.
+        sparse_clone() {
+          local url="$1" sha="$2" dir="$3"
+          shift 3
+
+          rm -rf "$dir"
+          mkdir -p "$dir"
+          git -C "$dir" init --quiet
+          git -C "$dir" remote add origin "$url"
+          git -C "$dir" config extensions.partialClone origin
+          if [[ $# -gt 0 ]]; then
+            git -C "$dir" sparse-checkout init --cone
+            git -C "$dir" sparse-checkout set "$@"
+          fi
+          git -C "$dir" fetch --quiet --depth 1 --filter=blob:none origin "$sha"
+          git -C "$dir" checkout --quiet FETCH_HEAD
+        }
+
+        sparse_clone 'https://github.com/yannh/kubernetes-json-schema.git' \
+          "$K8S_SCHEMA_SHA" "$SCHEMA_ROOT/kubernetes-json-schema" \
+          "$SPARSE_PLAIN" "$SPARSE_STRICT"
+
+        # Small enough to take whole, and every directory is potentially needed
+        # because it is keyed by CRD group rather than by Kubernetes version.
+        sparse_clone 'https://github.com/datreeio/CRDs-catalog.git' \
+          "$CRDS_CATALOG_SHA" "$SCHEMA_ROOT/crds-catalog"
+
+        # Drop the git metadata, it is dead weight in the cache.
+        find "$SCHEMA_ROOT" -maxdepth 2 -name '.git' -type d -prune -exec rm -rf {} +
+      env:
+        SCHEMA_ROOT: ${{ runner.temp }}/kubeconform-schemas
+        K8S_SCHEMA_SHA: ${{ steps.kc.outputs.k8s-schema-sha }}
+        CRDS_CATALOG_SHA: ${{ steps.kc.outputs.crds-catalog-sha }}
+        SPARSE_PLAIN: ${{ steps.kc.outputs.sparse-plain }}
+        SPARSE_STRICT: ${{ steps.kc.outputs.sparse-strict }}
+
+    # Without network locations, an empty schema tree means every resource is
+    # skipped and the build goes green having validated nothing. Fail loudly
+    # instead, regardless of the enforce setting, because this is a fault in the
+    # action rather than a problem with the chart.
+    - name: verify schemas
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        K8S_DIR="$SCHEMA_ROOT/kubernetes-json-schema/$EXPECT_DIR"
+        CRDS_DIR="$SCHEMA_ROOT/crds-catalog"
+
+        # Check the directories exist before counting. A find over a missing path
+        # fails, and with pipefail that would abort before the message below.
+        k8s_count=0
+        crds_count=0
+        if [[ -d "$K8S_DIR" ]]; then
+          k8s_count="$(find "$K8S_DIR" -name '*.json' | wc -l)"
+        fi
+        if [[ -d "$CRDS_DIR" ]]; then
+          crds_count="$(find "$CRDS_DIR" -name '*.json' | wc -l)"
+        fi
+
+        echo "kubernetes schemas: ${k8s_count} in ${EXPECT_DIR}"
+        echo "crd catalog schemas: ${crds_count}"
+
+        if [[ "$k8s_count" -eq 0 ]]; then
+          echo "::error title=kubeconform::No Kubernetes schemas found in ${EXPECT_DIR}. Either the schema fetch failed or that Kubernetes version does not exist upstream."
+          exit 1
+        fi
+      env:
+        SCHEMA_ROOT: ${{ runner.temp }}/kubeconform-schemas
+        EXPECT_DIR: ${{ steps.kc.outputs.expect-dir }}
+
+    - name: render chart
+      id: render
+      shell: bash
+      run: |
+        # No `set -e`, a render failure is reported by the validate step rather
+        # than aborting here, so warn mode stays non-blocking.
+        set -uo pipefail
+
+        WORK_DIR="$RUNNER_TEMP/kubeconform"
+        mkdir -p "$WORK_DIR"
+
+        # A missing path makes helm fall back to treating the argument as a
+        # repo/chart reference, which fails with the baffling "repo <x> not
+        # found". This is a configuration fault rather than a chart defect, so
+        # say so plainly and fail whatever the enforce setting is.
+        if [[ ! -e "$CHART" ]]; then
+          echo "::error title=kubeconform::Chart not found at '${CHART}' (looked in $(pwd))"
+          exit 1
+        fi
+
+        # --include-crds so a chart's crds/ directory is rendered too, it
+        # produces nothing without this. --skip-tests because templates/tests
+        # are throwaway hooks and failing on them is noise.
+        if helm template "$CHART" --include-crds --skip-tests $HELM_TEMPLATE_ARGS \
+            > "$WORK_DIR/manifests.yaml" 2> "$WORK_DIR/render.log"; then
+          echo "rendered=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "rendered=false" >> "$GITHUB_OUTPUT"
+          cat "$WORK_DIR/render.log"
+        fi
+
+      env:
+        CHART: ${{ inputs.chart }}
+        HELM_TEMPLATE_ARGS: ${{ inputs.helm-template-args }}
+
+    - name: validate chart
+      id: kubeconform
+      shell: bash
+      run: |
+        # Deliberately no `set -e`, the exit status of each tool is inspected
+        # below rather than aborting the step.
+        set -uo pipefail
+
+        WORK_DIR="$RUNNER_TEMP/kubeconform"
+        MANIFESTS="$WORK_DIR/manifests.yaml"
+        REPORT="$WORK_DIR/report.txt"
+
+        # Every location is a local path, so a normal run makes no outbound
+        # requests at all. The {{...}} placeholders are kubeconform's own
+        # templating, not GitHub expressions, and the Kubernetes one is its
+        # default template with a local prefix.
+        SCHEMA_ARGS=(
+          -schema-location "$SCHEMA_ROOT/kubernetes-json-schema/{{.NormalizedKubernetesVersion}}-standalone{{.StrictSuffix}}/{{.ResourceKind}}{{.KindSuffix}}.json"
+          -schema-location "$SCHEMA_ROOT/crds-catalog/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
+        )
+
+        # A resource silently skipped for want of a schema is the failure mode
+        # that is hardest to diagnose after the fact, so record what was on offer.
+        echo "::group::schema locations"
+        printf '%s\n' "${SCHEMA_ARGS[@]}" | grep -v '^-schema-location$'
+        echo "::endgroup::"
+
+        if [[ "$RENDERED" != 'true' ]]; then
+          RESULT='error'
+          cp "$WORK_DIR/render.log" "$REPORT"
+
+        # -verbose prints a line per resource, which is what makes skipped
+        # kinds visible. Valid lines are filtered out of the summary below.
+        # No -debug: it is only wired into the HTTP registry, and every location
+        # here is local, so it can never print anything.
+        elif kubeconform \
+            -ignore-missing-schemas \
+            -strict \
+            -summary \
+            -verbose \
+            -output text \
+            "${SCHEMA_ARGS[@]}" \
+            $KUBECONFORM_ARGS \
+            "$MANIFESTS" > "$REPORT" 2>&1; then
+          RESULT='success'
+
+        else
+          RESULT='issues'
+        fi
+
+        cat "$REPORT"
+
+        SUMMARY_LINE="$(grep -m1 '^Summary:' "$REPORT" || true)"
+
+        SKIPPED_COUNT="$(sed -n 's/.*Skipped: \([0-9][0-9]*\).*/\1/p' <<< "${SUMMARY_LINE}")"
+        SKIPPED_COUNT="${SKIPPED_COUNT:-0}"
+        # kubeconform's text output prints "<path> - <kind> <name> is valid" but
+        # "<path> - <name> <kind> skipped", so on a skipped line the kind is the
+        # second to last field, not the first after the dash.
+        SKIPPED_KINDS="$(awk '$NF == "skipped" { print $(NF - 1) }' "$REPORT" \
+          | sort -u | paste -sd, - | sed 's/,/, /g')"
+
+        case "$RESULT" in
+          success)
+            BADGE=':mag: Validation Success'
+            ;;
+          issues)
+            BADGE='Validation Issues'
+            ;;
+          error)
+            BADGE='Chart Failed To Render'
+            ;;
+        esac
+
+        # A non-success only earns the :x: marker when it is actually blocking.
+        if [[ "$RESULT" != 'success' ]]; then
+          if [[ "$ENFORCE" == 'true' ]]; then
+            BADGE=":x: ${BADGE}"
+          else
+            BADGE=":warning: ${BADGE} (not enforced)"
+          fi
+        fi
+
+        # An unvalidated resource is a gap whether one slipped through or all of
+        # them did, and naming the kinds is what makes it actionable, so say them
+        # in both cases. NOTHING_VALIDATED only changes how loudly it is said.
+        SKIPPED_NOTE=''
+        NOTHING_VALIDATED=''
+        if [[ "$RESULT" != 'error' && "$SKIPPED_COUNT" -gt 0 ]]; then
+          if [[ -n "$SKIPPED_KINDS" ]]; then
+            SKIPPED_WHAT="no schema found for: ${SKIPPED_KINDS}"
+          else
+            SKIPPED_WHAT='no schema found'
+          fi
+
+          # Nothing validated at all deserves a stronger note. It is legitimate
+          # whenever every kind in the chart falls outside the pinned schema set,
+          # which covers both a chart shipping only CRDs and one shipping in-house
+          # custom resources that no public catalog knows about.
+          if grep -qE 'Valid: 0,' "$REPORT"; then
+            NOTHING_VALIDATED='true'
+            SKIPPED_NOTE="Nothing was validated, all ${SKIPPED_COUNT} resource(s) skipped, ${SKIPPED_WHAT}. The pinned schema set does not cover these kinds"
+          else
+            SKIPPED_NOTE="${SKIPPED_COUNT} resource(s) not validated, ${SKIPPED_WHAT}"
+          fi
+
+          echo "::warning title=kubeconform::${SKIPPED_NOTE}"
+        fi
+
+        # Single line so it drops cleanly into the chart actions' PR comment.
+        COMMENT="$BADGE"
+        if [[ -n "$SKIPPED_NOTE" ]]; then
+          COMMENT="${COMMENT} - ${SKIPPED_NOTE}"
+        fi
+
+        {
+          echo "result=$RESULT"
+          echo "summary-line=${SUMMARY_LINE}"
+          echo "skipped-count=${SKIPPED_COUNT}"
+          echo "skipped-kinds=${SKIPPED_KINDS}"
+          echo "comment=${COMMENT}"
+        } >> "$GITHUB_OUTPUT"
+
+        {
+          echo "${BADGE}  "
+
+          if [[ -n "$SKIPPED_NOTE" ]]; then
+            if [[ -n "$NOTHING_VALIDATED" ]]; then
+              echo ":satellite: ${SKIPPED_NOTE}  "
+            else
+              echo ":heavy_minus_sign: ${SKIPPED_NOTE}  "
+            fi
+          fi
+
+          # On success the summary line is the whole story. Otherwise show the
+          # report, minus the per-resource valid lines that -verbose adds, and
+          # truncated so a badly broken chart cannot blow the 1MiB cap.
+          if [[ "$RESULT" == 'success' ]]; then
+            if [[ -n "$SUMMARY_LINE" ]]; then
+              echo '```'
+              echo "$SUMMARY_LINE"
+              echo '```'
+            fi
+          else
+            echo '```'
+            grep -vE ' is valid$' "$REPORT" | head -c 60000
+            echo
+            echo '```'
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [[ "$RESULT" != 'success' ]]; then
+          if [[ "$ENFORCE" == 'true' ]]; then
+            echo "::error title=kubeconform::Validation failed for ${CHART}"
+            exit 1
+          fi
+          echo "::warning title=kubeconform::Validation problems in ${CHART}, set kubeconform-enforce to 'true' to make this blocking"
+        fi
+      env:
+        CHART: ${{ inputs.chart }}
+        ENFORCE: ${{ inputs.enforce }}
+        KUBECONFORM_ARGS: ${{ inputs.kubeconform-args }}
+        RENDERED: ${{ steps.render.outputs.rendered }}
+        SCHEMA_ROOT: ${{ runner.temp }}/kubeconform-schemas

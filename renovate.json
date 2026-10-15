@@ -5,5 +5,17 @@
   ],
   "schedule": [
     "* * * * *"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/actions/kubeconform/action\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>\\S+?)\\s+KUBECONFORM_VERSION='(?<currentValue>[^']+)'",
+        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>\\S+?) branch=(?<currentValue>\\S+)\\s+\\w+='(?<currentDigest>[0-9a-f]{40})'"
+      ]
+    }
   ]
 }

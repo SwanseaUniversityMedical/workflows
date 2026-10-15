@@ -1,0 +1,28 @@
+name: Build Keycloakify Action
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/workflows-release-build-keycloakify-action.yaml'
+      - '.github/actions/build-keycloakify/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/workflows-release-build-keycloakify-action.yaml'
+      - '.github/actions/build-keycloakify/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-keycloakify-action:
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.1.2-repo
+    with:
+      job-name: build-keycloakify-action
+      comment-release: true
+      release-tag-format: 'v${version}-build-keycloakify-action'

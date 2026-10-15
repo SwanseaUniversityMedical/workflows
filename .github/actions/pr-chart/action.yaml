@@ -24,6 +24,18 @@ inputs:
     description: "Command to test the chart named $CHART."
     default: ''
 
+  kubeconform-enforce:
+    description: "Fail the build when kubeconform reports validation errors."
+    default: "false"
+
+  kubeconform-args:
+    description: "Extra arguments appended to the kubeconform invocation, for example '-kubernetes-version 1.31.0 -skip CustomResourceDefinition'."
+    default: ''
+
+  helm-template-args:
+    description: "Extra arguments passed to helm template when rendering the chart for validation, for example '--values ci/lint-values.yaml'."
+    default: ''
+
   registry:
     description: "URL of the chart registry."
     required: true
@@ -146,14 +158,30 @@ runs:
         echo "PR_TAG=0.0.0-pr.${{ github.event.pull_request.number }}" >> $GITHUB_ENV  
         echo "PR_COMMIT_TAG=0.0.0-pr.${{ github.event.pull_request.number }}+${GITHUB_SHORT_SHA}" >> $GITHUB_ENV
 
-    - name: build chart
-      id: helm
+    - name: package chart
+      id: helm-package
       shell: bash
       run: |
         helm dependency update ${{ inputs.chart }}
         helm package ${{ inputs.chart }} --version ${{ env.PR_TAG }}
-        helm push ${{ inputs.registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
         helm package ${{ inputs.chart }} --version ${{ env.PR_COMMIT_TAG }}
+
+    # Validates the packaged chart rather than the source directory, so what is
+    # checked is exactly what gets pushed, .helmignore and all.
+    - name: validate chart
+      id: kubeconform
+      uses: SwanseaUniversityMedical/workflows/.github/actions/kubeconform@v1.0.0-kubeconform-action
+      with:
+        chart: ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz
+        enforce: ${{ inputs.kubeconform-enforce }}
+        kubeconform-args: ${{ inputs.kubeconform-args }}
+        helm-template-args: ${{ inputs.helm-template-args }}
+
+    - name: build chart
+      id: helm
+      shell: bash
+      run: |
+        helm push ${{ inputs.registry-repo }}-${{ env.PR_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
         helm push ${{ inputs.registry-repo }}-${{ env.PR_COMMIT_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
 
     - name: build success
@@ -171,7 +199,7 @@ runs:
           :hammer_and_wrench: Build Success  
 
     - name: build failure
-      if: failure() && steps.helm.outcome == 'failure'
+      if: failure() && (steps.helm-package.outcome == 'failure' || steps.helm.outcome == 'failure')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -200,7 +228,8 @@ runs:
           ```
           ${{ env.CHART_REPO }}:${{ env.PR_TAG }}
           ${{ env.CHART_REPO }}:${{ env.PR_COMMIT_TAG }}
-          ``` 
+          ```
+          ${{ steps.kubeconform.outputs.comment }}
 
     - name: notation chart
       id: notation

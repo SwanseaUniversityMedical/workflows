@@ -20,6 +20,18 @@ inputs:
     description: "Command to test the chart named $CHART."
     default: ''
 
+  kubeconform-enforce:
+    description: "Fail the build when kubeconform reports validation errors."
+    default: "false"
+
+  kubeconform-args:
+    description: "Extra arguments appended to the kubeconform invocation, for example '-kubernetes-version 1.31.0 -skip CustomResourceDefinition'."
+    default: ''
+
+  helm-template-args:
+    description: "Extra arguments passed to helm template when rendering the chart for validation, for example '--values ci/lint-values.yaml'."
+    default: ''
+
   registry:
     description: "URL of the chart registry."
     required: true
@@ -176,13 +188,31 @@ runs:
         echo "RELEASE_TAG=${{ steps.semantic.outputs.release-version }}" >> $GITHUB_ENV
         echo "RC_TAG=${{ steps.semantic.outputs.release-version }}-rc" >> $GITHUB_ENV
 
-    - name: build release candidate chart
-      id: helm-rc
+    - name: package release candidate chart
+      id: helm-rc-package
       if: steps.semantic.outputs.new-release-published == 'true'
       shell: bash
       run: |
         helm dependency update ${{ inputs.chart }}
         helm package ${{ inputs.chart }} --version ${{ env.RC_TAG }}
+
+    # Validates the packaged chart rather than the source directory, so what is
+    # checked is exactly what gets pushed, .helmignore and all.
+    - name: validate chart
+      id: kubeconform
+      if: steps.semantic.outputs.new-release-published == 'true'
+      uses: SwanseaUniversityMedical/workflows/.github/actions/kubeconform@v1.0.0-kubeconform-action
+      with:
+        chart: ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz
+        enforce: ${{ inputs.kubeconform-enforce }}
+        kubeconform-args: ${{ inputs.kubeconform-args }}
+        helm-template-args: ${{ inputs.helm-template-args }}
+
+    - name: build release candidate chart
+      id: helm-rc
+      if: steps.semantic.outputs.new-release-published == 'true'
+      shell: bash
+      run: |
         helm push ${{ inputs.registry-repo }}-${{ env.RC_TAG }}.tgz oci://${{ env.CHART_PROJECT }}
 
     - name: build success
@@ -198,7 +228,7 @@ runs:
           :hammer_and_wrench: Build Success  
 
     - name: build failure
-      if: failure() && steps.helm-rc.outcome == 'failure'
+      if: failure() && (steps.helm-rc-package.outcome == 'failure' || steps.helm-rc.outcome == 'failure')
       shell: bash
       run: |
         echo "${SUMMARY}" >> "$GITHUB_STEP_SUMMARY"
@@ -396,6 +426,7 @@ runs:
           ${{ steps.semantic.outputs.git-tag }}
           ${{ env.CHART_REPO }}:${{ env.RELEASE_TAG }}
           ```
+          ${{ steps.kubeconform.outputs.comment }}
 
     - name: error
       if: failure()

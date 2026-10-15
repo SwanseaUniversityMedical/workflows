@@ -1,0 +1,28 @@
+name: PR Keycloakify Action
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - '.github/workflows/workflows-release-pr-keycloakify-action.yaml'
+      - '.github/actions/pr-keycloakify/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/workflows-release-pr-keycloakify-action.yaml'
+      - '.github/actions/pr-keycloakify/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pr-keycloakify-action:
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-repo.yaml@v2.1.2-repo
+    with:
+      job-name: pr-keycloakify-action
+      comment-release: true
+      release-tag-format: 'v${version}-pr-keycloakify-action'

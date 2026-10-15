@@ -32,6 +32,11 @@ on:
         default: '**.exe'
         type: string
 
+      test-project-file:
+        description: "Path to the test csproj/sln to run with coverage, relative to project-context. Requires coverlet.collector to be referenced by the test project."
+        default: ''
+        type: string
+
     secrets:
 
       sonar-token:
@@ -54,3 +59,4 @@ jobs:
           sonar-url: ${{ inputs.sonar-url }}
           sonar-token: ${{ secrets.sonar-token }}
           nuget-config: ${{ inputs.nuget-config }}
+          test-project-file: ${{ inputs.test-project-file }}

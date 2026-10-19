@@ -51,7 +51,7 @@ runs:
         REF: ${{ inputs.ref }}
 
     - if: github.event_name == 'pull_request'
-      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v3.0.0-pr-chart-action
+      uses: SwanseaUniversityMedical/workflows/.github/actions/pr-chart@v4.0.0-pr-chart-action
       with:
         name: ${{ env.BITNAMI_NAME }}-chart
         comment-enabled: "true"

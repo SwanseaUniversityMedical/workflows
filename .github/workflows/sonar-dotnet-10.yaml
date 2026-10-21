@@ -37,6 +37,11 @@ on:
         default: ''
         type: string
 
+      coverage-report-path:
+        description: "Path to an existing coverage report in Sonar generic coverage format, relative to the repo root. Passed through to sonar without running tests."
+        default: ''
+        type: string
+
     secrets:
 
       sonar-token:
@@ -60,3 +65,4 @@ jobs:
           sonar-token: ${{ secrets.sonar-token }}
           nuget-config: ${{ inputs.nuget-config }}
           test-project-file: ${{ inputs.test-project-file }}
+          coverage-report-path: ${{ inputs.coverage-report-path }}

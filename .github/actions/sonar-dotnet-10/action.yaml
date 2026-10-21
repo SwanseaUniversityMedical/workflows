@@ -34,6 +34,10 @@ inputs:
     description: "Path to the test csproj/sln to run with coverage, relative to project-context. Requires coverlet.collector to be referenced by the test project."
     default: ''
 
+  coverage-report-path:
+    description: "Path to an existing coverage report in Sonar generic coverage format, relative to the repo root. Passed through to sonar without running tests."
+    default: ''
+
 runs:
   using: "composite"
   steps:
@@ -90,6 +94,9 @@ runs:
           COVERAGE_ARG="/d:sonar.cs.opencover.reportsPaths=\"/repo/$PROJECT_CONTEXT/coverage/**/coverage.opencover.xml\""
           TEST_CMD="dotnet test \"$TEST_PROJECT_FILE\" -c Release --results-directory \"/repo/$PROJECT_CONTEXT/coverage\" --collect:\"XPlat Code Coverage;Format=opencover\" && "
         fi
+        if [ -n "$COVERAGE_REPORT_PATH" ]; then
+          COVERAGE_ARG="$COVERAGE_ARG /d:sonar.coverageReportPaths=\"/repo/$COVERAGE_REPORT_PATH\""
+        fi
         for n in {1..3}; do
           docker run --rm -v "$BUILD_CONTEXT":/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
             bash -c " \
@@ -122,6 +129,7 @@ runs:
         SONAR_URL: ${{ inputs.sonar-url }}
         SONAR_TOKEN: ${{ inputs.sonar-token }}
         TEST_PROJECT_FILE: ${{ inputs.test-project-file }}
+        COVERAGE_REPORT_PATH: ${{ inputs.coverage-report-path }}
     
     - name: scan project PR
       if: ${{ github.event_name == 'pull_request' }}
@@ -132,6 +140,9 @@ runs:
         if [ -n "$TEST_PROJECT_FILE" ]; then
           COVERAGE_ARG="/d:sonar.cs.opencover.reportsPaths=\"/repo/$PROJECT_CONTEXT/coverage/**/coverage.opencover.xml\""
           TEST_CMD="dotnet test \"$TEST_PROJECT_FILE\" -c Release --results-directory \"/repo/$PROJECT_CONTEXT/coverage\" --collect:\"XPlat Code Coverage;Format=opencover\" && "
+        fi
+        if [ -n "$COVERAGE_REPORT_PATH" ]; then
+          COVERAGE_ARG="$COVERAGE_ARG /d:sonar.coverageReportPaths=\"/repo/$COVERAGE_REPORT_PATH\""
         fi
         for n in {1..3}; do
           docker run --rm -v "$BUILD_CONTEXT":/repo -w "/repo/$PROJECT_CONTEXT" $SONAR_IMAGE \
@@ -168,3 +179,4 @@ runs:
         SONAR_URL: ${{ inputs.sonar-url }}
         SONAR_TOKEN: ${{ inputs.sonar-token }}
         TEST_PROJECT_FILE: ${{ inputs.test-project-file }}
+        COVERAGE_REPORT_PATH: ${{ inputs.coverage-report-path }}

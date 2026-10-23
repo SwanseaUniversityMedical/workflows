@@ -56,7 +56,7 @@ runs:
         KUBECONFORM_SHA256='9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883'
 
         # renovate: datasource=git-refs depName=https://github.com/yannh/kubernetes-json-schema branch=master
-        K8S_SCHEMA_SHA='c8f4e61c63bc529749125ac566bccc6986e08d45'
+        K8S_SCHEMA_SHA='f7d855e49c34b039c9ef2196444910275e31e09e'
 
         # renovate: datasource=git-refs depName=https://github.com/datreeio/CRDs-catalog branch=main
         CRDS_CATALOG_SHA='dcaa31aa03082906c0325a7a0ee7d5191e9cbe24'
